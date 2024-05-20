@@ -12,24 +12,43 @@ const int CELL_PERSON_IN_NEED = 6;
 const int CELL_CASUALTY =       7;
 
 // Map size
-const int N_ROWS = 10;
-const int N_COLS = 10;
+const int N_COLS = 10; // x
+const int N_ROWS = 10; // y
 
 // Map
-int[0,7] map[N_ROWS][N_COLS];
+int[0,7] map[N_COLS][N_ROWS];
+chan in_need_channels[N_COLS][N_ROWS];
+chan zero_resp_channels[N_COLS][N_ROWS];
 
 // Global channels
 urgent broadcast chan init_done;
 
-// Structs
+// Position struct
 typedef struct {
     int x;
     int y;
 } Position;
+const Position INVALID_POSITION = {-1, -1};
+
+// Moving policy step struct
 typedef struct {
     int x_inc;
     int y_inc;
-} MovingPolicyStep;</declaration>
+} MovingPolicyStep;
+
+// Functions
+
+bool is_fire_near(Position pos, const int radius) {
+    int x, y;
+    for(x = pos.x - radius; x &lt;= pos.x + radius; x += 1)
+        for(y = pos.y - radius; y &lt;= pos.y + radius; y += 1)
+            if(x &gt;= 0 &amp;&amp; x &lt; N_COLS &amp;&amp; y &gt;= 0 &amp;&amp; y &lt; N_ROWS)
+                if(map[x][y] == CELL_FIRE)
+                    return true;
+
+    return false;
+}
+</declaration>
 	<template>
 		<name x="5" y="5">Initializer</name>
 		<declaration>void init_assignment_example() {
@@ -41,36 +60,36 @@ typedef struct {
     }
 
     // Set fires
-    map[1][5] = CELL_FIRE;
-    map[1][6] = CELL_FIRE;
-    map[2][5] = CELL_FIRE;
-    map[2][6] = CELL_FIRE;
-    map[3][4] = CELL_FIRE;
-    map[3][5] = CELL_FIRE;
-    map[3][6] = CELL_FIRE;
+    map[5][1] = CELL_FIRE;
+    map[6][1] = CELL_FIRE;
+    map[5][2] = CELL_FIRE;
+    map[6][2] = CELL_FIRE;
+    map[4][3] = CELL_FIRE;
+    map[5][3] = CELL_FIRE;
+    map[6][3] = CELL_FIRE;
     map[4][4] = CELL_FIRE;
-    map[4][5] = CELL_FIRE;
+    map[5][4] = CELL_FIRE;
 
     // Set exits
-    map[4][0] = CELL_EXIT;
-    map[4][9] = CELL_EXIT;
-    map[5][0] = CELL_EXIT;
-    map[5][9] = CELL_EXIT;
+    map[0][4] = CELL_EXIT;
+    map[9][4] = CELL_EXIT;
+    map[0][5] = CELL_EXIT;
+    map[9][5] = CELL_EXIT;
 
     // Set first responders
-    map[5][6] = CELL_FIRST_RESP;
+    map[6][5] = CELL_FIRST_RESP;
 
     // Set zero responders
-    map[0][1] = CELL_ZERO_RESP;
-    map[5][3] = CELL_ZERO_RESP;
-    map[6][5] = CELL_ZERO_RESP;
-    map[7][4] = CELL_ZERO_RESP;
-    map[8][6] = CELL_ZERO_RESP;
-    map[9][3] = CELL_ZERO_RESP;
+    map[1][0] = CELL_ZERO_RESP;
+    map[3][5] = CELL_ZERO_RESP;
+    map[5][6] = CELL_ZERO_RESP;
+    map[4][7] = CELL_ZERO_RESP;
+    map[6][8] = CELL_ZERO_RESP;
+    map[3][9] = CELL_ZERO_RESP;
 
     // Set persons in need
     map[3][3] = CELL_PERSON_IN_NEED;
-    map[4][6] = CELL_PERSON_IN_NEED;
+    map[6][4] = CELL_PERSON_IN_NEED;
 }
 </declaration>
 		<location id="id0" x="272" y="0">
@@ -88,24 +107,26 @@ typedef struct {
 	</template>
 	<template>
 		<name>Drone</name>
-		<parameter>int x, int y</parameter>
+		<parameter>const int N_v, int x, int y</parameter>
 		<declaration>int move_policy_next_move_idx;
+
+Position pos;
 
 const int MOVE_POLICY_LEN = 8;
 MovingPolicyStep move_policy[MOVE_POLICY_LEN] = {
-    { 0,  1}, // Right
-    { 0,  1}, // Right
-    { 1,  0}, // Down
-    { 1,  0}, // Down
-    { 0, -1}, // Left
-    { 0, -1}, // Left
-    {-1,  0}, // Up
-    {-1,  0}  // Up
+    { 1,  0}, // Right
+    { 1,  0}, // Right
+    { 0,  1}, // Down
+    { 0,  1}, // Down
+    {-1,  0}, // Left
+    {-1,  0}, // Left
+    { 0, -1}, // Up
+    { 0, -1}  // Up
 };
 
 void move_one_step() {
-    x += move_policy[move_policy_next_move_idx].x_inc;
-    y += move_policy[move_policy_next_move_idx].y_inc;
+    pos.x += move_policy[move_policy_next_move_idx].x_inc;
+    pos.y += move_policy[move_policy_next_move_idx].y_inc;
 
     move_policy_next_move_idx += 1;
     if(move_policy_next_move_idx &gt;= MOVE_POLICY_LEN)
@@ -116,38 +137,117 @@ void move_one_step() {
 		</location>
 		<location id="id4" x="-76" y="-102">
 		</location>
+		<location id="id5" x="110" y="-102">
+			<name x="100" y="-136">Scanning</name>
+		</location>
+		<location id="id6" x="-42" y="127">
+		</location>
 		<init ref="id3"/>
-		<transition id="id5">
-			<source ref="id4"/>
-			<target ref="id4"/>
-			<label kind="assignment" x="8" y="-119">move_one_step()</label>
-			<nail x="0" y="-153"/>
-			<nail x="0" y="-59"/>
+		<transition id="id7">
+			<source ref="id5"/>
+			<target ref="id6"/>
+			<label kind="select" x="119" y="-85">x_in : int[0, N_COLS-1],
+y_in : int[0, N_ROWS-1],
+x_zr : int[0, N_COLS-1],
+y_zr : int[0, N_ROWS-1]</label>
+			<label kind="guard" x="119" y="0">pos.x - N_v &lt;= x_in &lt;= pos.x + N_v &amp;&amp;
+pos.y - N_v &lt;= y_in &lt;= pos.y + N_v &amp;&amp;
+pos.x - N_v &lt;= x_zr &lt;= pos.x + N_v &amp;&amp;
+pos.y - N_v &lt;= y_zr &lt;= pos.y + N_v</label>
+			<label kind="synchronisation" x="119" y="85">in_need_channels[x_in][y_in]!</label>
+			<nail x="110" y="127"/>
 		</transition>
-		<transition id="id6">
+		<transition id="id8">
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="assignment" x="-58" y="-102">move_one_step()</label>
+		</transition>
+		<transition id="id9">
 			<source ref="id3"/>
 			<target ref="id4"/>
 			<label kind="synchronisation" x="-221" y="-102">init_done?</label>
+			<label kind="assignment" x="-221" y="-85">pos.x = x,
+pos.y = y</label>
 		</transition>
 	</template>
 	<template>
 		<name>FirstResponder</name>
-		<location id="id7" x="0" y="0">
+		<location id="id10" x="0" y="0">
 		</location>
-		<init ref="id7"/>
+		<init ref="id10"/>
 	</template>
 	<template>
 		<name>Survivor</name>
-		<location id="id8" x="0" y="0">
+		<parameter>int x, int y</parameter>
+		<declaration>Position pos;
+
+void move() {
+    // TODO
+}</declaration>
+		<location id="id11" x="-178" y="17">
+			<name x="-170" y="-17">Moving</name>
 		</location>
-		<init ref="id8"/>
+		<location id="id12" x="204" y="-119">
+		</location>
+		<location id="id13" x="212" y="17">
+			<name x="202" y="-17">ActingZeroResponder</name>
+		</location>
+		<location id="id14" x="-297" y="-42">
+			<committed/>
+		</location>
+		<location id="id15" x="-178" y="-119">
+			<name x="-188" y="-153">InNeed</name>
+		</location>
+		<location id="id16" x="-510" y="-42">
+		</location>
+		<init ref="id16"/>
+		<transition id="id17">
+			<source ref="id11"/>
+			<target ref="id14"/>
+			<label kind="comments" x="-238" y="-68">TODO: move()</label>
+			<nail x="-178" y="-42"/>
+		</transition>
+		<transition id="id18">
+			<source ref="id14"/>
+			<target ref="id11"/>
+			<label kind="guard" x="-408" y="0">!is_fire_near(pos, 1)</label>
+		</transition>
+		<transition id="id19">
+			<source ref="id16"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-493" y="-42">init_done?</label>
+			<label kind="assignment" x="-493" y="-25">pos.x = x,
+pos.y = y</label>
+		</transition>
+		<transition id="id20">
+			<source ref="id15"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-161" y="-119">in_need_channels[pos.x][pos.y]?</label>
+		</transition>
+		<transition id="id21">
+			<source ref="id14"/>
+			<target ref="id15"/>
+			<label kind="guard" x="-399" y="-119">is_fire_near(pos, 1)</label>
+		</transition>
+		<transition id="id22">
+			<source ref="id11"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-161" y="17">zero_resp_channels[pos.x][pos.y]?</label>
+		</transition>
 	</template>
 	<system>initializer = Initializer();
 
-// Drones and their initial positions
-drone_1 = Drone(1, 1);
+const int N_v = 1;
 
-system initializer, drone_1;
+// Drones and their initial positions
+Position drone_1_initial_position = {1, 1};
+drone_1 = Drone(N_v, 1, 1);
+
+in_need_1 = Survivor(3, 3);
+
+zero_resp_1 = Survivor(2, 5);
+
+system initializer, drone_1, in_need_1; //, zero_resp_1;
 </system>
 	<queries>
 		<query>
