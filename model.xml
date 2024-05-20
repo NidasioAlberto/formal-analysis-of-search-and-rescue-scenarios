@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Map cell status enumeration
+const int CELL_EMPTY =          0;
+const int CELL_FIRE =           1;
+const int CELL_EXIT =           2;
+const int CELL_DRONE =          3;
+const int CELL_FIRST_RESP =     4;
+const int CELL_ZERO_RESP =      5;
+const int CELL_PERSON_IN_NEED = 6;
+const int CELL_CASUALTY =       7;
+
+// Map size
+const int N_ROWS = 10;
+const int N_COLS = 10;
+
+// Map
+int[0,7] map[N_ROWS][N_COLS];
+
+// Global channels
+urgent broadcast chan init_done;
+
+// Structs
+typedef struct {
+    int x;
+    int y;
+} Position;
+typedef struct {
+    int x_inc;
+    int y_inc;
+} MovingPolicyStep;</declaration>
+	<template>
+		<name x="5" y="5">Initializer</name>
+		<declaration>void init_assignment_example() {
+    // Init the map will all empty cells
+    for(x : int[0, N_ROWS-1]) {
+        for(y : int[0, N_COLS-1]) {
+            map[x][y] = CELL_EMPTY;
+        }
+    }
+
+    // Set fires
+    map[1][5] = CELL_FIRE;
+    map[1][6] = CELL_FIRE;
+    map[2][5] = CELL_FIRE;
+    map[2][6] = CELL_FIRE;
+    map[3][4] = CELL_FIRE;
+    map[3][5] = CELL_FIRE;
+    map[3][6] = CELL_FIRE;
+    map[4][4] = CELL_FIRE;
+    map[4][5] = CELL_FIRE;
+
+    // Set exits
+    map[4][0] = CELL_EXIT;
+    map[4][9] = CELL_EXIT;
+    map[5][0] = CELL_EXIT;
+    map[5][9] = CELL_EXIT;
+
+    // Set first responders
+    map[5][6] = CELL_FIRST_RESP;
+
+    // Set zero responders
+    map[0][1] = CELL_ZERO_RESP;
+    map[5][3] = CELL_ZERO_RESP;
+    map[6][5] = CELL_ZERO_RESP;
+    map[7][4] = CELL_ZERO_RESP;
+    map[8][6] = CELL_ZERO_RESP;
+    map[9][3] = CELL_ZERO_RESP;
+
+    // Set persons in need
+    map[3][3] = CELL_PERSON_IN_NEED;
+    map[4][6] = CELL_PERSON_IN_NEED;
+}
+</declaration>
+		<location id="id0" x="272" y="0">
+		</location>
+		<location id="id1" x="0" y="0">
+			<committed/>
+		</location>
+		<init ref="id1"/>
+		<transition id="id2">
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="17" y="0">init_done!</label>
+			<label kind="assignment" x="17" y="17">init_assignment_example()</label>
+		</transition>
+	</template>
+	<template>
+		<name>Drone</name>
+		<parameter>int x, int y</parameter>
+		<declaration>int move_policy_next_move_idx;
+
+const int MOVE_POLICY_LEN = 8;
+MovingPolicyStep move_policy[MOVE_POLICY_LEN] = {
+    { 0,  1}, // Right
+    { 0,  1}, // Right
+    { 1,  0}, // Down
+    { 1,  0}, // Down
+    { 0, -1}, // Left
+    { 0, -1}, // Left
+    {-1,  0}, // Up
+    {-1,  0}  // Up
+};
+
+void move_one_step() {
+    x += move_policy[move_policy_next_move_idx].x_inc;
+    y += move_policy[move_policy_next_move_idx].y_inc;
+
+    move_policy_next_move_idx += 1;
+    if(move_policy_next_move_idx &gt;= MOVE_POLICY_LEN)
+        move_policy_next_move_idx = 0;
+}
+</declaration>
+		<location id="id3" x="-238" y="-102">
+		</location>
+		<location id="id4" x="-76" y="-102">
+		</location>
+		<init ref="id3"/>
+		<transition id="id5">
+			<source ref="id4"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="8" y="-119">move_one_step()</label>
+			<nail x="0" y="-153"/>
+			<nail x="0" y="-59"/>
+		</transition>
+		<transition id="id6">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-221" y="-102">init_done?</label>
+		</transition>
+	</template>
+	<template>
+		<name>FirstResponder</name>
+		<location id="id7" x="0" y="0">
+		</location>
+		<init ref="id7"/>
+	</template>
+	<template>
+		<name>Survivor</name>
+		<location id="id8" x="0" y="0">
+		</location>
+		<init ref="id8"/>
+	</template>
+	<system>initializer = Initializer();
+
+// Drones and their initial positions
+drone_1 = Drone(1, 1);
+
+system initializer, drone_1;
+</system>
+	<queries>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+	</queries>
+</nta>
