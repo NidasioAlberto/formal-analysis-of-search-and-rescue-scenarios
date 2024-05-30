@@ -633,7 +633,7 @@ void move(int ii, int jj) {
     // Set the current position empty because we'll move
     map[x][y] = CELL_EMPTY;
 
-    if (!is_move_valid(next_x, next_y)) {
+    if (is_move_valid(next_x, next_y)) {
         // We move to the optimal cell if the move is valid
         x = next_x;
         y = next_y;
