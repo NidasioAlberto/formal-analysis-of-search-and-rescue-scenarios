@@ -38,7 +38,7 @@ const int CELL_IN_NEED =        CELL_FIRST + 6;
 const int CELL_ASSISTED =       CELL_FIRST + 7; // Survivor in need busy being assisted
 const int CELL_ASSISTING =      CELL_FIRST + 8; // First responder busy assisting
 
-const int CELL_LAST =           CELL_IN_NEED;
+const int CELL_LAST =           CELL_ASSISTING;
 
 // Map
 int[CELL_FIRST,CELL_LAST] map[N_COLS][N_ROWS];
@@ -53,7 +53,7 @@ chan assist_success[N_COLS][N_ROWS];   // Channels for signaling that an assista
 urgent broadcast chan init_done;
 
 // The number of available first responders at any given moment
-// Every first responders in the system increments this value during init
+// Every first responders in the system increments this value during init Every first responders in the system increments this value during init
 int available_fr;
 
 // Moving policy step struct
@@ -88,9 +88,9 @@ int distance(int x1, int y1, int x2, int y2) {
     int y_distance = y1 - y2;
 
     if (x_distance &lt; 0)
-        x_distance = 0 - x_distance;
+        x_distance = -x_distance;
     if (y_distance &lt; 0)
-        y_distance = 0 - y_distance;
+        y_distance = -y_distance;
 
     return imax(x_distance, y_distance);
 }
@@ -208,6 +208,7 @@ void set_in_need(int xx, int yy) {
 }
 
 bool is_survivor(int xx, int yy) {
+    // A survivor must be in the field of view
     return x_lower &lt;= xx &lt;= x_upper &amp;&amp;
            y_lower &lt;= yy &lt;= y_upper &amp;&amp;
            map[xx][yy] == CELL_SURVIVOR;
@@ -238,7 +239,7 @@ bool survivors_near() {
         for (j = y_lower; j &lt;= y_upper; j += 1) {
             int cell = map[i][j];
             
-            // Update cell flags
+            // Check map cell and update flags
             if (cell == CELL_IN_NEED)
                 found_in_need = true;
             else if (cell == CELL_SURVIVOR)
@@ -269,36 +270,36 @@ bool prefer_zr() {
 }
 </declaration>
 		<location id="id5" x="-170" y="-535">
-			<name x="-306" y="-544">FoundFirstResp</name>
+			<name x="-153" y="-569">FoundFirstResp</name>
 			<committed/>
 		</location>
 		<location id="id6" x="-425" y="-612">
-			<name x="-578" y="-620">InstructZeroResp</name>
+			<name x="-408" y="-646">InstructZeroResp</name>
 			<committed/>
 		</location>
 		<location id="id7" x="-170" y="-799">
-			<name x="-246" y="-841">FindFirstResponder</name>
+			<name x="-153" y="-833">FindFirstResponder</name>
 			<committed/>
 		</location>
 		<location id="id8" x="-424" y="-799">
-			<name x="-476" y="-841">FoundInNeed</name>
+			<name x="-408" y="-833">SurvivorAndInNeedSelected</name>
 			<committed/>
 		</location>
 		<location id="id9" x="-688" y="-799">
-			<name x="-747" y="-841">FoundSurvivor</name>
+			<name x="-671" y="-833">SurvivorSelected</name>
 			<committed/>
 		</location>
 		<location id="id10" x="-1589" y="-799">
 		</location>
 		<location id="id11" x="-1402" y="-799">
-			<name x="-1462" y="-841">Moving</name>
+			<name x="-1385" y="-833">Moving</name>
 			<committed/>
 		</location>
 		<location id="id12" x="-1164" y="-799">
-			<name x="-1156" y="-841">Scanning</name>
+			<name x="-1147" y="-833">Scanning</name>
 		</location>
 		<location id="id13" x="-943" y="-799">
-			<name x="-994" y="-841">FoundSurvivors</name>
+			<name x="-926" y="-833">FoundSurvivors</name>
 			<committed/>
 		</location>
 		<init ref="id10"/>
@@ -340,7 +341,7 @@ yy : int[0, N_ROWS-1]</label>
 		<transition id="id19">
 			<source ref="id8"/>
 			<target ref="id7"/>
-			<label kind="guard" x="-391" y="-799">available_fr &gt; 0</label>
+			<label kind="guard" x="-408" y="-799">available_fr &gt; 0</label>
 			<label kind="comments" x="-408" y="-901">TODO: available_fr can
 potentially be removed</label>
 		</transition>
@@ -351,6 +352,9 @@ potentially be removed</label>
 yy : int[0, N_ROWS-1]</label>
 			<label kind="guard" x="-662" y="-757">is_in_need(xx, yy)</label>
 			<label kind="assignment" x="-662" y="-739">set_in_need(xx, yy)</label>
+			<label kind="comments" x="-671" y="-714">Finds one in_need in the
+field of view and saves
+its coordinates</label>
 		</transition>
 		<transition id="id21">
 			<source ref="id13"/>
@@ -359,11 +363,14 @@ yy : int[0, N_ROWS-1]</label>
 yy : int[0, N_ROWS-1]</label>
 			<label kind="guard" x="-917" y="-756">is_survivor(xx, yy)</label>
 			<label kind="assignment" x="-917" y="-739">set_survivor(xx, yy)</label>
+			<label kind="comments" x="-926" y="-714">Finds one survivor in the
+field of view and saves
+its coordinates</label>
 		</transition>
 		<transition id="id22">
 			<source ref="id12"/>
 			<target ref="id11"/>
-			<label kind="guard" x="-1317" y="-918">!survivors_near()</label>
+			<label kind="guard" x="-1351" y="-918">!survivors_near()</label>
 			<nail x="-1164" y="-892"/>
 			<nail x="-1402" y="-892"/>
 		</transition>
@@ -634,7 +641,7 @@ survivor_2 = Survivor(4, 2); // In need
 first_responder_1 = FirstResponder(2, 3);
 first_responder_2 = FirstResponder(2, 4);
 
-system initializer, drone_1, survivor_1, survivor_2;//, first_responder_1, first_responder_2;
+system initializer, drone_1, survivor_1, survivor_2, first_responder_1, first_responder_2;
 </system>
 	<queries>
 		<query>
