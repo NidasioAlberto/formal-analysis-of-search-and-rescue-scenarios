@@ -579,6 +579,7 @@ void find_nearest_exit(int &amp;xx, int &amp;yy) {
 bool is_move_valid(int ii, int jj) {
     return (ii != 0 || jj != 0) &amp;&amp;
            !is_fire_near(x + ii, y + jj) &amp;&amp;
+           map[x+ii][y+jj] == CELL_EMPTY &amp;&amp;
            0 &lt;= x + ii &amp;&amp; x + ii &lt;= N_COLS - 1 &amp;&amp;
            0 &lt;= y + jj &amp;&amp; y + jj &lt;= N_ROWS - 1;
 }
@@ -695,11 +696,9 @@ void move(int ii, int jj) {
 			<nail x="773" y="459"/>
 		</transition>
 		<transition id="id44">
-			<so// Moving policy step struct
-typedef struct {
-    int x_inc;
-    int y_inc;
-} MovingPolicyStep;<label kind="synchronisation" x="255" y="-144">assist_success[x][y]?</label>
+			<source ref="id38"/>
+			<target ref="id38"/>
+			<label kind="synchronisation" x="255" y="-144">assist_success[x][y]?</label>
 			<label kind="comments" x="255" y="-188">Consume signals to avoid deadlocking
 the first/zero responder</label>
 			<nail x="238" y="-171"/>
