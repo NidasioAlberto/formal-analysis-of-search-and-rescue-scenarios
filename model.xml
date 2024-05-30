@@ -576,16 +576,31 @@ void find_nearest_exit(int &amp;xx, int &amp;yy) {
     }
 }
 
-bool is_move_valid(int ii, int jj) {
-    return (ii != 0 || jj != 0) &amp;&amp;
-           !is_fire_near(x + ii, y + jj) &amp;&amp;
-           map[x+ii][y+jj] == CELL_EMPTY &amp;&amp;
-           0 &lt;= x + ii &amp;&amp; x + ii &lt;= N_COLS - 1 &amp;&amp;
-           0 &lt;= y + jj &amp;&amp; y + jj &lt;= N_ROWS - 1;
+bool is_move_valid(int xx, int yy) {
+    bool valid;
+
+    // At least one coordinate must change, the move cannot target the same position
+    valid = xx != x || yy != y;
+
+    // We cannot move near a fire
+    valid &amp;= !is_fire_near(xx, yy);
+
+    // We can move only towards empty cells
+    valid &amp;= map[xx][yy] == CELL_EMPTY;
+
+    // We can only move inside the map
+    valid &amp;= 0 &lt;= xx &amp;&amp; xx &lt;= N_COLS - 1 &amp;&amp; 0 &lt;= yy &amp;&amp; yy &lt;= N_ROWS - 1;
+
+    return valid;
 }
 
 int exit_x, exit_y; // the current exit we are trying to reach
 
+/**
+ * This moving policy tries to follow a direct path to the nearest exit.
+ * When the next move on the direct path cannot be taken (the cell is
+ * occupied or there is a fire near) we randomly choose a valid move.
+ */
 void move(int ii, int jj) {
     int next_x, next_y;
     int direction_x, direction_y;
@@ -595,28 +610,31 @@ void move(int ii, int jj) {
 
     find_nearest_exit(exit_x, exit_y);
 
+    // Tells what direction to move to over x to go towards the exit
     if (exit_x - x &gt; 0)
-        direction_x = 1;
+        direction_x = 1; // Right
     else if (exit_x - x &lt; 0) 
-        direction_x = -1;
+        direction_x = -1; // Left
     else
-        direction_x = 0;
+        direction_x = 0; // Stay put
 
+    // Same thing for y
     if (exit_y - y &gt; 0)
-        direction_y = 1;
+        direction_y = 1; // Down
     else if (exit_y - y &lt; 0) 
-        direction_y = -1;
+        direction_y = -1; // Up
     else
-        direction_y = 0;
+        direction_y = 0; // Stay put
 
-    // The next optimal position towards the nearest exit
+    // Compute the next optimal position towards the nearest exit
     next_x = x + direction_x;
     next_y = y + direction_y;
 
+    // Set the current position empty because we'll move
     map[x][y] = CELL_EMPTY;
 
-    if (!is_fire_near(next_x, next_y)) {
-        // The optimal moving direction for both X and Y is feasible
+    if (!is_move_valid(next_x, next_y)) {
+        // We move to the optimal cell if the move is valid
         x = next_x;
         y = next_y;
     } else if (prefer_x) {
@@ -747,7 +765,7 @@ yy : int[0, N_ROWS-1]</label>
 			<target ref="id41"/>
 			<label kind="select" x="-221" y="314">ii : int[-1, 1],
 jj : int[-1, 1]</label>
-			<label kind="guard" x="-221" y="357">is_move_valid(ii, jj)</label>
+			<label kind="guard" x="-221" y="357">is_move_valid(x + ii, y + jj)</label>
 			<label kind="assignment" x="-221" y="374">move(ii,jj)</label>
 		</transition>
 		<transition id="id51">
