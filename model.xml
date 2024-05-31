@@ -52,14 +52,12 @@ chan call_fr[N_COLS][N_ROWS];          // Channels used by drones to instruct su
 chan fr_assist[N_COLS][N_ROWS];        // Channels used by survivors to instruct first responders to assist a survivor in need
 broadcast chan assist_success[N_COLS][N_ROWS];   // Channels for signaling that an assistance was completed successfully
 
-typedef struct {
+meta struct {
     int n_x; // In Need X
     int n_y; // In Need Y
     int fr_x; // First Responder X
     int fr_y; // First Responder Y
-} Payload;
-
-Payload payload_grid[N_COLS][N_ROWS];
+} target_payload;
 
 // The global initializion channel
 urgent broadcast chan init_done;
@@ -232,8 +230,8 @@ bool is_in_need(int xx, int yy) {
 }
 
 void set_in_need(int xx, int yy) {
-    payload_grid[s_x][s_y].n_x = xx;
-    payload_grid[s_x][s_y].n_y = yy;
+    target_payload.n_x = xx;
+    target_payload.n_y = yy;
 }
 
 bool is_first_resp(int xx, int yy) {
@@ -241,8 +239,8 @@ bool is_first_resp(int xx, int yy) {
 }
 
 void set_first_resp(int xx, int yy) {
-    payload_grid[s_x][s_y].fr_x = xx;
-    payload_grid[s_x][s_y].fr_y = yy;
+    target_payload.fr_x = xx;
+    target_payload.fr_y = yy;
 }
 
 // Returns whether the drone is near a survivor in need and a moving survivor
@@ -412,8 +410,8 @@ int targ_y;
 
 void do_fr_assist() {
     // Set assisted coords to notify the end of the assistance later
-    targ_x = payload_grid[x][y].n_x;
-    targ_y = payload_grid[x][y].n_y;
+    targ_x = target_payload.n_x;
+    targ_y = target_payload.n_y;
 
     // Set moving time
     move_time = distance(x, y, targ_x, targ_y);
@@ -555,8 +553,8 @@ int fr_y;
 
 void do_zr_assist() {
     // Set assisted coords to notify the end of the assistance later
-    targ_x = payload_grid[x][y].n_x;
-    targ_y = payload_grid[x][y].n_y;
+    targ_x = target_payload.n_x;
+    targ_y = target_payload.n_y;
     
     // Set moving time
     move_time = distance(x, y, targ_x, targ_y);
@@ -570,16 +568,16 @@ void do_zr_assist() {
 
 void do_call_fr() {
     // Set assisted coords to wait for the end of the first responder assistance
-    targ_x = payload_grid[x][y].n_x;
-    targ_y = payload_grid[x][y].n_y;
+    targ_x = target_payload.n_x;
+    targ_y = target_payload.n_y;
     
     // Set first responder coords to notify them of an assistance
-    fr_x = payload_grid[x][y].fr_x;
-    fr_y = payload_grid[x][y].fr_y;
+    fr_x = target_payload.fr_x;
+    fr_y = target_payload.fr_y;
     
     // Set the target coordinates for the first responder
-    payload_grid[fr_x][fr_y].n_x = targ_x;
-    payload_grid[fr_x][fr_y].n_y = targ_y;
+    target_payload.n_x = targ_x;
+    target_payload.n_y = targ_y;
 
     // Set moving time
     move_time = distance(x, y, fr_x, fr_y);
