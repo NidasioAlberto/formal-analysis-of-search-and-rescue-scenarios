@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
 <nta>
-	<declaration>/*********
- * Types *
- *********/
+	<declaration>/******************************************************************************
+ *                                  Types                                     *
+ ******************************************************************************/
 
  typedef struct {
      int x;
      int y;
  } position_t;
 
-/****************************
- * Configuration Parameters *
- ****************************/
+/******************************************************************************
+ *                          Configuration Parameters                          *
+ ******************************************************************************/
 
 // Map size
 const int N_COLS = 10; // x
@@ -21,84 +21,72 @@ const int N_ROWS = 10; // y
 // Number of total cells, used when flatten out the map for the visualizer
 const int N_CELLS = N_COLS * N_ROWS;
 
-// Drone vision range
-const int N_v = 6;
-
-// Drone movement side
-const int N_r = 2;
-
-// Assistance duration of first responders
-const int T_fr = 5;
-// Assistance duration of zero responders
-const int T_zr = 8;
-
-// Time after which a survivor in need dies
-const int T_v = 15;
-
 // Number of drones and their starting positions
 const int N_DRONES = 2;
 typedef int[0, N_DRONES-1] drone_id_t;
 const position_t drones_starting_pos[N_DRONES] = {{3, 1}, {6, 6}};
+const int N_v[N_DRONES] = {6, 6}; // Drones vision range
+const int N_r[N_DRONES] = {2, 2}; // Drones movement side
 
 // Number of survivors and their starting positions
 const int N_SURVIVORS = 3;
 typedef int[0, N_SURVIVORS-1] survivor_id_t;
 const position_t survivors_starting_pos[N_SURVIVORS] = {{2, 1}, {4, 2}, {5, 8}};
+const int T_zr[N_SURVIVORS] = {8, 8, 8}; // Zero reponders assistance duration
+const int T_v[N_SURVIVORS] = {15, 15, 15}; // Time after which a survivor in need dies
 
 // Number of first responders and their starting positions
 const int N_FIRST_RESPONDERS = 2;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
 const position_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}, {8, 5}};
+const int T_fr[N_FIRST_RESPONDERS] = {5, 5}; // First reponders assistance duration
 
-/********************************
- * Global Variables &amp; Constants *
- ********************************/
+/******************************************************************************
+ *                                 Constants                                  *
+ ******************************************************************************/
 
 // Map cell status enumeration
-const int CELL_FIRST =          0;
+const int CELL_FIRST =      0;
 
-const int CELL_EMPTY =          CELL_FIRST + 0;
-const int CELL_FIRE =           CELL_FIRST + 1;
-const int CELL_EXIT =           CELL_FIRST + 2;
-const int CELL_FIRST_RESP =     CELL_FIRST + 3;
-const int CELL_SURVIVOR =       CELL_FIRST + 4;
-const int CELL_ZERO_RESP =      CELL_FIRST + 5;
-const int CELL_IN_NEED =        CELL_FIRST + 6;
-const int CELL_ASSISTED =       CELL_FIRST + 7; // Survivor in need busy being assisted
-const int CELL_ASSISTING =      CELL_FIRST + 8; // First responder busy assisting
+const int CELL_EMPTY =      CELL_FIRST + 0;
+const int CELL_FIRE =       CELL_FIRST + 1;
+const int CELL_EXIT =       CELL_FIRST + 2;
+const int CELL_FIRST_RESP = CELL_FIRST + 3;
+const int CELL_SURVIVOR =   CELL_FIRST + 4;
+const int CELL_ZERO_RESP =  CELL_FIRST + 5;
+const int CELL_IN_NEED =    CELL_FIRST + 6;
+const int CELL_ASSISTED =   CELL_FIRST + 7; // Survivor in need while being assisted (by either zero or first responders)
+const int CELL_ASSISTING =  CELL_FIRST + 8; // First responder busy assisting a survivor
 
 const int CELL_LAST =           CELL_ASSISTING;
 
-// Map
+/******************************************************************************
+ *                              Global variables                              *
+ ******************************************************************************/
+
+// Maps
 int[CELL_FIRST,CELL_LAST] map[N_COLS][N_ROWS];
 bool drone_map[N_COLS][N_ROWS];
 
 // Channels
-urgent chan zr_assist[N_COLS][N_ROWS];        // Channels used by drones to instruct survivors to act as zero responders and assist a survivor in need
-chan call_fr[N_COLS][N_ROWS];          // Channels used by drones to instruct survivors to go call a first responder
-chan fr_assist[N_COLS][N_ROWS];        // Channels used by survivors to instruct first responders to assist a survivor in need
-broadcast chan assist_success[N_COLS][N_ROWS];   // Channels for signaling that an assistance was completed successfully
+broadcast chan init_done;                      // Global initializing channel
+broadcast chan tick;                           // Global simulation tick channel
+urgent chan zr_assist[N_COLS][N_ROWS];         // Used by drones to instruct survivors to act as zero responders and assist a survivor in need
+chan call_fr[N_COLS][N_ROWS];                  // Used by drones to instruct survivors to go call a first responder
+chan fr_assist[N_COLS][N_ROWS];                // Used by survivors to instruct first responders to assist a survivor in need
+broadcast chan assist_success[N_COLS][N_ROWS]; // For signaling that an assistance was completed successfully
 
-meta struct {
-    int n_x; // In Need X
-    int n_y; // In Need Y
-    int fr_x; // First Responder X
-    int fr_y; // First Responder Y
-} target_payload;
+// Meta variables used to share target positions
+meta position_t target_in_need;
+meta position_t target_first_resp;
 
-// The global initializing channel
-broadcast chan init_done;
-
-// The global simulation tick channel
-broadcast chan tick;
-
-// The number of available first responders at any given moment
-// Every first responders in the system increments this value during init Every first responders in the system increments this value during init
+// Number of available first responders at any given moment
+// Every first responder in the system increments this value during init
 int available_fr;
 
-/*********************
- * Utility functions *
- *********************/
+/******************************************************************************
+ *                             Utility functions                              *
+ ******************************************************************************/
 
 // Returns the maximum between the two given integers
 int imax(int a, int b) {
@@ -185,7 +173,7 @@ int distance(int x1, int y1, int x2, int y2) {
 	</template>
 	<template>
 		<name>Drone</name>
-		<parameter>drone_id_t id</parameter>
+		<parameter>const drone_id_t id</parameter>
 		<declaration>int x;
 int y;
 
@@ -197,7 +185,7 @@ void init_state() {
 
 int move_policy_next_move_idx = 0;
 
-const int MOVE_POLICY_LEN = N_r * 4;
+const int MOVE_POLICY_LEN = N_r[id] * 4;
 
 void step_calculation(int &amp;next_x, int &amp;next_y) {
     if (move_policy_next_move_idx &lt; MOVE_POLICY_LEN / 4) // We have to move right
@@ -246,10 +234,10 @@ void move_one_step() {
     y =  imin(y, N_ROWS - 1); // check if we are out of the top side of the map
 
     // Update search bounds
-    x_lower = imax(x - N_v, 0);
-    x_upper = imin(x + N_v, N_COLS - 1);
-    y_lower = imax(y - N_v, 0);
-    y_upper = imin(y + N_v, N_ROWS - 1);
+    x_lower = imax(x - N_v[id], 0);
+    x_upper = imin(x + N_v[id], N_COLS - 1);
+    y_lower = imax(y - N_v[id], 0);
+    y_upper = imin(y + N_v[id], N_ROWS - 1);
 }
 
 // Survivor, Survivor-In-Need and First-Responder detection is done in a pipelined way
@@ -284,8 +272,8 @@ bool is_in_need(int xx, int yy) {
 }
 
 void set_in_need(int xx, int yy) {
-    target_payload.n_x = xx;
-    target_payload.n_y = yy;
+    target_in_need.x = xx;
+    target_in_need.y = yy;
     map[xx][yy] = CELL_ASSISTED;
 }
 
@@ -294,8 +282,8 @@ bool is_first_resp(int xx, int yy) {
 }
 
 void set_first_resp(int xx, int yy) {
-    target_payload.fr_x = xx;
-    target_payload.fr_y = yy;
+    target_first_resp.x = xx;
+    target_first_resp.y = yy;
 }
 
 // Returns whether the drone is near a survivor in need and a moving survivor
@@ -471,7 +459,7 @@ its coordinates</label>
 	</template>
 	<template>
 		<name>Survivor</name>
-		<parameter>survivor_id_t id</parameter>
+		<parameter>const survivor_id_t id</parameter>
 		<declaration>clock t=0;
 
 int x;
@@ -505,8 +493,8 @@ int fr_y;
 
 void do_zr_assist() {
     // Set assisted coords to notify the end of the assistance later
-    targ_x = target_payload.n_x;
-    targ_y = target_payload.n_y;
+    targ_x = target_in_need.x;
+    targ_y = target_in_need.y;
 
     // Set moving time
     move_time = distance(x, y, targ_x, targ_y);
@@ -520,16 +508,16 @@ void do_zr_assist() {
 
 void do_call_fr() {
     // Set assisted coords to wait for the end of the first responder assistance
-    targ_x = target_payload.n_x;
-    targ_y = target_payload.n_y;
+    targ_x = target_in_need.x;
+    targ_y = target_in_need.y;
 
     // Set first responder coords to notify them of an assistance
-    fr_x = target_payload.fr_x;
-    fr_y = target_payload.fr_y;
+    fr_x = target_first_resp.x;
+    fr_y = target_first_resp.y;
 
     // Set the target coordinates for the first responder
-    target_payload.n_x = targ_x;
-    target_payload.n_y = targ_y;
+    target_in_need.x = targ_x;
+    target_in_need.y = targ_y;
 
     // Set moving time
     move_time = distance(x, y, fr_x, fr_y);
@@ -698,7 +686,7 @@ void move(int ii, int jj) {
 		</location>
 		<location id="id28" x="375" y="-262">
 			<name x="350" y="-321">InNeed</name>
-			<label kind="invariant" x="350" y="-304">t &lt;= T_v</label>
+			<label kind="invariant" x="350" y="-304">t &lt;= T_v[id]</label>
 		</location>
 		<location id="id29" x="-637" y="85">
 		</location>
@@ -796,14 +784,14 @@ the first/zero responder</label>
 		<transition id="id47">
 			<source ref="id28"/>
 			<target ref="id30"/>
-			<label kind="guard" x="401" y="-194">t &gt;= T_v</label>
+			<label kind="guard" x="401" y="-194">t &gt;= T_v[id]</label>
 			<label kind="assignment" x="401" y="-177">map[x][y] = CELL_EMPTY</label>
 			<nail x="375" y="-151"/>
 		</transition>
 		<transition id="id48">
 			<source ref="id26"/>
 			<target ref="id31"/>
-			<label kind="guard" x="639" y="25">t &gt;= T_zr + move_time</label>
+			<label kind="guard" x="639" y="25">t &gt;= T_zr[id] + move_time</label>
 			<label kind="synchronisation" x="639" y="42">assist_success[targ_x][targ_y]!</label>
 			<label kind="assignment" x="639" y="59">map[x][y] = CELL_EMPTY</label>
 		</transition>
@@ -846,7 +834,7 @@ t = 0</label>
 	</template>
 	<template>
 		<name>FirstResponder</name>
-		<parameter>first_resp_id_t id</parameter>
+		<parameter>const first_resp_id_t id</parameter>
 		<declaration>clock t=0;
 
 int x;
@@ -873,8 +861,8 @@ int targ_y;
 
 void do_fr_assist() {
     // Set assisted coords to notify the end of the assistance later
-    targ_x = target_payload.n_x;
-    targ_y = target_payload.n_y;
+    targ_x = target_in_need.x;
+    targ_y = target_in_need.y;
 
     // Set moving time
     move_time = distance(x, y, targ_x, targ_y);
@@ -927,7 +915,7 @@ void move(int ii, int jj) {
 }</declaration>
 		<location id="id54" x="170" y="-161">
 			<name x="143" y="-203">Assisting</name>
-			<label kind="invariant" x="187" y="-170">t &lt;= T_fr</label>
+			<label kind="invariant" x="187" y="-170">t &lt;= T_fr[id]</label>
 		</location>
 		<location id="id55" x="-552" y="-161">
 			<name x="-544" y="-195">Available</name>
@@ -984,7 +972,7 @@ do_fr_assist()</label>
 		<transition id="id65">
 			<source ref="id54"/>
 			<target ref="id58"/>
-			<label kind="guard" x="-68" y="59">t &gt;= T_fr</label>
+			<label kind="guard" x="-68" y="59">t &gt;= T_fr[id]</label>
 			<label kind="synchronisation" x="-68" y="76">assist_success[targ_x][targ_y]!</label>
 			<nail x="170" y="58"/>
 		</transition>
