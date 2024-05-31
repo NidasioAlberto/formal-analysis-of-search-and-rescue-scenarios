@@ -237,6 +237,11 @@ bool is_survivor(int xx, int yy) {
 void set_survivor(int xx, int yy) {
     s_x = xx;
     s_y = yy;
+    map[xx][yy] = CELL_ZERO_RESP;
+}
+
+void unset_survivor(){
+    map[s_x][s_y] = CELL_SURVIVOR;
 }
 
 bool is_in_need(int xx, int yy) {
@@ -248,6 +253,7 @@ bool is_in_need(int xx, int yy) {
 void set_in_need(int xx, int yy) {
     target_payload.n_x = xx;
     target_payload.n_y = yy;
+    map[xx][yy] = CELL_ASSISTED;
 }
 
 bool is_first_resp(int xx, int yy) {
@@ -278,6 +284,25 @@ bool survivors_near() {
             
             // Exit if we found an in_need cell and an survivor cell
             if (found_in_need &amp;&amp; found_survivor)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
+// Returns whether the drone is near a survivor in need
+// Used to control access to the decision-making locations
+bool in_need_near() {
+       int i, j;
+
+    for (i = x_lower; i &lt;= x_upper; i += 1) {
+        for (j = y_lower; j &lt;= y_upper; j += 1) {
+            int cell = map[i][j];
+            
+            // Check map cell and update flags
+            if (cell == CELL_IN_NEED)
                 return true;
         }
     }
@@ -326,14 +351,17 @@ bool prefer_zr() {
 			<name x="-1385" y="-850">Moving</name>
 		</location>
 		<location id="id13" x="-1164" y="-799">
-			<name x="-1147" y="-833">Scanning</name>
-			<committed/>
-		</location>
-		<location id="id14" x="-943" y="-799">
-			<name x="-926" y="-833">FoundSurvivors</name>
+			<name x="-994" y="-824">Scanning</name>
 			<committed/>
 		</location>
 		<init ref="id11"/>
+		<transition id="id14">
+			<source ref="id10"/>
+			<target ref="id13"/>
+			<label kind="guard" x="-1028" y="-901">!in_need_near()</label>
+			<label kind="assignment" x="-1028" y="-884">unset_survivor()</label>
+			<nail x="-969" y="-858"/>
+		</transition>
 		<transition id="id15">
 			<source ref="id6"/>
 			<target ref="id12"/>
@@ -360,19 +388,13 @@ yy : int[0, N_ROWS-1]</label>
 			<label kind="guard" x="-416" y="-688">available_fr == 0</label>
 		</transition>
 		<transition id="id19">
-			<source ref="id13"/>
-			<target ref="id14"/>
-			<label kind="guard" x="-1130" y="-799">survivors_near()</label>
-			<nail x="-1147" y="-799"/>
-		</transition>
-		<transition id="id20">
 			<source ref="id9"/>
 			<target ref="id8"/>
 			<label kind="guard" x="-399" y="-799">available_fr &gt; 0</label>
 			<label kind="comments" x="-408" y="-901">TODO: available_fr can
 potentially be removed</label>
 		</transition>
-		<transition id="id21">
+		<transition id="id20">
 			<source ref="id10"/>
 			<target ref="id9"/>
 			<label kind="select" x="-662" y="-799">xx : int[0, N_COLS-1],
@@ -383,31 +405,31 @@ yy : int[0, N_ROWS-1]</label>
 field of view and saves
 its coordinates</label>
 		</transition>
-		<transition id="id22">
-			<source ref="id14"/>
+		<transition id="id21">
+			<source ref="id13"/>
 			<target ref="id10"/>
-			<label kind="select" x="-917" y="-799">xx : int[0, N_COLS-1],
+			<label kind="select" x="-1045" y="-799">xx : int[0, N_COLS-1],
 yy : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-917" y="-756">is_survivor(xx, yy)</label>
-			<label kind="synchronisation" x="-918" y="-722">zr_assist[xx][yy]!</label>
-			<label kind="assignment" x="-917" y="-739">set_survivor(xx, yy)</label>
-			<label kind="comments" x="-926" y="-688">Finds one survivor in the
+			<label kind="guard" x="-1045" y="-756">is_survivor(xx, yy)</label>
+			<label kind="synchronisation" x="-1046" y="-722">zr_assist[xx][yy]!</label>
+			<label kind="assignment" x="-1045" y="-739">set_survivor(xx, yy)</label>
+			<label kind="comments" x="-1054" y="-688">Finds one survivor in the
 field of view and saves
 its coordinates</label>
 		</transition>
-		<transition id="id23">
+		<transition id="id22">
 			<source ref="id13"/>
 			<target ref="id12"/>
 			<label kind="guard" x="-1283" y="-875">!survivors_near()</label>
 			<nail x="-1275" y="-858"/>
 		</transition>
-		<transition id="id24">
+		<transition id="id23">
 			<source ref="id12"/>
 			<target ref="id13"/>
 			<label kind="synchronisation" x="-1317" y="-816">tick?</label>
 			<label kind="assignment" x="-1351" y="-799">move_one_step()</label>
 		</transition>
-		<transition id="id25">
+		<transition id="id24">
 			<source ref="id11"/>
 			<target ref="id12"/>
 			<label kind="synchronisation" x="-1564" y="-799">init_done?</label>
@@ -479,40 +501,40 @@ void move(int ii, int jj) {
         map[x][y] = CELL_FIRST_RESP;
     }
 }</declaration>
-		<location id="id26" x="170" y="-161">
+		<location id="id25" x="170" y="-161">
 			<name x="143" y="-203">Assisting</name>
 			<label kind="invariant" x="187" y="-170">t &lt;= T_fr</label>
 		</location>
-		<location id="id27" x="-552" y="-161">
+		<location id="id26" x="-552" y="-161">
 			<name x="-544" y="-195">Available</name>
 		</location>
-		<location id="id28" x="-850" y="-161">
+		<location id="id27" x="-850" y="-161">
 		</location>
-		<location id="id29" x="-34" y="-161">
+		<location id="id28" x="-34" y="-161">
 			<name x="-59" y="-203">Moving</name>
 			<label kind="invariant" x="-85" y="-153">t &lt;= move_time</label>
 		</location>
-		<location id="id30" x="-161" y="59">
+		<location id="id29" x="-161" y="59">
 			<committed/>
 		</location>
-		<location id="id31" x="-340" y="-161">
+		<location id="id30" x="-340" y="-161">
 		</location>
-		<init ref="id28"/>
-		<transition id="id32">
-			<source ref="id27"/>
-			<target ref="id31"/>
+		<init ref="id27"/>
+		<transition id="id31">
+			<source ref="id26"/>
+			<target ref="id30"/>
 			<label kind="synchronisation" x="-501" y="-153">call_fr[x][y]?</label>
 		</transition>
-		<transition id="id33">
-			<source ref="id30"/>
-			<target ref="id27"/>
+		<transition id="id32">
+			<source ref="id29"/>
+			<target ref="id26"/>
 			<label kind="assignment" x="-510" y="68">available_fr += 1,
 end_assist()</label>
 			<nail x="-553" y="59"/>
 		</transition>
-		<transition id="id34">
-			<source ref="id27"/>
-			<target ref="id27"/>
+		<transition id="id33">
+			<source ref="id26"/>
+			<target ref="id26"/>
 			<label kind="select" x="-663" y="-391">ii : int[-1, 1],
 jj : int[-1, 1]</label>
 			<label kind="guard" x="-663" y="-348">is_move_valid(x + ii, y + jj)</label>
@@ -521,30 +543,30 @@ jj : int[-1, 1]</label>
 			<nail x="-671" y="-297"/>
 			<nail x="-552" y="-297"/>
 		</transition>
-		<transition id="id35">
-			<source ref="id29"/>
-			<target ref="id26"/>
+		<transition id="id34">
+			<source ref="id28"/>
+			<target ref="id25"/>
 			<label kind="guard" x="8" y="-204">t &gt;= move_time</label>
 			<label kind="assignment" x="8" y="-187">t = 0</label>
 		</transition>
-		<transition id="id36">
-			<source ref="id31"/>
-			<target ref="id29"/>
+		<transition id="id35">
+			<source ref="id30"/>
+			<target ref="id28"/>
 			<label kind="synchronisation" x="-280" y="-238">fr_assist[x][y]?</label>
 			<label kind="assignment" x="-280" y="-221">t = 0,
 available_fr -= 1,
 do_fr_assist()</label>
 		</transition>
-		<transition id="id37">
-			<source ref="id26"/>
-			<target ref="id30"/>
+		<transition id="id36">
+			<source ref="id25"/>
+			<target ref="id29"/>
 			<label kind="guard" x="-68" y="59">t &gt;= T_fr</label>
 			<label kind="synchronisation" x="-68" y="76">assist_success[targ_x][targ_y]!</label>
 			<nail x="170" y="58"/>
 		</transition>
-		<transition id="id38">
-			<source ref="id28"/>
-			<target ref="id27"/>
+		<transition id="id37">
+			<source ref="id27"/>
+			<target ref="id26"/>
 			<label kind="synchronisation" x="-825" y="-161">init_done?</label>
 			<label kind="assignment" x="-825" y="-144">map[x][y] = CELL_FIRST_RESP,
 available_fr += 1</label>
@@ -756,129 +778,129 @@ void move(int ii, int jj) {
     map[x][y] = CELL_SURVIVOR;
 }
 </declaration>
-		<location id="id39" x="-161" y="85">
+		<location id="id38" x="-161" y="85">
 			<name x="-186" y="51">Moving</name>
 		</location>
-		<location id="id40" x="382" y="85">
+		<location id="id39" x="382" y="85">
 			<name x="297" y="102">ActingZeroResponder</name>
 		</location>
-		<location id="id41" x="-382" y="85">
+		<location id="id40" x="-382" y="85">
 			<committed/>
 		</location>
-		<location id="id42" x="375" y="-262">
+		<location id="id41" x="375" y="-262">
 			<name x="350" y="-321">InNeed</name>
 			<label kind="invariant" x="350" y="-304">t &lt;= T_v</label>
 		</location>
-		<location id="id43" x="-637" y="85">
+		<location id="id42" x="-637" y="85">
 		</location>
-		<location id="id44" x="681" y="-152">
+		<location id="id43" x="681" y="-152">
 			<name x="664" y="-194">Dead</name>
 		</location>
-		<location id="id45" x="1021" y="84">
+		<location id="id44" x="1021" y="84">
 			<name x="1045" y="75">Safe</name>
 		</location>
-		<location id="id46" x="348" y="348">
+		<location id="id45" x="348" y="348">
 			<name x="255" y="306">LockFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id47" x="-161" y="450">
+		<location id="id46" x="-161" y="450">
 			<name x="-195" y="467">Moved</name>
 			<committed/>
 		</location>
-		<location id="id48" x="926" y="348">
+		<location id="id47" x="926" y="348">
 		</location>
-		<location id="id49" x="629" y="348">
+		<location id="id48" x="629" y="348">
 			<name x="543" y="306">CallingFirstResponder</name>
 			<label kind="invariant" x="604" y="391">t &lt;= move_time</label>
 		</location>
-		<location id="id50" x="17" y="255">
+		<location id="id49" x="17" y="255">
 			<name x="8" y="272">AwaitingJob</name>
 		</location>
-		<init ref="id43"/>
-		<transition id="id51">
-			<source ref="id47"/>
-			<target ref="id50"/>
+		<init ref="id42"/>
+		<transition id="id50">
+			<source ref="id46"/>
+			<target ref="id49"/>
 			<label kind="synchronisation" x="-136" y="425">zr_assist[x][y]?</label>
 			<nail x="17" y="450"/>
 		</transition>
-		<transition id="id52">
-			<source ref="id50"/>
-			<target ref="id40"/>
+		<transition id="id51">
+			<source ref="id49"/>
+			<target ref="id39"/>
 			<label kind="synchronisation" x="136" y="110">zr_assist[x][y]?</label>
 			<label kind="assignment" x="136" y="127">do_zr_assist()</label>
 		</transition>
-		<transition id="id53">
-			<source ref="id49"/>
-			<target ref="id48"/>
+		<transition id="id52">
+			<source ref="id48"/>
+			<target ref="id47"/>
 			<label kind="guard" x="732" y="323">t &gt;= move_time</label>
 			<label kind="synchronisation" x="724" y="306">fr_assist[fr_x][fr_y]!</label>
 		</transition>
-		<transition id="id54">
-			<source ref="id48"/>
-			<target ref="id45"/>
+		<transition id="id53">
+			<source ref="id47"/>
+			<target ref="id44"/>
 			<label kind="synchronisation" x="654" y="178">assist_success[targ_x][targ_y]?</label>
 			<label kind="assignment" x="654" y="195">map[x][y] = CELL_EMPTY</label>
 			<nail x="926" y="136"/>
 		</transition>
-		<transition id="id55">
-			<source ref="id47"/>
-			<target ref="id39"/>
+		<transition id="id54">
+			<source ref="id46"/>
+			<target ref="id38"/>
 			<label kind="guard" x="-161" y="255">!is_exit_near(x,y)</label>
 			<nail x="-161" y="306"/>
 		</transition>
-		<transition id="id56">
-			<source ref="id47"/>
-			<target ref="id45"/>
+		<transition id="id55">
+			<source ref="id46"/>
+			<target ref="id44"/>
 			<label kind="guard" x="280" y="578">is_exit_near(x,y)</label>
 			<label kind="assignment" x="263" y="595">map[x][y] = CELL_EMPTY</label>
 			<nail x="-161" y="569"/>
 			<nail x="1011" y="569"/>
 		</transition>
-		<transition id="id57">
-			<source ref="id44"/>
-			<target ref="id44"/>
+		<transition id="id56">
+			<source ref="id43"/>
+			<target ref="id43"/>
 			<label kind="synchronisation" x="758" y="-161">assist_success[x][y]?</label>
 			<label kind="comments" x="554" y="-119">Consume signals to avoid deadlocking
 the first/zero responder</label>
 			<nail x="749" y="-178"/>
 			<nail x="749" y="-127"/>
 		</transition>
-		<transition id="id58">
-			<source ref="id42"/>
-			<target ref="id45"/>
+		<transition id="id57">
+			<source ref="id41"/>
+			<target ref="id44"/>
 			<label kind="synchronisation" x="545" y="-304">assist_success[x][y]?</label>
 			<label kind="assignment" x="545" y="-288">map[x][y] = CELL_EMPTY</label>
 			<nail x="1021" y="-256"/>
 		</transition>
-		<transition id="id59">
-			<source ref="id46"/>
-			<target ref="id49"/>
+		<transition id="id58">
+			<source ref="id45"/>
+			<target ref="id48"/>
 			<label kind="synchronisation" x="434" y="349">call_fr[fr_x][fr_y]!</label>
 			<label kind="assignment" x="442" y="374">t = 0</label>
 		</transition>
-		<transition id="id60">
-			<source ref="id50"/>
-			<target ref="id46"/>
+		<transition id="id59">
+			<source ref="id49"/>
+			<target ref="id45"/>
 			<label kind="synchronisation" x="127" y="323">call_fr[x][y]?</label>
 			<label kind="assignment" x="127" y="340">do_call_fr()</label>
 		</transition>
-		<transition id="id61">
-			<source ref="id42"/>
-			<target ref="id44"/>
+		<transition id="id60">
+			<source ref="id41"/>
+			<target ref="id43"/>
 			<label kind="guard" x="401" y="-194">t &gt;= T_v</label>
 			<label kind="assignment" x="401" y="-177">map[x][y] = CELL_EMPTY</label>
 			<nail x="375" y="-151"/>
 		</transition>
-		<transition id="id62">
-			<source ref="id40"/>
-			<target ref="id45"/>
+		<transition id="id61">
+			<source ref="id39"/>
+			<target ref="id44"/>
 			<label kind="guard" x="639" y="25">t &gt;= T_zr + move_time</label>
 			<label kind="synchronisation" x="639" y="42">assist_success[targ_x][targ_y]!</label>
 			<label kind="assignment" x="639" y="59">map[x][y] = CELL_EMPTY</label>
 		</transition>
-		<transition id="id63">
-			<source ref="id39"/>
-			<target ref="id47"/>
+		<transition id="id62">
+			<source ref="id38"/>
+			<target ref="id46"/>
 			<label kind="select" x="-424" y="238">ii : int[-1, 1],
 jj : int[-1, 1]</label>
 			<label kind="guard" x="-424" y="281">is_move_valid(x + ii, y + jj)</label>
@@ -887,35 +909,35 @@ jj : int[-1, 1]</label>
 			<nail x="-433" y="153"/>
 			<nail x="-433" y="399"/>
 		</transition>
-		<transition id="id64">
-			<source ref="id41"/>
-			<target ref="id39"/>
+		<transition id="id63">
+			<source ref="id40"/>
+			<target ref="id38"/>
 			<label kind="guard" x="-357" y="59">!is_fire_near(x,y)</label>
 		</transition>
-		<transition id="id65">
-			<source ref="id43"/>
-			<target ref="id41"/>
+		<transition id="id64">
+			<source ref="id42"/>
+			<target ref="id40"/>
 			<label kind="synchronisation" x="-611" y="17">init_done?</label>
 			<label kind="assignment" x="-611" y="34">map[x][y] = CELL_SURVIVOR</label>
 		</transition>
-		<transition id="id66">
-			<source ref="id41"/>
-			<target ref="id42"/>
+		<transition id="id65">
+			<source ref="id40"/>
+			<target ref="id41"/>
 			<label kind="guard" x="-374" y="-221">is_fire_near(x,y)</label>
 			<label kind="assignment" x="-374" y="-204">map[x][y] = CELL_IN_NEED,
 t = 0</label>
 			<nail x="-382" y="-255"/>
 		</transition>
-		<transition id="id67">
-			<source ref="id39"/>
-			<target ref="id50"/>
+		<transition id="id66">
+			<source ref="id38"/>
+			<target ref="id49"/>
 			<label kind="synchronisation" x="-127" y="59">zr_assist[x][y]?</label>
 			<nail x="17" y="85"/>
 		</transition>
 	</template>
-	<system>import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
+	<system>/*import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
-};
+};*/
 
 initializer = Initializer();
 
@@ -942,10 +964,10 @@ void prepare_flat_map() {
 
 void send_state() {
     prepare_flat_map();
-    send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
+    //send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
 }
 
-before_update { send_state() }
+//before_update { send_state() }
 
 
 //system initializer, survivor_1, survivor_2, survivor_3; // Only survivor
