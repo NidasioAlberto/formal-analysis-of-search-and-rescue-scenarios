@@ -41,22 +41,25 @@ FIRE_COLOR = pygame.Color(255, 139, 131)
 EXIT_COLOR = pygame.Color(204, 251, 115)
 
 def load_assets(pixels_per_cell):
-    global first_responder_image, survivor_image, in_need_image
+    global first_responder_image, survivor_image, in_need_image, drone_image
 
     # Load best asset size
     if pixels_per_cell <= 50:
         first_responder_image = pygame.image.load(ASSETS_PATH + '/first_responder_50.png')
         survivor_image = pygame.image.load(ASSETS_PATH + '/survivor_50.png')
         in_need_image = pygame.image.load(ASSETS_PATH + '/in_need_50.png')
+        drone_image = pygame.image.load(ASSETS_PATH + '/drone_50.png')
     else:
         first_responder_image = pygame.image.load(ASSETS_PATH + '/first_responder_100.png')
         survivor_image = pygame.image.load(ASSETS_PATH + '/survivor_100.png')
         in_need_image = pygame.image.load(ASSETS_PATH + '/in_need_100.png')
+        drone_image = pygame.image.load(ASSETS_PATH + '/drone_100.png')
 
     # Resize assets to match target size
     first_responder_image = pygame.transform.scale(first_responder_image, (pixels_per_cell, pixels_per_cell))
     survivor_image = pygame.transform.scale(survivor_image, (pixels_per_cell, pixels_per_cell))
     in_need_image = pygame.transform.scale(in_need_image, (pixels_per_cell, pixels_per_cell))
+    drone_image = pygame.transform.scale(drone_image, (pixels_per_cell, pixels_per_cell))
 
 def load_trace():
     # For some reason pyuppaal modifies the model file, so we just copy it locally
@@ -102,6 +105,39 @@ def parse_map_state(global_variables):
 
     return map
 
+def parse_drone_positions(global_variables):
+    x_pattern = re.compile(r'drone_(\d+)\.x$')
+    y_pattern = re.compile(r'drone_(\d+)\.y$')
+
+    # First count the number of drones
+    drones_count = len([1 for name in global_variables.variables_name if x_pattern.match(name)])
+
+    # Initialize positions
+    positions = [(0, 0) for i in range(drones_count)]
+
+    for name, value in zip(global_variables.variables_name, global_variables.variables_value):
+        # Parse x coordinate
+        x_match = x_pattern.match(name)
+        if x_match:
+            # Assuming drone ids start from 1
+            drone_id = int(x_match.groups()[0]) - 1
+            if positions[drone_id]:
+                positions[drone_id] = (int(value), positions[drone_id][1])
+            else:
+                positions[drone_id] = (int(value), 0)
+
+        # Parse y coordinate
+        y_match = y_pattern.match(name)
+        if y_match:
+            # Assuming drone ids start from 1
+            drone_id = int(y_match.groups()[0]) - 1
+            if positions[drone_id]:
+                positions[drone_id] = (positions[drone_id][0], int(value))
+            else:
+                positions[drone_id] = (0, int(value))
+
+    return positions
+
 def draw_grid():
     for x in range(1, N_COLS):
         for y in range(1, N_ROWS):
@@ -124,6 +160,10 @@ def draw_map_content(map):
             elif cell == CELL_IN_NEED:
                 screen.blit(in_need_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
 
+def draw_drones(positions):
+    for position in positions:
+        screen.blit(drone_image, (position[0] * PIXELS_PER_CELL + 1, position[1] * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+
 def wait_for_key(key):
     print(f'Waiting for {pygame.key.name(key)}')
     while True:
@@ -141,6 +181,7 @@ def main():
     trace = load_trace()
     (N_COLS, N_ROWS) = parse_map_size()
     maps = [parse_map_state(vars) for vars in trace.global_variables]
+    drone_positions = [parse_drone_positions(vars) for vars in trace.global_variables]
 
     # Create the window
     screen = pygame.display.set_mode((N_COLS * PIXELS_PER_CELL, N_ROWS * PIXELS_PER_CELL))
@@ -158,6 +199,7 @@ def main():
         # Draw grid and content
         draw_grid()
         draw_map_content(maps[i])
+        draw_drones(drone_positions[i])
         pygame.display.flip()
 
         # Wait for user
