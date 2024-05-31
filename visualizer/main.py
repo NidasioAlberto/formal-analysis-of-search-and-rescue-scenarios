@@ -40,6 +40,9 @@ CELL_ASSISTING =  CELL_FIRST + 8 # First responder busy assisting
 FIRE_COLOR = pygame.Color(255, 139, 131)
 EXIT_COLOR = pygame.Color(204, 251, 115)
 
+pygame.font.init()
+my_font = pygame.font.SysFont('monospace', int(PIXELS_PER_CELL / 3))
+
 def load_assets(pixels_per_cell):
     global first_responder_image, survivor_image, in_need_image, drone_image
 
@@ -145,8 +148,8 @@ def draw_grid():
             pygame.draw.line(screen, (0, 0, 0), (0, y * PIXELS_PER_CELL), (N_COLS * PIXELS_PER_CELL - 1, y * PIXELS_PER_CELL))
 
 def draw_map_content(map):
-    for x in range(1, N_COLS):
-        for y in range(1, N_ROWS):
+    for x in range(N_COLS):
+        for y in range(N_ROWS):
             cell = map[x][y]
 
             if cell == CELL_FIRE:
@@ -155,10 +158,22 @@ def draw_map_content(map):
                 pygame.draw.rect(screen, EXIT_COLOR, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
             elif cell == CELL_FIRST_RESP:
                 screen.blit(first_responder_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
-            elif cell == CELL_SURVIVOR or cell == CELL_ZERO_RESP or cell == CELL_ASSISTED or cell == CELL_ASSISTING:
-                screen.blit(survivor_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1)) 
+            elif cell == CELL_SURVIVOR:
+                screen.blit(survivor_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+            elif cell == CELL_ZERO_RESP:
+                screen.blit(survivor_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+                state = my_font.render('Z', False, (0, 0, 0))
+                screen.blit(state, (x * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3, y * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3))
             elif cell == CELL_IN_NEED:
                 screen.blit(in_need_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+            elif cell == CELL_ASSISTED:
+                screen.blit(in_need_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+                state = my_font.render('A', False, (0, 0, 0))
+                screen.blit(state, (x * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3, y * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3))
+            elif cell == CELL_ASSISTING:
+                screen.blit(first_responder_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+                state = my_font.render('A', False, (0, 0, 0))
+                screen.blit(state, (x * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3, y * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3))
 
 def draw_drones(positions):
     for position in positions:
@@ -195,6 +210,8 @@ def main():
         screen.fill((255, 255, 255))
 
         print(f'Drawing step {i}/{len(maps)}')
+
+        print(maps[i].transpose())
 
         # Draw grid and content
         draw_grid()
