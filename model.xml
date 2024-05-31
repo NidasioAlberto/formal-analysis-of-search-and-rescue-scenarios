@@ -8,6 +8,7 @@
 // Grid size
 const int N_COLS = 10; // x
 const int N_ROWS = 10; // y
+const int N_CELLS = N_COLS * N_ROWS;
 
 // Drone vision range
 const int N_v = 2;
@@ -872,7 +873,11 @@ t = 0</label>
 			<nail x="8" y="84"/>
 		</transition>
 	</template>
-	<system>initializer = Initializer();
+	<system>import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
+    void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS]);
+};
+
+initializer = Initializer();
 
 drone_1 = Drone(3, 1);
 survivor_1 = Survivor(2, 1); // Survivor
@@ -881,6 +886,23 @@ survivor_3 = Survivor(5, 8); // Survivor
 first_responder_1 = FirstResponder(2, 3);
 first_responder_2 = FirstResponder(2, 4);
 
+meta int flat_map[N_CELLS];
+
+void prepare_flat_map() {
+    // Flat the map, Uppaal cannot have a 2D array as argument
+    for (x : int[0, N_COLS-1]) {
+        for (y : int[0, N_ROWS-1]) {
+            flat_map[x*N_COLS + y] = map[x][y];
+        }
+    }
+}
+
+void send_state() {
+    prepare_flat_map();
+    send_state_via_post_request(N_COLS, N_ROWS, flat_map);
+}
+
+before_update { send_state() }
 system drone_1, survivor_1, survivor_2, survivor_3, first_responder_1, first_responder_2, initializer;
 </system>
 	<queries>

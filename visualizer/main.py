@@ -4,8 +4,12 @@ import pyuppaal
 import re
 import numpy
 import pygame
-import sys
+import sys, os
 import shutil
+from flask import Flask
+from flask import request
+import threading
+import queue
 
 # Set Uppaal verifyta path
 pyuppaal.set_verifyta_path('~/uppaal-5.0.0-linux64/bin/verifyta')
@@ -18,11 +22,11 @@ TRACE_PATH = 'test_trace.xtr'
 ASSETS_PATH = 'assets'
 
 # Map size
-N_COLS = 0
-N_ROWS = 0
+N_COLS = 10
+N_ROWS = 10
 
 # Size of each cell in pixels
-PIXELS_PER_CELL = 100
+PIXELS_PER_CELL = 200
 
 # Map cell status enumeration
 CELL_FIRST = 0
@@ -42,6 +46,8 @@ EXIT_COLOR = pygame.Color(204, 251, 115)
 
 pygame.font.init()
 my_font = pygame.font.SysFont('monospace', int(PIXELS_PER_CELL / 3))
+
+state_queue = queue.Queue()
 
 def load_assets(pixels_per_cell):
     global first_responder_image, survivor_image, in_need_image, drone_image
@@ -179,51 +185,51 @@ def draw_drones(positions):
     for position in positions:
         screen.blit(drone_image, (position[0] * PIXELS_PER_CELL + 1, position[1] * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
 
-def wait_for_key(key):
-    print(f'Waiting for {pygame.key.name(key)}')
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN and event.key == key:
-                print('Key pressed')
-                return
-            elif event.type == pygame.QUIT:
-                sys.exit(0)
+def draw_state(state):
+    # Clear map
+    screen.fill((255, 255, 255))
 
-def main():
+    # Draw grid and content
+    draw_grid()
+
+    if state != None:
+        draw_map_content(state['map'])
+        # draw_drones(drone_positions[i])
+
+    # Commit
+    pygame.display.flip()
+
+def run_gui():
     global screen, N_COLS, N_ROWS
 
     # Parse the simulation trace and load map values
-    trace = load_trace()
     (N_COLS, N_ROWS) = parse_map_size()
-    maps = [parse_map_state(vars) for vars in trace.global_variables]
-    drone_positions = [parse_drone_positions(vars) for vars in trace.global_variables]
 
     # Create the window
     screen = pygame.display.set_mode((N_COLS * PIXELS_PER_CELL, N_ROWS * PIXELS_PER_CELL))
     load_assets(PIXELS_PER_CELL)
+    draw_state(None)
 
-    # Start after the user press enter
-    wait_for_key(pygame.K_s)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                os._exit(0)
+        
+        while state_queue.qsize() > 0:
+            state = state_queue.get()
+            draw_state(state)
 
-    for i in range(len(maps)):
-        # Clear map
-        screen.fill((255, 255, 255))
+app = Flask(__name__)
 
-        print(f'Drawing step {i}/{len(maps)}')
+@app.route('/state', methods = ['POST'])
+def state():
+    global screen, N_COLS, N_ROWS
+    state_queue.put(request.get_json())
+    return 'Ok'
 
-        print(maps[i].transpose())
+# Run Flask server in separate thread
+threading.Thread(target=lambda: app.run(debug=False, use_reloader=False)).start()
 
-        # Draw grid and content
-        draw_grid()
-        draw_map_content(maps[i])
-        draw_drones(drone_positions[i])
-        pygame.display.flip()
-
-        # Wait for user
-        wait_for_key(pygame.K_n)
-
-    # Interaction loop
-    wait_for_key(pygame.K_q)
-
-# Run visualizer
-main()
+# Start GUI
+run_gui()

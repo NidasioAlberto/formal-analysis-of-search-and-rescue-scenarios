@@ -1,0 +1,6 @@
+[submodule "visualizer/curlpp"]
+	path = visualizer/curlpp
+	url = https://github.com/jpbarrette/curlpp.git
+[submodule "visualizer/json"]
+	path = visualizer/json
+	url = https://github.com/nlohmann/json.git
