@@ -5,20 +5,24 @@ import re
 import numpy
 import pygame
 import sys
+import shutil
 
 # Set Uppaal verifyta path
 pyuppaal.set_verifyta_path('~/uppaal-5.0.0-linux64/bin/verifyta')
 
+MODEL_FILE_NAME = 'model.xml'
+MODEL_PATH = '../' + MODEL_FILE_NAME
+
+TRACE_PATH = 'test_trace.xtr'
+
+ASSETS_PATH = 'assets'
+
 # Map size
-COLS = 10
-ROWS = 10
+N_COLS = 0
+N_ROWS = 0
 
 # Size of each cell in pixels
 PIXELS_PER_CELL = 100
-
-# Set window size
-WIDTH = COLS * PIXELS_PER_CELL
-HEIGHT = ROWS * PIXELS_PER_CELL
 
 # Map cell status enumeration
 CELL_FIRST = 0
@@ -41,13 +45,13 @@ def load_assets(pixels_per_cell):
 
     # Load best asset size
     if pixels_per_cell <= 50:
-        first_responder_image = pygame.image.load('assets/first_responder_50.png')
-        survivor_image = pygame.image.load('assets/survivor_50.png')
-        in_need_image = pygame.image.load('assets/in_need_50.png')
+        first_responder_image = pygame.image.load(ASSETS_PATH + '/first_responder_50.png')
+        survivor_image = pygame.image.load(ASSETS_PATH + '/survivor_50.png')
+        in_need_image = pygame.image.load(ASSETS_PATH + '/in_need_50.png')
     else:
-        first_responder_image = pygame.image.load('assets/first_responder_100.png')
-        survivor_image = pygame.image.load('assets/survivor_100.png')
-        in_need_image = pygame.image.load('assets/in_need_100.png')
+        first_responder_image = pygame.image.load(ASSETS_PATH + '/first_responder_100.png')
+        survivor_image = pygame.image.load(ASSETS_PATH + '/survivor_100.png')
+        in_need_image = pygame.image.load(ASSETS_PATH + '/in_need_100.png')
 
     # Resize assets to match target size
     first_responder_image = pygame.transform.scale(first_responder_image, (pixels_per_cell, pixels_per_cell))
@@ -55,16 +59,42 @@ def load_assets(pixels_per_cell):
     in_need_image = pygame.transform.scale(in_need_image, (pixels_per_cell, pixels_per_cell))
 
 def load_trace():
-    umodel = pyuppaal.UModel('../model.xml')
-    return umodel.load_xtr_trace('test_trace.xtr')
+    # For some reason pyuppaal modifies the model file, so we just copy it locally
 
-def parse_map(global_variables):
+    shutil.copy(MODEL_PATH, 'model.xml')
+    umodel = pyuppaal.UModel('model.xml')
+    return umodel.load_xtr_trace(TRACE_PATH)
+
+def parse_map_size():
+    cols = 0
+    rows = 0
+
+    cols_pattern = re.compile(r'N_COLS = (\d+)')
+    rows_pattern = re.compile(r'N_ROWS = (\d+)')
+
+    model_text_lines = open(MODEL_PATH, 'r').readlines()
+
+    for line in model_text_lines:
+        cols_match = cols_pattern.search(line)
+        rows_match = rows_pattern.search(line)
+
+        if cols_match:
+            cols = int(cols_match.groups()[0])
+        if rows_match:
+            rows = int(rows_match.groups()[0])
+
+        if cols and rows:
+            break
+
+    return (cols, rows)
+
+def parse_map_state(global_variables):
     map = numpy.zeros((10, 10))
 
-    map_pattern = re.compile(r'map\[(\d)\]\[(\d)\]')
+    map_pattern = re.compile(r'map\[(\d+)\]\[(\d+)\]')
 
-    for var, value in zip(global_variables.variables_name, global_variables.variables_value):
-        result = map_pattern.match(var)
+    for name, value in zip(global_variables.variables_name, global_variables.variables_value):
+        result = map_pattern.match(name)
         if result:
             (x, y) = result.groups()
             (x, y) = (int(x), int(y))
@@ -73,14 +103,14 @@ def parse_map(global_variables):
     return map
 
 def draw_grid():
-    for x in range(1, COLS):
-        for y in range(1, ROWS):
-            pygame.draw.line(screen, (0, 0, 0), (x * PIXELS_PER_CELL, 0), (x * PIXELS_PER_CELL, HEIGHT - 1))
-            pygame.draw.line(screen, (0, 0, 0), (0, y * PIXELS_PER_CELL), (WIDTH - 1, y * PIXELS_PER_CELL))
+    for x in range(1, N_COLS):
+        for y in range(1, N_ROWS):
+            pygame.draw.line(screen, (0, 0, 0), (x * PIXELS_PER_CELL, 0), (x * PIXELS_PER_CELL, N_ROWS * PIXELS_PER_CELL - 1))
+            pygame.draw.line(screen, (0, 0, 0), (0, y * PIXELS_PER_CELL), (N_COLS * PIXELS_PER_CELL - 1, y * PIXELS_PER_CELL))
 
 def draw_map_content(map):
-    for x in range(1, COLS):
-        for y in range(1, ROWS):
+    for x in range(1, N_COLS):
+        for y in range(1, N_ROWS):
             cell = map[x][y]
 
             if cell == CELL_FIRE:
@@ -105,15 +135,16 @@ def wait_for_key(key):
                 sys.exit(0)
 
 def main():
-    global screen
-
-    # Create the window
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    load_assets(PIXELS_PER_CELL)
+    global screen, N_COLS, N_ROWS
 
     # Parse the simulation trace and load map values
     trace = load_trace()
-    maps = [parse_map(vars) for vars in trace.global_variables]
+    (N_COLS, N_ROWS) = parse_map_size()
+    maps = [parse_map_state(vars) for vars in trace.global_variables]
+
+    # Create the window
+    screen = pygame.display.set_mode((N_COLS * PIXELS_PER_CELL, N_ROWS * PIXELS_PER_CELL))
+    load_assets(PIXELS_PER_CELL)
 
     # Start after the user press enter
     wait_for_key(pygame.K_s)
