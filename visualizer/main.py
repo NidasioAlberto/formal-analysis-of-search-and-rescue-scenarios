@@ -26,7 +26,7 @@ N_COLS = 10
 N_ROWS = 10
 
 # Size of each cell in pixels
-PIXELS_PER_CELL = 200
+PIXELS_PER_CELL = 100
 
 # Map cell status enumeration
 CELL_FIRST = 0
@@ -181,9 +181,11 @@ def draw_map_content(map):
                 state = my_font.render('A', False, (0, 0, 0))
                 screen.blit(state, (x * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3, y * PIXELS_PER_CELL + 1 + PIXELS_PER_CELL * 2/3))
 
-def draw_drones(positions):
-    for position in positions:
-        screen.blit(drone_image, (position[0] * PIXELS_PER_CELL + 1, position[1] * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
+def draw_drones(map):
+    for x in range(N_COLS):
+        for y in range(N_ROWS):
+            if map[x][y]:
+                screen.blit(drone_image, (x * PIXELS_PER_CELL + 1, y * PIXELS_PER_CELL + 1, PIXELS_PER_CELL - 1, PIXELS_PER_CELL - 1))
 
 def draw_state(state):
     # Clear map
@@ -194,7 +196,7 @@ def draw_state(state):
 
     if state != None:
         draw_map_content(state['map'])
-        # draw_drones(drone_positions[i])
+        draw_drones(state['drone_map'])
 
     # Commit
     pygame.display.flip()

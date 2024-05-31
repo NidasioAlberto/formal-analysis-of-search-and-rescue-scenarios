@@ -46,6 +46,7 @@ const int CELL_LAST =           CELL_ASSISTING;
 
 // Map
 int[CELL_FIRST,CELL_LAST] map[N_COLS][N_ROWS];
+bool drone_map[N_COLS][N_ROWS];
 
 // Channels
 chan zr_assist[N_COLS][N_ROWS];        // Channels used by drones to instruct survivors to act as zero responders and assist a survivor in need
@@ -105,8 +106,10 @@ int distance(int x1, int y1, int x2, int y2) {
 		<declaration>void init_assignment_example() {
     // Init the map will all empty cells
     for(x : int[0, N_ROWS-1])
-        for(y : int[0, N_COLS-1])
+        for(y : int[0, N_COLS-1]) {
             map[x][y] = CELL_EMPTY;
+            drone_map[x][y] = false;
+        }
 
     // Set fires
     map[5][1] = CELL_FIRE;
@@ -190,7 +193,9 @@ int y_upper;
 
 void move_one_step() {
     // Update position
+    drone_map[x][y] = false;
     step_calculation(x,y);
+    drone_map[x][y] = true;
 
     x =  imax(x, 0); // check if we are out of the left side of the map
     x =  imin(x, N_COLS - 1); // check if we are out of the right side of the map
@@ -874,7 +879,7 @@ t = 0</label>
 		</transition>
 	</template>
 	<system>import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
-    void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS]);
+    void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
 };
 
 initializer = Initializer();
@@ -887,19 +892,21 @@ first_responder_1 = FirstResponder(2, 3);
 first_responder_2 = FirstResponder(2, 4);
 
 meta int flat_map[N_CELLS];
+meta bool flat_drone_map[N_CELLS];
 
 void prepare_flat_map() {
-    // Flat the map, Uppaal cannot have a 2D array as argument
     for (x : int[0, N_COLS-1]) {
         for (y : int[0, N_ROWS-1]) {
+            // Flatten the maps
             flat_map[x*N_COLS + y] = map[x][y];
+            flat_drone_map[x*N_COLS + y] = drone_map[x][y];
         }
     }
 }
 
 void send_state() {
     prepare_flat_map();
-    send_state_via_post_request(N_COLS, N_ROWS, flat_map);
+    send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
 }
 
 before_update { send_state() }
