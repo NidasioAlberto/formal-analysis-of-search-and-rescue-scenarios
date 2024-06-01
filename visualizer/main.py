@@ -222,6 +222,8 @@ def run_gui():
             state = state_queue.get()
             draw_state(state)
 
+        pygame.time.wait(100)
+
 app = Flask(__name__)
 
 @app.route('/state', methods = ['POST'])
