@@ -21,7 +21,6 @@ const int N_ROWS = 10; // y
 // Number of total cells, used when flatten out the map for the visualizer
 const int N_CELLS = N_COLS * N_ROWS;
 
-/*
 // Scenario found in the project documentation
 
 // Number of drones and their starting positions
@@ -43,10 +42,10 @@ const int N_FIRST_RESPONDERS = 2;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
 const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}, {8, 5}};
 const int T_fr[N_FIRST_RESPONDERS] = {5, 5}; // First reponders assistance duration
-*/
 
-// SUper simple scenario
+// Super simple scenario
 
+/*
 // Number of drones and their starting positions
 const int N_DRONES = 1;
 typedef int[0, N_DRONES-1] drone_id_t;
@@ -66,6 +65,7 @@ const int N_FIRST_RESPONDERS = 1;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
 const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}};
 const int T_fr[N_FIRST_RESPONDERS] = {5}; // First reponders assistance duration
+*/
 
 /******************************************************************************
  *                                 Constants                                  *
@@ -81,7 +81,7 @@ const int CELL_FIRST_RESP = CELL_FIRST + 3;
 const int CELL_SURVIVOR =   CELL_FIRST + 4;
 const int CELL_ZERO_RESP =  CELL_FIRST + 5;
 const int CELL_IN_NEED =    CELL_FIRST + 6;
-const int CELL_ASSISTED =   CELL_FIRST + 7; // Survivor in need while being assisted (by either zero or first responders)
+const int CELL_ASSISTED =   CELL_FIRST + 7; // Survivor that is being assisted (by either zero or first responders)
 const int CELL_ASSISTING =  CELL_FIRST + 8; // First responder busy assisting a survivor
 
 const int CELL_LAST =           CELL_ASSISTING;
@@ -96,8 +96,12 @@ bool drone_map[N_COLS][N_ROWS];
 
 // Channels
 broadcast chan init_done;                       // Global initializing channel
-chan zr_assist[N_COLS][N_ROWS];                 // Used by drones to instruct survivors to act as zero responders and assist directly a survivor in need
+chan be_a_zr[N_COLS][N_ROWS];                   // Used by drones to instruct survivors to act as zero responders (how to act will be notified later)
+chan assist_directly[N_COLS][N_ROWS];           // Used by drones to instruct survivors to assist directly an in_need
 chan go_call_a_fr[N_COLS][N_ROWS];              // Used by drones to instruct survivors to go call a first responder
+chan lock_fr[N_COLS][N_ROWS];                   // Used by zero_responders to lock a first_responder from moving
+chan zr_arrived[N_COLS][N_ROWS];                // Used by zero_responders to notify that they reached the target first_responder
+chan starting_assistance[N_COLS][N_ROWS];       // Used by zero_responders and first_responders to notify an in_need that the assistance procedure has started
 chan fr_assist[N_COLS][N_ROWS];                 // Used by survivors to instruct first responders to assist a survivor in need
 broadcast chan assist_complete[N_COLS][N_ROWS]; // For signaling that an assistance was completed successfully
 
@@ -127,27 +131,29 @@ void set_map(pos_t pos, int val) {
     map[pos.x][pos.y] = val;
 }
 
+int get_map(pos_t pos) {
+    return map[pos.x][pos.y];
+}
+
 void set_drone_map(pos_t pos, bool val) {
     drone_map[pos.x][pos.y] = val;
 }
 
-// Returns the maximum between the two given integers
-int imax(int a, int b) {
-    return (a &gt;= b) ? a : b;
-}
-
-// Returns the minimum between the two given integers
-int imin(int a, int b) {
-    return (a &lt;= b) ? a : b;
-}
-
 // Returns the interger value clamped to the range [lower, upper]
 int iclamp(int value, int lower, int upper) {
-    return imax(lower, imin(value, upper));
+    return lower &gt;? (value &lt;? upper);
 }
 
 // Returns the distance between two points in the grid
-int distance(int x1, int y1, int x2, int y2) {
+int distance(pos_t pos1, pos_t pos2) {
+    int x_distance = abs(pos1.x - pos2.x);
+    int y_distance = abs(pos1.y - pos2.y);
+
+    return x_distance &gt;? y_distance;
+}
+
+// Returns the distance between two points in the grid
+int distance_old(int x1, int y1, int x2, int y2) {
     int x_distance = x1 - x2;
     int y_distance = y1 - y2;
 
@@ -156,50 +162,91 @@ int distance(int x1, int y1, int x2, int y2) {
     if (y_distance &lt; 0)
         y_distance = -y_distance;
 
-    return imax(x_distance, y_distance);
+    return x_distance &gt;? y_distance;
 }
 
-// Check if a position is inside of the map
-bool is_in_map(pos_t pos) {
-    return pos.x &lt; 0 || pos.x &gt;= N_COLS || pos.y &lt; 0 || pos.y &gt;= N_ROWS;
+// Checks if a position is inside of the map
+bool is_pos_in_map(pos_t pos) {
+    return pos.x &gt;= 0 &amp;&amp; pos.x &lt; N_COLS &amp;&amp; pos.y &gt;= 0 &amp;&amp; pos.y &lt; N_ROWS;
 }
 
-bool is_in_bound(pos_t pos, pos_t lower_bound, pos_t upper_bound) {
+// Checks if a position is inside the given bounds (included) and inside the map 
+bool is_pos_in_bound(pos_t pos, pos_t lower_bound, pos_t upper_bound) {
     return pos.x &lt; lower_bound.x || pos.x &gt; upper_bound.x || pos.y &lt; lower_bound.y || pos.y &gt; upper_bound.y;
 }
 
-bool is_in_radius(pos_t pos, pos_t center, int radius) {
+// Checks if a position is in a radius (included) from a given position and inside the map
+bool is_pos_in_radius(pos_t pos, pos_t center, int radius) {
     pos_t lower_bound = {center.x - radius, center.y - radius};
     pos_t upper_bound = {center.x + radius, center.y + radius};
 
-    return is_in_bound(pos, lower_bound, upper_bound);
+    return is_pos_in_bound(pos, lower_bound, upper_bound);
 }
 
 // Check if a location on the map has the given value
-bool cell_check(pos_t pos, int value) {
+bool map_check_val(pos_t pos, int value) {
     // Coordinates must be inside the map
-    if (is_in_map(pos))
+    if (!is_pos_in_map(pos))
         return false;
 
     return map[pos.x][pos.y] == value;
 }
 
 // Check if a location on the map in the given bounds (included) has the provided value
-bool bounded_cell_check(pos_t pos, int value, pos_t lower_bound, pos_t upper_bound) {
+bool map_check_val_with_bounds(pos_t pos, int value, pos_t lower_bound, pos_t upper_bound) {
     // Check provided bounds
-    if (is_in_bound(pos, lower_bound, upper_bound))
+    if (is_pos_in_bound(pos, lower_bound, upper_bound))
         return false;
 
-    return cell_check(pos, value);
+    return map_check_val(pos, value);
 }
 
 // Check if a location on the map in a radius (included) from a position has the provided value
-bool radius_cell_check(pos_t pos, int value, pos_t center, int radius) {
+bool map_check_val_with_radius_bound(pos_t pos, int value, pos_t center, int radius) {
     // Check provided bounds
-    if (is_in_radius(pos, center, radius))
+    if (is_pos_in_radius(pos, center, radius))
         return false;
 
-    return cell_check(pos, value);
+    return map_check_val(pos, value);
+}
+
+// Checks if the given map value is somewhere in the radius (included)
+bool is_val_in_radius(pos_t pos, int value, const int radius) {
+    int i, j;
+    for (i = -radius; i &lt;= radius; i += 1) {
+        for (j = -radius; j &lt;= radius; j += 1) {
+            pos_t pos_to_check = pos;
+            pos_to_check.x += i;
+            pos_to_check.y += j;
+
+            if (map_check_val(pos_to_check, value))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+// Find the nearest value in the map starting from the given position
+pos_t map_find_nearest_val(pos_t pos, int value) {
+    // Initialize with maximum possible distance
+    int min_dist = N_ROWS &gt;? N_COLS + 1;
+    pos_t nearest_pos;
+
+    for (x : int[0, N_COLS-1]) {
+        for (y : int[0, N_ROWS-1]) {
+            pos_t tmp_pos = {x, y};
+            if (map_check_val(tmp_pos, value)) {
+                int tmp_dist = distance(pos, tmp_pos);
+                if (tmp_dist &lt;= min_dist) {
+                    nearest_pos = tmp_pos;
+                    min_dist = tmp_dist;
+                }
+            }
+        }
+    }
+    
+    return nearest_pos;
 }
 </declaration>
 	<template>
@@ -257,8 +304,7 @@ bool radius_cell_check(pos_t pos, int value, pos_t center, int radius) {
  *                                  Variables                                 *
  ******************************************************************************/
 
-clock t;
-
+clock t = 0;
 pos_t pos;
 
 pos_t zr; // Selected zero_responder
@@ -266,7 +312,7 @@ pos_t in; // Selected in_need
 pos_t fr; // Selected first_responder
 
 /******************************************************************************
- *                             Drone moving policy                            *
+ *                                Moving policy                               *
  ******************************************************************************/
 
 // Moving policy, this includes the N_r parameter
@@ -300,51 +346,38 @@ pos_t next_step() {
     return pos;
 }
 
+void move() {
+    // Apply movement
+    set_drone_map(pos, false);
+    pos = next_step();
+    set_drone_map(pos, true);
+}
+
 /******************************************************************************
  *                               Other functions                              *
  ******************************************************************************/
 
-void init_state() {
-    // Init clock
-    t = 0;
-
-    // Initialize position
-    pos = drones_starting_pos[id];
-    set_drone_map(pos, true);
-}
-
 // Tells whether the given coordinates points to a survivor that can be a zero responder (in the fov)
 bool is_possible_zero_responder(int x, int y) {
     pos_t pos_to_check = {x, y};
-    return radius_cell_check(pos_to_check, CELL_SURVIVOR, pos, N_v[id]);
+    return map_check_val_with_radius_bound(pos_to_check, CELL_SURVIVOR, pos, N_v[id]);
 }
 
 // Check if the given coordinates points to a survivor in_need (in the fov)
 bool is_in_need(int x, int y) {
     pos_t pos_to_check = {x, y};
-    return radius_cell_check(pos_to_check, CELL_IN_NEED, pos, N_v[id]);
+    return map_check_val_with_radius_bound(pos_to_check, CELL_IN_NEED, pos, N_v[id]);
 }
 
 // Tells whether the drone has a survivor in its fov
 bool in_need_near() {
-    for (i : int[-N_v[id], N_v[id]]) {
-        for (j : int[-N_v[id], N_v[id]]) {
-            pos_t pos_to_check = pos;
-            pos_to_check.x += i;
-            pos_to_check.y += j;
-
-            if (cell_check(pos_to_check, CELL_IN_NEED))
-                return true;
-        }
-    }
-
-    return false;
+    return is_val_in_radius(pos, CELL_IN_NEED, N_v[id]);
 }
 
 // Check if the given coordinates points to a first_responder
 bool is_first_resp(int x, int y) {
     pos_t pos_to_check = {x, y};
-    return cell_check(pos_to_check, CELL_FIRST_RESP);
+    return map_check_val(pos_to_check, CELL_FIRST_RESP);
 }
 
 // Sets the given coordinates as the selected zero_responder
@@ -364,37 +397,22 @@ void save_first_resp(int x, int y) {
     fr.x = x;
     fr.y = y;
 }
-
-void set_cell_zero_resp(int x, int y) {
-    map[x][y] = CELL_ZERO_RESP; // TODO: This should be set by the survivor
-}
-
-void set_cell_assisted(int x, int y) {
-    map[x][y] = CELL_ASSISTED; // TODO: This should be set by the survivor
-}
-
-void move_one_step() {
-    // Update position
-    set_drone_map(pos, false);
-    pos = next_step();
-    set_drone_map(pos, true);
-}
 </declaration>
-		<location id="id5" x="-1232" y="-433">
-			<name x="-1215" y="-467">FirstResponderFound</name>
+		<location id="id5" x="-1232" y="-450">
+			<name x="-1215" y="-484">FirstResponderFound</name>
 			<committed/>
 		</location>
-		<location id="id6" x="-944" y="-544">
-			<name x="-927" y="-578">AssistingDirectly</name>
+		<location id="id6" x="-944" y="-561">
+			<name x="-927" y="-595">AssistingDirectly</name>
 			<committed/>
 		</location>
-		<location id="id7" x="-943" y="-433">
-			<name x="-926" y="-467">SearchingFirstResponder</name>
+		<location id="id7" x="-943" y="-450">
+			<name x="-926" y="-484">SearchingFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id8" x="-680" y="-493">
-			<name x="-909" y="-501">SurvivorAndInNeedSelected</name>
-			<label kind="comments" x="-918" y="-399">If there is a first responder
+		<location id="id8" x="-680" y="-510">
+			<name x="-909" y="-518">SurvivorAndInNeedSelected</name>
+			<label kind="comments" x="-918" y="-416">If there is a first responder
 available, instruct the selected
 zero reponder to call him,
 otherwise assit directly</label>
@@ -404,7 +422,7 @@ otherwise assit directly</label>
 			<name x="-935" y="-833">SurvivorSelected</name>
 			<committed/>
 		</location>
-		<location id="id10" x="-1589" y="-799">
+		<location id="id10" x="-1700" y="-799">
 		</location>
 		<location id="id11" x="-1402" y="-799">
 			<name x="-1385" y="-850">Moving</name>
@@ -415,58 +433,59 @@ otherwise assit directly</label>
 			<source ref="id11"/>
 			<target ref="id11"/>
 			<label kind="guard" x="-1470" y="-909">t &gt;= 1</label>
-			<label kind="assignment" x="-1470" y="-892">move_one_step(),
+			<label kind="assignment" x="-1470" y="-892">move(),
 t = 0</label>
+			<label kind="comments" x="-1385" y="-901">This edge is the only one that resets the clock.
+This way the drone must make one move per time unit</label>
 			<nail x="-1445" y="-841"/>
 			<nail x="-1402" y="-858"/>
 		</transition>
 		<transition id="id13">
 			<source ref="id5"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-1462" y="-425">go_call_a_fr[zr.x][zr.y]!</label>
-			<label kind="assignment" x="-1462" y="-408">target_first_resp = fr,
+			<label kind="synchronisation" x="-1462" y="-442">go_call_a_fr[zr.x][zr.y]!</label>
+			<label kind="assignment" x="-1462" y="-425">target_first_resp = fr,
 target_in_need = in</label>
-			<nail x="-1428" y="-433"/>
+			<nail x="-1428" y="-450"/>
 			<nail x="-1428" y="-773"/>
 		</transition>
 		<transition id="id14">
 			<source ref="id6"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-1147" y="-544">zr_assist[zr.x][zr.y]!</label>
-			<label kind="assignment" x="-1147" y="-527">target_in_need = in</label>
-			<nail x="-1402" y="-544"/>
+			<label kind="synchronisation" x="-1215" y="-552">assist_directly[zr.x][zr.y]!</label>
+			<label kind="assignment" x="-1215" y="-535">target_in_need = in</label>
+			<nail x="-1402" y="-561"/>
 		</transition>
 		<transition id="id15">
 			<source ref="id7"/>
 			<target ref="id5"/>
-			<label kind="select" x="-1207" y="-433">x : int[0, N_COLS-1],
+			<label kind="select" x="-1207" y="-441">x : int[0, N_COLS-1],
 y : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-1207" y="-391">is_first_resp(x, y)</label>
-			<label kind="assignment" x="-1207" y="-374">save_first_resp(x, y)</label>
-			<label kind="comments" x="-1207" y="-340">Selects one first_reponder
+			<label kind="guard" x="-1207" y="-399">is_first_resp(x, y)</label>
+			<label kind="assignment" x="-1207" y="-382">save_first_resp(x, y)</label>
+			<label kind="comments" x="-1207" y="-348">Selects one first_reponder
 for the zero_responder to call</label>
 		</transition>
 		<transition id="id16">
 			<source ref="id8"/>
 			<target ref="id6"/>
-			<label kind="guard" x="-919" y="-544">available_fr == 0</label>
-			<nail x="-731" y="-544"/>
+			<label kind="guard" x="-918" y="-552">available_fr == 0</label>
+			<nail x="-731" y="-561"/>
 		</transition>
 		<transition id="id17">
 			<source ref="id8"/>
 			<target ref="id7"/>
-			<label kind="guard" x="-918" y="-433">available_fr &gt; 0</label>
-			<nail x="-731" y="-433"/>
+			<label kind="guard" x="-918" y="-442">available_fr &gt; 0</label>
+			<nail x="-731" y="-450"/>
 		</transition>
 		<transition id="id18">
 			<source ref="id9"/>
 			<target ref="id8"/>
-			<label kind="select" x="-935" y="-799">x : int[0, N_COLS-1],
+			<label kind="select" x="-935" y="-791">x : int[0, N_COLS-1],
 y : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-935" y="-757">is_in_need(x, y)</label>
-			<label kind="assignment" x="-935" y="-739">save_in_need(x, y),
-set_cell_assisted(x, y) // TODO: Remove</label>
-			<label kind="comments" x="-935" y="-688">Finds one in_need in the
+			<label kind="guard" x="-935" y="-749">is_in_need(x, y)</label>
+			<label kind="assignment" x="-935" y="-731">save_in_need(x, y)</label>
+			<label kind="comments" x="-935" y="-697">Finds one in_need in the
 field of view and saves
 its coordinates</label>
 			<nail x="-679" y="-799"/>
@@ -474,581 +493,422 @@ its coordinates</label>
 		<transition id="id19">
 			<source ref="id11"/>
 			<target ref="id9"/>
-			<label kind="select" x="-1385" y="-799">x : int[0, N_COLS-1],
+			<label kind="select" x="-1385" y="-790">x : int[0, N_COLS-1],
 y : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-1385" y="-756">t &gt;= 1 &amp;&amp;
+			<label kind="guard" x="-1385" y="-747">t &gt;= 1 &amp;&amp;
 in_need_near() &amp;&amp;
 is_possible_zero_responder(x, y)</label>
-			<label kind="synchronisation" x="-1385" y="-697">zr_assist[x][y]!</label>
-			<label kind="assignment" x="-1385" y="-680">save_zero_resp(x, y),
-set_cell_zero_resp(x, y) // TODO: Remove</label>
-			<label kind="comments" x="-1385" y="-629">Finds one possible zero_responder in
+			<label kind="synchronisation" x="-1385" y="-688">be_a_zr[x][y]!</label>
+			<label kind="assignment" x="-1385" y="-671">save_zero_resp(x, y)</label>
+			<label kind="comments" x="-1385" y="-637">Finds one possible zero_responder in
 the field of view, saves its coordinates
 and tells him to assist</label>
 		</transition>
 		<transition id="id20">
 			<source ref="id10"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-1572" y="-799">init_done?</label>
-			<label kind="assignment" x="-1572" y="-782">init_state()</label>
+			<label kind="synchronisation" x="-1683" y="-790">init_done?</label>
+			<label kind="assignment" x="-1683" y="-773">pos = drones_starting_pos[id],
+set_drone_map(pos, true)</label>
 		</transition>
 	</template>
 	<template>
 		<name>Survivor</name>
 		<parameter>const survivor_id_t id</parameter>
-		<declaration>clock t;
+		<declaration>/******************************************************************************
+ *                                  Variables                                 *
+ ******************************************************************************/
 
-int x;
-int y;
+clock t = 0;
+pos_t pos;
 
-void init_state() {
-    // Init clock
-    t = 0;
+pos_t target_fr;
+pos_t target_in;
 
-    // Initialize position
-    x = survivors_starting_pos[id].x;
-    y = survivors_starting_pos[id].y;
+// Some constant that are not parameters but are still usefull to abstract
+const int FIRE_RADIUS = 1; // Distance from fire when this survivor becomes in need
+const int EXIT_RADIUS = 1; // Distance from exit when this survivor becomes in safe
 
-    // Set position in the map
-    map[x][y] = CELL_SURVIVOR;
-}
+/******************************************************************************
+ *                                Moving policy                               *
+ ******************************************************************************/
 
-// Distance from fire when this survivor becomes in need
-const int FIRE_RADIUS = 1;
+bool is_move_valid(int i, int j) {
+    pos_t next_pos = {pos.x + i, pos.y + j};
 
-// Distance from exit when this survivor becomes in safe
-const int EXIT_RADIUS = 1;
-
-// Distance variable used to emulate the time taken for this survivor to perform grid movements
-int move_time = 0;
-
-// Target positions
-pos_t targ_in;
-pos_t targ_fr;
-
-void do_zr_assist() {
-    // Set assisted coords to notify the end of the assistance later
-    targ_in.x = target_in_need.x;
-    targ_in.y = target_in_need.y;
-
-    // Set moving time
-    move_time = distance(x, y, targ_in.x, targ_in.y);
-
-    // Set our cell as zero responder
-    map[x][y] = CELL_ZERO_RESP;
-
-    // Set the in-need cell as being assisted
-    map[targ_in.x][targ_in.y] = CELL_ASSISTED;
-}
-
-void do_call_first_resp() {
-    // Save target positions
-    targ_in = target_in_need;
-    targ_fr = target_first_resp;
-
-    // Set the target coordinates for the first responder
-    target_in_need.x = targ_in.x;
-    target_in_need.y = targ_in.y;
-
-    // Set moving time
-    move_time = distance(x, y, targ_fr.x, targ_fr.y);
-
-    // Set our cell as zero responder
-    map[x][y] = CELL_ZERO_RESP;
-}
-
-bool is_fire_near(int xx, int yy) {
-    int x_lower = imax(xx - FIRE_RADIUS, 0);
-    int x_upper = imin(xx + FIRE_RADIUS, N_COLS - 1);
-    int y_lower = imax(yy - FIRE_RADIUS, 0);
-    int y_upper = imin(yy + FIRE_RADIUS, N_ROWS - 1);
-
-    int i, j;
-    for (i = x_lower; i &lt;= x_upper; i += 1)
-        for (j = y_lower; j &lt;= y_upper; j += 1)
-            if (map[i][j] == CELL_FIRE)
-                return true;
-
-    return false;
-}
-
-bool is_exit_near(int xx, int yy) {
-    int x_lower = imax(xx - EXIT_RADIUS, 0);
-    int x_upper = imin(xx + EXIT_RADIUS, N_COLS - 1);
-    int y_lower = imax(yy - EXIT_RADIUS, 0);
-    int y_upper = imin(yy + EXIT_RADIUS, N_ROWS - 1);
-
-    int i, j;
-    for (i = x_lower; i &lt;= x_upper; i += 1)
-        for (j = y_lower; j &lt;= y_upper; j += 1)
-            if (map[i][j] == CELL_EXIT)
-                return true;
-
-    return false;
-}
-
-
-void find_nearest_exit(int &amp;xx, int &amp;yy) {
-    int exitDistance = imax(N_ROWS, N_COLS) + 1; // max value
-    int i, j;
-
-    for (i = 0; i &lt; N_COLS; i += 1) {
-        for (j = 0; j &lt; N_ROWS; j += 1) {
-            int cell = map[i][j];
-
-            if (cell == CELL_EXIT) {
-                int disTemp = distance(x, y, i, j);
-                if (disTemp &lt;= exitDistance) {
-                    xx = i;
-                    yy = j;
-                    exitDistance = disTemp;
-                }
-            }
-        }
-    }
-}
-
-bool is_move_valid(int xx, int yy) {
-    bool valid = false;
-
-    // We can only move inside the map
-    if (0 &lt;= xx &amp;&amp; xx &lt;= N_COLS - 1 &amp;&amp; 0 &lt;= yy &amp;&amp; yy &lt;= N_ROWS - 1) {
-
-        // At least one coordinate must change, the move cannot target the same position
-        valid = xx != x || yy != y;
+    // We can only move inside the map and we canot stay in the same position
+    if (is_pos_in_map(next_pos) &amp;&amp; next_pos != pos) {
 
         // We cannot move near a fire
-        valid &amp;= !is_fire_near(xx, yy);
+        bool valid = !is_val_in_radius(next_pos, CELL_FIRE, FIRE_RADIUS);
 
         // We can move only towards empty cells
-        valid &amp;= map[xx][yy] == CELL_EMPTY;
+        valid &amp;= map_check_val(next_pos, CELL_EMPTY);
+        
+        return valid;
     }
 
-    return valid;
+    return false;
 }
-
-int exit_x, exit_y; // the current exit we are trying to reach
 
 /**
  * This moving policy tries to follow a direct path to the nearest exit.
  * When the next move on the direct path cannot be taken (the cell is
  * occupied or there is a fire near) we randomly choose a valid move.
  */
-void move(int ii, int jj) {
-    int next_x, next_y;
-    int direction_x, direction_y;
-
+void move(int i, int j) {
     // Random function to prefer X half of the time
-    bool prefer_x = (ii * jj) != 0;
+    bool prefer_x = (i * j) != 0;
 
-    find_nearest_exit(exit_x, exit_y);
-
-    // Tells what direction to move to over x to go towards the exit
-    if (exit_x - x &gt; 0)
-        direction_x = 1; // Right
-    else if (exit_x - x &lt; 0)
-        direction_x = -1; // Left
-    else
-        direction_x = 0; // Stay put
-
-    // Same thing for y
-    if (exit_y - y &gt; 0)
-        direction_y = 1; // Down
-    else if (exit_y - y &lt; 0)
-        direction_y = -1; // Up
-    else
-        direction_y = 0; // Stay put
+    pos_t nearest_exit = map_find_nearest_val(pos, CELL_EXIT);
 
     // Compute the next optimal position towards the nearest exit
-    next_x = x + direction_x;
-    next_y = y + direction_y;
+    pos_t move = {0, 0}; // Default to stay put (invalid)
 
-    // Set the current position empty because we'll move
-    map[x][y] = CELL_EMPTY;
+    if (nearest_exit.x - pos.x &gt; 0)
+        move.x = 1; // Right
+    else if (nearest_exit.x - pos.x &lt; 0)
+        move.x = -1; // Left
 
-    if (is_move_valid(next_x, next_y)) {
-        // We move to the optimal cell if the move is valid
-        x = next_x;
-        y = next_y;
-    } else if (prefer_x) {
-        // If we prefer X, try in order X -&gt; Y -&gt; random
-        if (is_move_valid(next_x, y)) {
-            // The optimal X direction is not null and is feasible
-            x = next_x;
-            y = y;
-        } else if (is_move_valid(x, next_y)) {
-            // The optimal Y direction is not null and is feasible
-            x = x;
-            y = next_y;
-        } else {
-            // Move in a random direction from the chosen transition
-            x += ii;
-            y += jj;
-        }
-    } else if (!prefer_x) {
-        // If we prefer Y, try in order Y -&gt; X -&gt; random
-        if (is_move_valid(x, next_y)) {
-            // The optimal Y direction is not null and is feasible
-            x = x;
-            y = next_y;
-        } else if (is_move_valid(next_x, next_y)) {
-            // The optimal X direction is not null and is feasible
-            x = next_x;
-            y = y;
-        } else if(is_move_valid(x+ii, y+jj)){
-            // Move in a random direction from the chosen transition
-            // We still have to check if the move is still valid or if it is occupied
-            x += ii;
-            y += jj;
-        }
+    if (nearest_exit.y - pos.y &gt; 0)
+        move.y = 1; // Down
+    else if (nearest_exit.y - pos.y &lt; 0)
+        move.y = -1; // Up
+
+    // If the move is valid we do it, otherwise we use the selected (random) one
+    if (!is_move_valid(move.x, move.y)) {
+        move.x = i;
+        move.y = j;
     }
 
-    map[x][y] = CELL_SURVIVOR;
+    // Apply movement
+    set_map(pos, CELL_EMPTY);
+    pos.x += move.x;
+    pos.y += move.y;
+    set_map(pos, CELL_SURVIVOR);
+}
+
+/******************************************************************************
+ *                               Other functions                              *
+ ******************************************************************************/
+
+bool starting_near_a_fire() {
+    return is_val_in_radius(survivors_starting_pos[id], CELL_FIRE, FIRE_RADIUS);
+}
+
+bool is_fire_near() {
+    return is_val_in_radius(pos, CELL_FIRE, FIRE_RADIUS);
+}
+
+bool is_exit_near() {
+    return is_val_in_radius(pos, CELL_EXIT, EXIT_RADIUS);
 }
 </declaration>
-		<location id="id21" x="-161" y="85">
-			<name x="-186" y="51">Moving</name>
-			<label kind="invariant" x="-171" y="102">t &lt;= 1</label>
+		<location id="id21" x="153" y="-170">
+			<name x="170" y="-162">Moving</name>
+			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
 		</location>
-		<location id="id22" x="382" y="85">
-			<name x="297" y="102">ActingZeroResponder</name>
+		<location id="id22" x="399" y="-17">
+			<name x="416" y="-51">AssistingDirectly</name>
 		</location>
-		<location id="id23" x="-382" y="85">
+		<location id="id23" x="858" y="-323">
+			<name x="875" y="-374">InNeed</name>
+			<label kind="invariant" x="875" y="-357">t &lt;= T_v[id]</label>
+		</location>
+		<location id="id24" x="493" y="-170">
+		</location>
+		<location id="id25" x="1164" y="-323">
+			<name x="1113" y="-357">Dead</name>
+		</location>
+		<location id="id26" x="833" y="-17">
+			<name x="857" y="-26">Safe</name>
+		</location>
+		<location id="id27" x="85" y="161">
+			<name x="102" y="127">LockingFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id24" x="375" y="-262">
-			<name x="350" y="-321">InNeed</name>
-			<label kind="invariant" x="350" y="-304">t &lt;= T_v[id]</label>
+		<location id="id28" x="756" y="161">
 		</location>
-		<location id="id25" x="-637" y="85">
+		<location id="id29" x="399" y="160">
+			<name x="408" y="110">CallingFirstResponder</name>
+			<label kind="invariant" x="408" y="127">t &lt;= distance(pos, target_fr)</label>
 		</location>
-		<location id="id26" x="681" y="-152">
-			<name x="664" y="-194">Dead</name>
+		<location id="id30" x="85" y="-17">
+			<name x="102" y="-43">AwaitingJob</name>
 		</location>
-		<location id="id27" x="1021" y="84">
-			<name x="1045" y="75">Safe</name>
+		<location id="id31" x="858" y="-170">
+			<name x="874" y="-221">BeingAssisted</name>
+			<label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label>
 		</location>
-		<location id="id28" x="348" y="348">
-			<name x="255" y="306">LockFirstResponder</name>
-			<committed/>
-		</location>
-		<location id="id29" x="-161" y="450">
-			<name x="-195" y="467">Moved</name>
-			<committed/>
-		</location>
-		<location id="id30" x="926" y="348">
-		</location>
-		<location id="id31" x="629" y="348">
-			<name x="543" y="306">CallingFirstResponder</name>
-			<label kind="invariant" x="604" y="391">t &lt;= move_time</label>
-		</location>
-		<location id="id32" x="17" y="255">
-			<name x="8" y="272">AwaitingJob</name>
-		</location>
-		<init ref="id25"/>
+		<init ref="id24"/>
+		<transition id="id32">
+			<source ref="id31"/>
+			<target ref="id25"/>
+			<label kind="guard" x="875" y="-170">t &gt;= T_v[id]</label>
+			<label kind="assignment" x="875" y="-153">set_map(pos, CELL_EMPTY)</label>
+			<nail x="1164" y="-170"/>
+		</transition>
 		<transition id="id33">
-			<source ref="id29"/>
-			<target ref="id32"/>
-			<label kind="synchronisation" x="-136" y="425">zr_assist[x][y]?</label>
-			<nail x="17" y="450"/>
+			<source ref="id23"/>
+			<target ref="id31"/>
+			<label kind="synchronisation" x="867" y="-272">starting_assistance[pos.x][pos.y]?</label>
+			<label kind="assignment" x="867" y="-255">set_map(pos, CELL_ASSISTED)</label>
 		</transition>
 		<transition id="id34">
-			<source ref="id32"/>
-			<target ref="id22"/>
-			<label kind="synchronisation" x="136" y="110">zr_assist[x][y]?</label>
-			<label kind="assignment" x="136" y="127">do_zr_assist()</label>
+			<source ref="id24"/>
+			<target ref="id21"/>
+			<label kind="guard" x="212" y="-246">!starting_near_a_fire()</label>
+			<label kind="synchronisation" x="212" y="-229">init_done?</label>
+			<label kind="assignment" x="212" y="-212">pos = survivors_starting_pos[id],
+set_map(pos, CELL_SURVIVOR)</label>
 		</transition>
 		<transition id="id35">
-			<source ref="id31"/>
-			<target ref="id30"/>
-			<label kind="guard" x="732" y="323">t &gt;= move_time</label>
-			<label kind="synchronisation" x="724" y="306">fr_assist[targ_fr.x][targ_fr.y]!</label>
+			<source ref="id30"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="102" y="-17">assist_directly[pos.x][pos.y]?</label>
+			<label kind="assignment" x="102" y="0">target_in = target_in_need</label>
 		</transition>
 		<transition id="id36">
-			<source ref="id30"/>
-			<target ref="id27"/>
-			<label kind="synchronisation" x="654" y="178">assist_complete[targ_in.x][targ_in.y]?</label>
-			<label kind="assignment" x="654" y="195">map[x][y] = CELL_EMPTY</label>
-			<nail x="926" y="136"/>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="guard" x="416" y="161">t &gt;= distance(pos, target_fr)</label>
+			<label kind="synchronisation" x="416" y="178">zr_arrived[target_fr.x][target_fr.y]!</label>
 		</transition>
 		<transition id="id37">
-			<source ref="id29"/>
-			<target ref="id21"/>
-			<label kind="guard" x="-161" y="255">!is_exit_near(x,y)</label>
-			<nail x="-161" y="306"/>
+			<source ref="id28"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="816" y="101">assist_complete[target_in.x][target_in.y]?</label>
+			<label kind="assignment" x="816" y="118">set_map(pos, CELL_EMPTY)</label>
+			<nail x="833" y="84"/>
 		</transition>
 		<transition id="id38">
-			<source ref="id29"/>
-			<target ref="id27"/>
-			<label kind="guard" x="280" y="578">is_exit_near(x,y)</label>
-			<label kind="assignment" x="263" y="595">map[x][y] = CELL_EMPTY</label>
-			<nail x="-161" y="569"/>
-			<nail x="1011" y="569"/>
+			<source ref="id21"/>
+			<target ref="id26"/>
+			<label kind="guard" x="620" y="-119">t &gt;= 1 &amp;&amp;
+is_exit_near()</label>
+			<label kind="assignment" x="620" y="-77">set_map(pos, CELL_EMPTY)</label>
+			<nail x="153" y="-119"/>
+			<nail x="833" y="-119"/>
 		</transition>
 		<transition id="id39">
-			<source ref="id26"/>
+			<source ref="id31"/>
 			<target ref="id26"/>
-			<label kind="synchronisation" x="758" y="-161">assist_complete[x][y]?</label>
-			<label kind="comments" x="554" y="-119">Consume signals to avoid deadlocking
-the first/zero responder</label>
-			<nail x="749" y="-178"/>
-			<nail x="749" y="-127"/>
+			<label kind="synchronisation" x="867" y="-85">assist_complete[pos.x][pos.y]?</label>
+			<label kind="assignment" x="867" y="-68">set_map(pos, CELL_EMPTY)</label>
+			<nail x="858" y="-42"/>
 		</transition>
 		<transition id="id40">
-			<source ref="id24"/>
-			<target ref="id27"/>
-			<label kind="synchronisation" x="545" y="-304">assist_complete[x][y]?</label>
-			<label kind="assignment" x="545" y="-288">map[x][y] = CELL_EMPTY</label>
-			<nail x="1021" y="-256"/>
+			<source ref="id27"/>
+			<target ref="id29"/>
+			<label kind="synchronisation" x="102" y="161">lock_fr[target_fr.x][target_fr.y]!</label>
+			<label kind="assignment" x="102" y="178">t = 0</label>
 		</transition>
 		<transition id="id41">
-			<source ref="id28"/>
-			<target ref="id31"/>
-			<label kind="synchronisation" x="374" y="357">go_call_a_fr[targ_fr.x][targ_fr.y]!</label>
-			<label kind="assignment" x="442" y="374">t = 0</label>
+			<source ref="id30"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="93" y="51">go_call_a_fr[pos.x][pos.y]?</label>
+			<label kind="assignment" x="93" y="68">target_fr = target_first_resp,
+target_in = target_in_need</label>
 		</transition>
 		<transition id="id42">
-			<source ref="id32"/>
-			<target ref="id28"/>
-			<label kind="synchronisation" x="127" y="323">go_call_a_fr[x][y]?</label>
-			<label kind="assignment" x="127" y="340">do_call_first_resp()</label>
+			<source ref="id23"/>
+			<target ref="id25"/>
+			<label kind="guard" x="875" y="-323">t &gt;= T_v[id]</label>
+			<label kind="assignment" x="875" y="-306">set_map(pos, CELL_EMPTY)</label>
 		</transition>
 		<transition id="id43">
-			<source ref="id24"/>
+			<source ref="id22"/>
 			<target ref="id26"/>
-			<label kind="guard" x="401" y="-194">t &gt;= T_v[id]</label>
-			<label kind="assignment" x="401" y="-177">map[x][y] = CELL_EMPTY</label>
-			<nail x="375" y="-151"/>
+			<label kind="guard" x="416" y="-17">t &gt;= T_zr[id] + distance(pos, target_in)</label>
+			<label kind="synchronisation" x="416" y="0">assist_complete[target_in.x][target_in.y]!</label>
+			<label kind="assignment" x="416" y="17">set_map(pos, CELL_EMPTY)</label>
 		</transition>
 		<transition id="id44">
-			<source ref="id22"/>
-			<target ref="id27"/>
-			<label kind="guard" x="639" y="25">t &gt;= T_zr[id] + move_time</label>
-			<label kind="synchronisation" x="639" y="42">assist_complete[targ_in.x][targ_in.y]!</label>
-			<label kind="assignment" x="639" y="59">map[x][y] = CELL_EMPTY</label>
+			<source ref="id21"/>
+			<target ref="id21"/>
+			<label kind="select" x="60" y="-357">i : int[-1, 1],
+j : int[-1, 1]</label>
+			<label kind="guard" x="59" y="-315">t &gt;= 1 &amp;&amp;
+is_move_valid(i, j) &amp;&amp;
+!is_exit_near()</label>
+			<label kind="assignment" x="60" y="-255">move(i, j),
+t = 0</label>
+			<label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
+This way the survivor must make one move per time unit</label>
+			<nail x="136" y="-230"/>
+			<nail x="93" y="-187"/>
 		</transition>
 		<transition id="id45">
-			<source ref="id21"/>
-			<target ref="id29"/>
-			<label kind="select" x="-424" y="238">ii : int[-1, 1],
-jj : int[-1, 1]</label>
-			<label kind="guard" x="-425" y="280">t &gt;= 1 &amp;&amp;
-is_move_valid(x + ii, y + jj)</label>
-			<label kind="assignment" x="-425" y="331">move(ii,jj),
-t = 0</label>
-			<nail x="-433" y="153"/>
-			<nail x="-433" y="399"/>
+			<source ref="id24"/>
+			<target ref="id23"/>
+			<label kind="guard" x="510" y="-246">starting_near_a_fire()</label>
+			<label kind="synchronisation" x="510" y="-229">init_done?</label>
+			<label kind="assignment" x="510" y="-212">pos = survivors_starting_pos[id],
+set_map(pos, CELL_IN_NEED)</label>
+			<nail x="833" y="-170"/>
+			<nail x="833" y="-297"/>
 		</transition>
 		<transition id="id46">
-			<source ref="id23"/>
-			<target ref="id21"/>
-			<label kind="guard" x="-357" y="59">!is_fire_near(x,y)</label>
-		</transition>
-		<transition id="id47">
-			<source ref="id25"/>
-			<target ref="id23"/>
-			<label kind="synchronisation" x="-620" y="93">init_done?</label>
-			<label kind="assignment" x="-620" y="110">init_state()</label>
-		</transition>
-		<transition id="id48">
-			<source ref="id23"/>
-			<target ref="id24"/>
-			<label kind="guard" x="-374" y="-221">is_fire_near(x,y)</label>
-			<label kind="assignment" x="-374" y="-204">map[x][y] = CELL_IN_NEED,
-t = 0</label>
-			<nail x="-382" y="-255"/>
-		</transition>
-		<transition id="id49">
 			<source ref="id21"/>
-			<target ref="id32"/>
-			<label kind="synchronisation" x="-127" y="59">zr_assist[x][y]?</label>
-			<nail x="17" y="85"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="93" y="-93">be_a_zr[pos.x][pos.y]?</label>
+			<label kind="assignment" x="93" y="-76">set_map(pos, CELL_ZERO_RESP)</label>
+			<nail x="85" y="-111"/>
 		</transition>
 	</template>
 	<template>
 		<name>FirstResponder</name>
 		<parameter>const first_resp_id_t id</parameter>
-		<declaration>clock t;
+		<declaration>/******************************************************************************
+ *                                  Variables                                 *
+ ******************************************************************************/
 
-int x;
-int y;
+clock t = 0;
+pos_t pos;
 
-void init_state() {
-    // Init clock
-    t = 0;
+pos_t target; // Target position to move to
 
-    // Initialize position
-    x = first_responders_starting_pos[id].x;
-    y = first_responders_starting_pos[id].y;
+/******************************************************************************
+ *                                Moving policy                               *
+ ******************************************************************************/
 
-    // Set position in the map
-    map[x][y] = CELL_FIRST_RESP;
+bool is_move_valid(int i, int j) {
+    pos_t move = {pos.x + i, pos.y + j};
 
-    // Register as an available first responder
-    available_fr += 1;
-}
-
-// Distance variable used to emulate the time taken for this survivor to perform grid movements
-int move_time = 0;
-
-// Target coordinates that this survivor should move to
-int targ_x;
-int targ_y;
-
-void save_survivor_target() {
-
-}
-
-void do_fr_assist() {
-    // Set assisted coords to notify the end of the assistance later
-    targ_x = target_in_need.x;
-    targ_y = target_in_need.y;
-
-    // Set moving time
-    move_time = distance(x, y, targ_x, targ_y);
-
-    // Set our cell as busy first responder
-    map[x][y] = CELL_ASSISTING;
-
-    // Set the in-need cell as being assisted
-    map[targ_x][targ_y] = CELL_ASSISTED;
-}
-
-void end_assist() {
-    // Set our previous position as empty
-    map[x][y] = CELL_EMPTY;
-
-    // Teleport to the position of the survivor-in-need we just finished assisting
-    x = targ_x;
-    y = targ_y;
-
-    // Set ourselves at the new position
-    map[x][y] = CELL_FIRST_RESP;
-}
-
-bool is_move_valid(int xx, int yy) {
-    bool valid = false;
-
-    // We can only move inside the map
-    if (0 &lt;= xx &amp;&amp; xx &lt;= N_COLS - 1 &amp;&amp; 0 &lt;= yy &amp;&amp; yy &lt;= N_ROWS - 1) {
-
-        // At least one coordinate must change, the move cannot target the same position
-        valid = xx != x || yy != y;
-
-        // As a first responder we can move near a fire
-
-        // We can move only towards empty cells
-        valid &amp;= map[xx][yy] == CELL_EMPTY;
+    // We can only move inside the map and we canot stay in the same position
+    if (is_pos_in_map(move) &amp;&amp; move != pos) {
+        // As a first responder we can move near a fire and we can move only towards empty cells
+        return get_map(move) == CELL_EMPTY;
     }
 
-    return valid;
+    return false;
 }
 
-void move(int ii, int jj) {
-
-    if(is_move_valid(x+ii,y+jj)){
-        map[x][y] = CELL_EMPTY;
-        x += ii;
-        y += jj;
-        map[x][y] = CELL_FIRST_RESP;
-    }
+void move(int i, int j) {
+    // Apply movement
+    set_map(pos, CELL_EMPTY);
+    pos.x += i;
+    pos.y += j;
+    set_map(pos, CELL_FIRST_RESP);
 }
 
+/******************************************************************************
+ *                               Other functions                              *
+ ******************************************************************************/
+
+// Check if the given relative coordinates points to a survivor in_need
 bool is_in_need(int i, int j) {
-    pos_t pos_to_check = {x + i, y + j};
-    return cell_check(pos_to_check, CELL_IN_NEED);
+    pos_t pos_to_check = pos;
+    pos_to_check.x += i;
+    pos_to_check.y += j;
+    return map_check_val(pos_to_check, CELL_IN_NEED);
 }
 
 void set_target(int i, int j) {
-    targ_x = x + i;
-    targ_y = y + j;
-}</declaration>
-		<location id="id50" x="-238" y="-76">
-			<name x="-221" y="-127">Assisting</name>
-			<label kind="invariant" x="-221" y="-110">t &lt;= T_fr[id]</label>
+    target = pos;
+    target.x += i;
+    target.y += j;
+}
+
+void teleport_to_in_need() {
+    set_map(pos, CELL_EMPTY);
+    pos = target;
+    set_map(pos, CELL_FIRST_RESP); // From CELL_ASSISTING back to CELL_FIRST_RESP
+}
+</declaration>
+		<location id="id47" x="-195" y="-76">
+			<name x="-178" y="-127">Assisting</name>
+			<label kind="invariant" x="-178" y="-110">t &lt;= T_fr[id]</label>
 		</location>
-		<location id="id51" x="-552" y="-161">
+		<location id="id48" x="-552" y="-161">
 			<name x="-527" y="-178">Available</name>
 			<label kind="invariant" x="-527" y="-161">t &lt;= 1</label>
 		</location>
-		<location id="id52" x="-850" y="-161">
+		<location id="id49" x="-926" y="-161">
 		</location>
-		<location id="id53" x="-8" y="-255">
-			<name x="9" y="-306">MovingToInNeed</name>
-			<label kind="invariant" x="9" y="-289">t &lt;= move_time</label>
+		<location id="id50" x="85" y="-255">
+			<name x="102" y="-306">MovingToInNeed</name>
+			<label kind="invariant" x="102" y="-289">t &lt;= distance(pos, target)</label>
 		</location>
-		<location id="id54" x="-238" y="59">
+		<location id="id51" x="-195" y="59">
 			<committed/>
 		</location>
-		<location id="id55" x="-238" y="-255">
-			<name x="-221" y="-289">WaitingZeroRespMoveTime</name>
+		<location id="id52" x="-195" y="-255">
+			<name x="-178" y="-289">WaitingZeroRespMoveTime</name>
+			<label kind="comments" x="-399" y="-357">The first_responder is locked by the zero_responder
+and then waits for him to move</label>
 		</location>
-		<init ref="id52"/>
-		<transition id="id56">
-			<source ref="id51"/>
-			<target ref="id55"/>
-			<label kind="synchronisation" x="-450" y="-255">go_call_a_fr[x][y]?</label>
+		<init ref="id49"/>
+		<transition id="id53">
+			<source ref="id48"/>
+			<target ref="id52"/>
+			<label kind="synchronisation" x="-450" y="-246">lock_fr[pos.x][pos.y]?</label>
 			<nail x="-459" y="-255"/>
 		</transition>
-		<transition id="id57">
-			<source ref="id51"/>
-			<target ref="id50"/>
-			<label kind="select" x="-450" y="-68">i : int[-1, 1],
+		<transition id="id54">
+			<source ref="id48"/>
+			<target ref="id47"/>
+			<label kind="select" x="-527" y="-68">i : int[-1, 1],
 j : int[-1, 1]</label>
-			<label kind="guard" x="-450" y="-25">is_in_need(i, j)</label>
-			<label kind="assignment" x="-450" y="-8">set_target(i, j)</label>
+			<label kind="guard" x="-527" y="-26">is_in_need(i, j)</label>
+			<label kind="synchronisation" x="-527" y="-9">starting_assistance[pos.x+i][pos.y+j]!</label>
+			<label kind="assignment" x="-527" y="8">set_target(i, j)</label>
 			<nail x="-459" y="-76"/>
 		</transition>
-		<transition id="id58">
-			<source ref="id54"/>
-			<target ref="id51"/>
-			<label kind="assignment" x="-417" y="59">available_fr += 1,
-end_assist(),
+		<transition id="id55">
+			<source ref="id51"/>
+			<target ref="id48"/>
+			<label kind="assignment" x="-417" y="59">teleport_to_in_need(),
+available_fr += 1,
 t = 0</label>
 			<nail x="-553" y="59"/>
 		</transition>
-		<transition id="id59">
-			<source ref="id51"/>
-			<target ref="id51"/>
-			<label kind="select" x="-629" y="-366">ii : int[-1, 1],
-jj : int[-1, 1]</label>
+		<transition id="id56">
+			<source ref="id48"/>
+			<target ref="id48"/>
+			<label kind="select" x="-629" y="-366">i : int[-1, 1],
+j : int[-1, 1]</label>
 			<label kind="guard" x="-629" y="-323">t &gt;= 1 &amp;&amp;
-is_move_valid(x + ii, y + jj)</label>
-			<label kind="assignment" x="-629" y="-280">move(ii, jj),
+is_move_valid(i, j)</label>
+			<label kind="assignment" x="-629" y="-280">move(i, j),
 t = 0</label>
-			<label kind="comments" x="-867" y="-340">While not busy assisting
+			<label kind="comments" x="-867" y="-357">While not busy assisting
 survivors, first reponders
 can move with a custom
 moving policy</label>
 			<nail x="-629" y="-238"/>
 			<nail x="-552" y="-238"/>
 		</transition>
-		<transition id="id60">
-			<source ref="id53"/>
-			<target ref="id50"/>
-			<label kind="guard" x="1" y="-238">t &gt;= move_time</label>
-			<label kind="assignment" x="1" y="-221">t = 0</label>
-			<nail x="-8" y="-76"/>
-		</transition>
-		<transition id="id61">
-			<source ref="id55"/>
-			<target ref="id53"/>
-			<label kind="synchronisation" x="-229" y="-246">fr_assist[x][y]?</label>
-			<label kind="assignment" x="-229" y="-229">t = 0,
-available_fr -= 1,
-do_fr_assist()</label>
-		</transition>
-		<transition id="id62">
+		<transition id="id57">
 			<source ref="id50"/>
-			<target ref="id54"/>
-			<label kind="guard" x="-229" y="-51">t &gt;= T_fr[id]</label>
-			<label kind="synchronisation" x="-229" y="-34">assist_complete[targ_x][targ_y]!</label>
+			<target ref="id47"/>
+			<label kind="guard" x="-169" y="-76">t &gt;= distance(pos, target)</label>
+			<label kind="synchronisation" x="-170" y="-59">starting_assistance[target.x][target.y]!</label>
+			<label kind="assignment" x="-170" y="-42">t = 0</label>
+			<nail x="85" y="-76"/>
 		</transition>
-		<transition id="id63">
+		<transition id="id58">
 			<source ref="id52"/>
+			<target ref="id50"/>
+			<label kind="synchronisation" x="-186" y="-246">zr_arrived[pos.x][pos.y]?</label>
+			<label kind="assignment" x="-186" y="-229">target = target_in_need,
+set_map(pos, CELL_ASSISTING),
+available_fr -= 1,
+t = 0</label>
+		</transition>
+		<transition id="id59">
+			<source ref="id47"/>
 			<target ref="id51"/>
-			<label kind="synchronisation" x="-825" y="-161">init_done?</label>
-			<label kind="assignment" x="-825" y="-144">init_state()</label>
+			<label kind="guard" x="-187" y="0">t &gt;= T_fr[id]</label>
+			<label kind="synchronisation" x="-187" y="17">assist_complete[target.x][target.y]!</label>
+		</transition>
+		<transition id="id60">
+			<source ref="id49"/>
+			<target ref="id48"/>
+			<label kind="synchronisation" x="-909" y="-153">init_done?</label>
+			<label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
+set_map(pos, CELL_FIRST_RESP),
+available_fr += 1</label>
 		</transition>
 	</template>
 	<system>import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
@@ -1073,9 +933,10 @@ void send_state() {
     send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
 }
 
+// before_update { send_state() }
 after_update { send_state() }
 
-system Initializer, Drone, Survivor, FirstResponder;
+system Drone, Survivor, FirstResponder, Initializer;
 
 gantt {
     Drone(i : drone_id_t): Drone(i).Moving -&gt; 1;
@@ -1086,7 +947,19 @@ gantt {
  * - Make all agents update their status in the map (e.g. the drone should not update the cell of a survivor from survivor to zero responder)
  * - Move Drone decison making policy into a function (possible?). This way it should be easy to define multiple ones
  * - Change go_call_a_fr in first_responder. This should disappear if we model all movements
+ * - Make drone selection ranges be relative instead of global, like in first_reponders
+ * - Model the death of an in_need when occurring before being saved (this will most likely require a channel)
+ * - Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
+ * - Rename radius_cell_check to something better, improve comment
+ * - Color the location
+ * - Change the Survivor moving policy
+ * - When a survivor assist directly he does not send starting_assistance signal
  *
+ * - Add checkboxes to this TODO list
+ * - Check if the TODOs have been done or not
+ *
+ * - Read again the assignment and check model consistency
+ * - Read again the prof's answers to email questions and check consistency
  */</system>
 	<queries>
 		<query>
