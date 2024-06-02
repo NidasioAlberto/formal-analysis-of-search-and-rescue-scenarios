@@ -673,6 +673,7 @@ set_map(pos, CELL_SURVIVOR)</label>
 			<target ref="id28"/>
 			<label kind="guard" x="416" y="161">t &gt;= distance(pos, target_fr)</label>
 			<label kind="synchronisation" x="416" y="178">zr_arrived[target_fr.x][target_fr.y]!</label>
+			<label kind="assignment" x="416" y="195">target_in_need = target_in</label>
 		</transition>
 		<transition id="id37">
 			<source ref="id28"/>
@@ -943,23 +944,27 @@ gantt {
 }
 
 /* TODOs
- * - All payload passing must happen when channel is triggered (survivors saves both target at the end)
- * - Make all agents update their status in the map (e.g. the drone should not update the cell of a survivor from survivor to zero responder)
- * - Move Drone decison making policy into a function (possible?). This way it should be easy to define multiple ones
- * - Change go_call_a_fr in first_responder. This should disappear if we model all movements
- * - Make drone selection ranges be relative instead of global, like in first_reponders
- * - Model the death of an in_need when occurring before being saved (this will most likely require a channel)
- * - Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
- * - Rename radius_cell_check to something better, improve comment
- * - Color the location
- * - Change the Survivor moving policy
- * - When a survivor assist directly he does not send starting_assistance signal
+ * [X] All payload passing must happen when channels are triggered
+ *     Pyaload passing happens in:
+ *     - Drone -assist_directly-&gt; Survivor: target_in_need
+ *     - Drone -go_call_a_fr-&gt; Survivor: target_first_resp, target_in_need
+ *     - Survivor -zr_arrived-&gt; FirstResponder: target_in_need
+ * [ ] Make all agents update their status in the map (e.g. the drone should not update the cell of a survivor from survivor to zero responder)
+ * [ ] Move Drone decison making policy into a function (possible?). This way it should be easy to define multiple ones
+ * [ ] Change go_call_a_fr in first_responder. This should disappear if we model all movements
+ * [ ] Make drone selection ranges be relative instead of global, like in first_reponders
+ * [ ] Model the death of an in_need when occurring before being saved (this will most likely require a channel)
+ * [ ] Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
+ * [ ] Rename radius_cell_check to something better, improve comment
+ * [ ] Color the location
+ * [ ] Change the Survivor moving policy
+ * [ ] When a survivor assist directly he does not send starting_assistance signal
  *
- * - Add checkboxes to this TODO list
- * - Check if the TODOs have been done or not
+ * [X] Add checkboxes to this TODO list
+ * [ ] Check if the TODOs have been done or not
  *
- * - Read again the assignment and check model consistency
- * - Read again the prof's answers to email questions and check consistency
+ * [ ] Read again the assignment and check model consistency
+ * [ ] Read again the prof's answers to email questions and check consistency
  */</system>
 	<queries>
 		<query>
