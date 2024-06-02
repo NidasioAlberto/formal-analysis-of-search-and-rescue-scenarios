@@ -148,20 +148,6 @@ int iclamp(int value, int lower, int upper) {
 int distance(pos_t pos1, pos_t pos2) {
     int x_distance = abs(pos1.x - pos2.x);
     int y_distance = abs(pos1.y - pos2.y);
-
-    return x_distance &gt;? y_distance;
-}
-
-// Returns the distance between two points in the grid
-int distance_old(int x1, int y1, int x2, int y2) {
-    int x_distance = x1 - x2;
-    int y_distance = y1 - y2;
-
-    if (x_distance &lt; 0)
-        x_distance = -x_distance;
-    if (y_distance &lt; 0)
-        y_distance = -y_distance;
-
     return x_distance &gt;? y_distance;
 }
 
@@ -522,6 +508,7 @@ set_drone_map(pos, true)</label>
 clock t = 0;
 pos_t pos;
 
+pos_t target;
 pos_t target_fr;
 pos_t target_in;
 
@@ -530,20 +517,42 @@ const int FIRE_RADIUS = 1; // Distance from fire when this survivor becomes in n
 const int EXIT_RADIUS = 1; // Distance from exit when this survivor becomes in safe
 
 /******************************************************************************
- *                                Moving policy                               *
+ *                               Other functions                              *
  ******************************************************************************/
 
-bool is_move_valid(int i, int j) {
-    pos_t next_pos = {pos.x + i, pos.y + j};
+pos_t find_nearest_exit() {
+    pos_t best_exit;
+    int min_distance = N_COLS + N_ROWS; // Just a big number
 
+    for (x : int[0, N_COLS - 1]) {
+        for (y : int[0, N_ROWS - 1]) {
+            // Search only on the boundaries
+            if(x == 0 || x == N_COLS - 1 || y == 0 || y == N_ROWS - 1) {
+                pos_t curr_exit = {x, y};
+                if (map_check_val(curr_exit, CELL_EXIT)) {
+                    int distance = distance(pos, curr_exit);
+                    if (distance &lt; min_distance) {
+                        min_distance = distance;
+                        best_exit = curr_exit;
+                    }
+                }
+            }
+        }
+    }
+    
+    return best_exit;
+}
+
+// Check if the given position can be occupied by a survivor
+bool is_pos_feasible(pos_t target) {
     // We can only move inside the map and we canot stay in the same position
-    if (is_pos_in_map(next_pos) &amp;&amp; next_pos != pos) {
+    if (is_pos_in_map(target) &amp;&amp; target != pos) {
 
         // We cannot move near a fire
-        bool valid = !is_val_in_radius(next_pos, CELL_FIRE, FIRE_RADIUS);
+        bool valid = !is_val_in_radius(target, CELL_FIRE, FIRE_RADIUS);
 
         // We can move only towards empty cells
-        valid &amp;= map_check_val(next_pos, CELL_EMPTY);
+        valid &amp;= map_check_val(target, CELL_EMPTY);
         
         return valid;
     }
@@ -551,40 +560,45 @@ bool is_move_valid(int i, int j) {
     return false;
 }
 
-/**
- * This moving policy tries to follow a direct path to the nearest exit.
- * When the next move on the direct path cannot be taken (the cell is
- * occupied or there is a fire near) we randomly choose a valid move.
- */
-void move(int i, int j) {
-    // Random function to prefer X half of the time
-    bool prefer_x = (i * j) != 0;
+int compute_best_move_distance(pos_t target) {
+    int min_distance = N_COLS + N_ROWS; // Just a big number
 
-    pos_t nearest_exit = map_find_nearest_val(pos, CELL_EXIT);
-
-    // Compute the next optimal position towards the nearest exit
-    pos_t move = {0, 0}; // Default to stay put (invalid)
-
-    if (nearest_exit.x - pos.x &gt; 0)
-        move.x = 1; // Right
-    else if (nearest_exit.x - pos.x &lt; 0)
-        move.x = -1; // Left
-
-    if (nearest_exit.y - pos.y &gt; 0)
-        move.y = 1; // Down
-    else if (nearest_exit.y - pos.y &lt; 0)
-        move.y = -1; // Up
-
-    // If the move is valid we do it, otherwise we use the selected (random) one
-    if (!is_move_valid(move.x, move.y)) {
-        move.x = i;
-        move.y = j;
+    for (i : int[-1, 1]) {
+        for (j : int[-1, 1]) {
+            pos_t move = {pos.x + i, pos.y + j};
+            if (is_pos_feasible(move)) {
+                int distance = distance(move, target);
+                if (distance &lt; min_distance)
+                    min_distance = distance;
+            }
+        }
     }
+    
+    return min_distance;
+}
 
+/******************************************************************************
+ *                                Moving policy                               *
+ ******************************************************************************/
+
+// The current moving policy allows only the best possible moves (the ones that minize the distance to the target)
+
+bool is_move_valid(int i, int j) {
+    pos_t next_pos = {pos.x + i, pos.y + j};
+    pos_t target = find_nearest_exit();
+
+    // Find the distance of the best move
+    int min_distance = compute_best_move_distance(target);
+
+    // A move to be valid must be feasible and must have minimum distance among the possible moves
+    return is_pos_feasible(next_pos) &amp;&amp; distance(next_pos, target) == min_distance;
+}
+
+void move(int i, int j) {
     // Apply movement
     set_map(pos, CELL_EMPTY);
-    pos.x += move.x;
-    pos.y += move.y;
+    pos.x += i;
+    pos.y += j;
     set_map(pos, CELL_SURVIVOR);
 }
 
@@ -945,7 +959,7 @@ gantt {
 
 /* TODOs
  * [X] All payload passing must happen when channels are triggered
- *     Pyaload passing happens in:
+ *     Payload passing happens in:
  *     - Drone -assist_directly-&gt; Survivor: target_in_need
  *     - Drone -go_call_a_fr-&gt; Survivor: target_first_resp, target_in_need
  *     - Survivor -zr_arrived-&gt; FirstResponder: target_in_need
@@ -957,7 +971,7 @@ gantt {
  * [ ] Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
  * [X] Rename radius_cell_check to something better, improve comment
  * [ ] Color the location
- * [ ] Change the Survivor moving policy
+ * [X] Change the Survivor moving policy -&gt; Improved Federico's policy
  * [ ] When a survivor assist directly he does not send starting_assistance signal
  *
  * [ ] Read again the assignment and check model consistency
