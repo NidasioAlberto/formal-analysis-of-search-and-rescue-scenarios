@@ -625,8 +625,8 @@ bool is_exit_near() {
 			<name x="170" y="-162">Moving</name>
 			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
 		</location>
-		<location id="id22" x="399" y="-17" color="#ffc0cb">
-			<name x="416" y="-51">AssistingDirectly</name>
+		<location id="id22" x="704" y="144" color="#ffc0cb">
+			<name x="721" y="110">AssistingDirectly</name>
 		</location>
 		<location id="id23" x="858" y="-323" color="#ff0000">
 			<name x="875" y="-374">InNeed</name>
@@ -640,31 +640,33 @@ bool is_exit_near() {
 		<location id="id26" x="833" y="-17" color="#00ff00">
 			<name x="857" y="-26">Safe</name>
 		</location>
-		<location id="id27" x="85" y="161" color="#00ffff">
-			<name x="102" y="127">LockingFirstResponder</name>
+		<location id="id27" x="93" y="-17" color="#00ffff">
+			<name x="110" y="-51">LockingFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id28" x="756" y="161" color="#ffc0cb">
+		<location id="id28" x="552" y="-17" color="#ffc0cb">
+			<name x="561" y="-51">WaitingCompletion</name>
 		</location>
-		<location id="id29" x="399" y="160" color="#00ffff">
-			<name x="408" y="110">CallingFirstResponder</name>
-			<label kind="invariant" x="408" y="127">t &lt;= distance(pos, fr)</label>
+		<location id="id29" x="314" y="-18" color="#00ffff">
+			<name x="323" y="-68">CallingFirstResponder</name>
+			<label kind="invariant" x="323" y="-51">t &lt;= distance(pos, fr)</label>
 		</location>
-		<location id="id30" x="-212" y="-17" color="#c0c0c0">
-			<name x="-195" y="-43">AwaitingJob</name>
+		<location id="id30" x="93" y="144" color="#c0c0c0">
+			<name x="110" y="110">AwaitingJob</name>
 		</location>
 		<location id="id31" x="858" y="-170" color="#ffff00">
 			<name x="874" y="-221">BeingAssisted</name>
 			<label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label>
 		</location>
-		<location id="id32" x="85" y="-17" color="#00ffff">
+		<location id="id32" x="390" y="144" color="#00ffff">
+			<name x="408" y="110">StartingAssistance</name>
 			<committed/>
 		</location>
 		<init ref="id24"/>
 		<transition id="id33">
 			<source ref="id32"/>
 			<target ref="id22"/>
-			<label kind="synchronisation" x="102" y="-17">starting_assistance[in.x][in.y]!</label>
+			<label kind="synchronisation" x="407" y="144">starting_assistance[in.x][in.y]!</label>
 		</transition>
 		<transition id="id34">
 			<source ref="id31"/>
@@ -690,22 +692,21 @@ set_map(pos, CELL_SURVIVOR)</label>
 		<transition id="id37">
 			<source ref="id30"/>
 			<target ref="id32"/>
-			<label kind="synchronisation" x="-195" y="-17">assist_directly[pos.x][pos.y]?</label>
-			<label kind="assignment" x="-195" y="0">in = target_in_need</label>
+			<label kind="synchronisation" x="110" y="144">assist_directly[pos.x][pos.y]?</label>
+			<label kind="assignment" x="110" y="161">in = target_in_need</label>
 		</transition>
 		<transition id="id38">
 			<source ref="id29"/>
 			<target ref="id28"/>
-			<label kind="guard" x="416" y="161">t &gt;= distance(pos, fr)</label>
-			<label kind="synchronisation" x="416" y="178">zr_arrived[fr.x][fr.y]!</label>
-			<label kind="assignment" x="416" y="195">target_in_need = in</label>
+			<label kind="guard" x="331" y="-17">t &gt;= distance(pos, fr)</label>
+			<label kind="synchronisation" x="331" y="0">zr_arrived[fr.x][fr.y]!</label>
+			<label kind="assignment" x="331" y="17">target_in_need = in</label>
 		</transition>
 		<transition id="id39">
 			<source ref="id28"/>
 			<target ref="id26"/>
-			<label kind="synchronisation" x="816" y="101">assist_complete[in.x][in.y]?</label>
-			<label kind="assignment" x="816" y="118">set_map(pos, CELL_EMPTY)</label>
-			<nail x="833" y="84"/>
+			<label kind="synchronisation" x="569" y="-17">assist_complete[in.x][in.y]?</label>
+			<label kind="assignment" x="569" y="0">set_map(pos, CELL_EMPTY)</label>
 		</transition>
 		<transition id="id40">
 			<source ref="id21"/>
@@ -726,16 +727,15 @@ is_exit_near()</label>
 		<transition id="id42">
 			<source ref="id27"/>
 			<target ref="id29"/>
-			<label kind="synchronisation" x="102" y="161">lock_fr[fr.x][fr.y]!</label>
-			<label kind="assignment" x="102" y="178">t = 0</label>
+			<label kind="synchronisation" x="110" y="-17">lock_fr[fr.x][fr.y]!</label>
+			<label kind="assignment" x="110" y="0">t = 0</label>
 		</transition>
 		<transition id="id43">
 			<source ref="id30"/>
 			<target ref="id27"/>
-			<label kind="synchronisation" x="-34" y="51">go_call_a_fr[pos.x][pos.y]?</label>
-			<label kind="assignment" x="-34" y="68">fr = target_first_resp,
+			<label kind="synchronisation" x="102" y="42">go_call_a_fr[pos.x][pos.y]?</label>
+			<label kind="assignment" x="102" y="59">fr = target_first_resp,
 in = target_in_need</label>
-			<nail x="-212" y="25"/>
 		</transition>
 		<transition id="id44">
 			<source ref="id23"/>
@@ -746,9 +746,10 @@ in = target_in_need</label>
 		<transition id="id45">
 			<source ref="id22"/>
 			<target ref="id26"/>
-			<label kind="guard" x="416" y="-17">t &gt;= T_zr[id] + distance(pos, in)</label>
-			<label kind="synchronisation" x="416" y="0">assist_complete[in.x][in.y]!</label>
-			<label kind="assignment" x="416" y="17">set_map(pos, CELL_EMPTY)</label>
+			<label kind="guard" x="721" y="144">t &gt;= T_zr[id] + distance(pos, in)</label>
+			<label kind="synchronisation" x="721" y="161">assist_complete[in.x][in.y]!</label>
+			<label kind="assignment" x="721" y="178">set_map(pos, CELL_EMPTY)</label>
+			<nail x="705" y="110"/>
 		</transition>
 		<transition id="id46">
 			<source ref="id21"/>
@@ -778,9 +779,10 @@ set_map(pos, CELL_IN_NEED)</label>
 		<transition id="id48">
 			<source ref="id21"/>
 			<target ref="id30"/>
-			<label kind="synchronisation" x="-102" y="-102">await_job[pos.x][pos.y]?</label>
-			<label kind="assignment" x="-102" y="-85">set_map(pos, CELL_ZERO_RESP)</label>
-			<nail x="-212" y="-68"/>
+			<label kind="synchronisation" x="68" y="-102">await_job[pos.x][pos.y]?</label>
+			<label kind="assignment" x="68" y="-85">set_map(pos, CELL_ZERO_RESP)</label>
+			<nail x="59" y="-93"/>
+			<nail x="59" y="110"/>
 		</transition>
 	</template>
 	<template>
