@@ -99,8 +99,8 @@ broadcast chan init_done;                       // Global initializing channel
 chan await_job[N_COLS][N_ROWS];                 // Used by drones to instruct survivors to wait for a job (how to act will be notified later)
 chan assist_directly[N_COLS][N_ROWS];           // Used by drones to instruct survivors to assist directly an in_need
 chan go_call_a_fr[N_COLS][N_ROWS];              // Used by drones to instruct survivors to go call a first responder
-chan lock_fr[N_COLS][N_ROWS];                   // Used by zero_responders to lock a first_responder from moving
-chan zr_arrived[N_COLS][N_ROWS];                // Used by zero_responders to notify that they reached the target first_responder
+chan lock_fr[N_COLS][N_ROWS];                   // Used by survivors to lock a first_responder from moving
+chan arrived[N_COLS][N_ROWS];                   // Used by survivors to notify that they reached the target first_responder
 chan starting_assistance[N_COLS][N_ROWS];       // Used by zero_responders and first_responders to notify an in_need that the assistance procedure has started
 chan fr_assist[N_COLS][N_ROWS];                 // Used by survivors to instruct first responders to assist a survivor in need
 broadcast chan assist_complete[N_COLS][N_ROWS]; // For signaling that an assistance was completed successfully
@@ -410,9 +410,9 @@ otherwise assit directly</label>
 			<name x="-935" y="-833">SurvivorSelected</name>
 			<committed/>
 		</location>
-		<location id="id10" x="-1700" y="-799">
+		<location id="id10" x="-1700" y="-799" color="#ffffff">
 		</location>
-		<location id="id11" x="-1402" y="-799">
+		<location id="id11" x="-1402" y="-799" color="#ffa500">
 			<name x="-1385" y="-850">Moving</name>
 			<label kind="invariant" x="-1385" y="-833">t &lt;= 1</label>
 		</location>
@@ -621,43 +621,43 @@ bool is_exit_near() {
     return is_val_in_radius(pos, CELL_EXIT, EXIT_RADIUS);
 }
 </declaration>
-		<location id="id21" x="153" y="-170">
+		<location id="id21" x="153" y="-170" color="#ffa500">
 			<name x="170" y="-162">Moving</name>
 			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
 		</location>
-		<location id="id22" x="399" y="-17">
+		<location id="id22" x="399" y="-17" color="#ffc0cb">
 			<name x="416" y="-51">AssistingDirectly</name>
 		</location>
-		<location id="id23" x="858" y="-323">
+		<location id="id23" x="858" y="-323" color="#ff0000">
 			<name x="875" y="-374">InNeed</name>
 			<label kind="invariant" x="875" y="-357">t &lt;= T_v[id]</label>
 		</location>
-		<location id="id24" x="493" y="-170">
+		<location id="id24" x="493" y="-170" color="#ffffff">
 		</location>
-		<location id="id25" x="1164" y="-323">
+		<location id="id25" x="1164" y="-323" color="#000000">
 			<name x="1113" y="-357">Dead</name>
 		</location>
-		<location id="id26" x="833" y="-17">
+		<location id="id26" x="833" y="-17" color="#00ff00">
 			<name x="857" y="-26">Safe</name>
 		</location>
-		<location id="id27" x="85" y="161">
+		<location id="id27" x="85" y="161" color="#00ffff">
 			<name x="102" y="127">LockingFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id28" x="756" y="161">
+		<location id="id28" x="756" y="161" color="#ffc0cb">
 		</location>
-		<location id="id29" x="399" y="160">
+		<location id="id29" x="399" y="160" color="#00ffff">
 			<name x="408" y="110">CallingFirstResponder</name>
 			<label kind="invariant" x="408" y="127">t &lt;= distance(pos, fr)</label>
 		</location>
-		<location id="id30" x="-212" y="-17">
+		<location id="id30" x="-212" y="-17" color="#c0c0c0">
 			<name x="-195" y="-43">AwaitingJob</name>
 		</location>
-		<location id="id31" x="858" y="-170">
+		<location id="id31" x="858" y="-170" color="#ffff00">
 			<name x="874" y="-221">BeingAssisted</name>
 			<label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label>
 		</location>
-		<location id="id32" x="85" y="-17">
+		<location id="id32" x="85" y="-17" color="#00ffff">
 			<committed/>
 		</location>
 		<init ref="id24"/>
@@ -843,25 +843,25 @@ void teleport_to_in_need() {
     set_map(pos, CELL_FIRST_RESP); // From CELL_ASSISTING back to CELL_FIRST_RESP
 }
 </declaration>
-		<location id="id49" x="-195" y="-76">
+		<location id="id49" x="-195" y="-76" color="#ffc0cb">
 			<name x="-178" y="-127">Assisting</name>
 			<label kind="invariant" x="-178" y="-110">t &lt;= T_fr[id]</label>
 		</location>
-		<location id="id50" x="-552" y="-161">
+		<location id="id50" x="-552" y="-161" color="#ffa500">
 			<name x="-527" y="-178">Available</name>
 			<label kind="invariant" x="-527" y="-161">t &lt;= 1</label>
 		</location>
-		<location id="id51" x="-926" y="-161">
+		<location id="id51" x="-926" y="-161" color="#ffffff">
 		</location>
-		<location id="id52" x="85" y="-255">
+		<location id="id52" x="85" y="-255" color="#00ffff">
 			<name x="102" y="-306">MovingToInNeed</name>
 			<label kind="invariant" x="102" y="-289">t &lt;= distance(pos, target)</label>
 		</location>
-		<location id="id53" x="-195" y="59">
+		<location id="id53" x="-195" y="59" color="#00ff00">
 			<committed/>
 		</location>
-		<location id="id54" x="-195" y="-255">
-			<name x="-178" y="-289">WaitingZeroRespMoveTime</name>
+		<location id="id54" x="-195" y="-255" color="#c0c0c0">
+			<name x="-178" y="-289">WaitingSurvivorMoveTime</name>
 			<label kind="comments" x="-399" y="-357">The first_responder is locked by the zero_responder
 and then waits for him to move</label>
 		</location>
@@ -917,7 +917,7 @@ moving policy</label>
 		<transition id="id60">
 			<source ref="id54"/>
 			<target ref="id52"/>
-			<label kind="synchronisation" x="-186" y="-246">zr_arrived[pos.x][pos.y]?</label>
+			<label kind="synchronisation" x="-186" y="-246">arrived[pos.x][pos.y]?</label>
 			<label kind="assignment" x="-186" y="-229">target = target_in_need,
 set_map(pos, CELL_ASSISTING),
 available_fr -= 1,
@@ -982,7 +982,7 @@ gantt {
  * [ ] Model the death of an in_need when occurring before being saved and notify who is helping to stop (this will most likely require a channel)
  * [X] Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
  * [X] Rename radius_cell_check to something better, improve comment
- * [ ] Color the location
+ * [X] Color the locations
  * [X] Change the Survivor moving policy -&gt; Improved Federico's policy
  * [X] When a survivor assist directly he does not send starting_assistance signal
  *
