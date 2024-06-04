@@ -968,7 +968,7 @@ gantt {
  * [ ] Change go_call_a_fr in first_responder. This should disappear if we model all movements
  * [ ] Make drone move selection ranges be relative instead of global, like in first_reponders
  * [ ] Model the death of an in_need when occurring before being saved and notify who is helping to stop (this will most likely require a channel)
- * [ ] Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
+ * [X] Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
  * [X] Rename radius_cell_check to something better, improve comment
  * [ ] Color the location
  * [X] Change the Survivor moving policy -&gt; Improved Federico's policy
