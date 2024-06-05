@@ -627,7 +627,8 @@ bool is_exit_near() {
 			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
 		</location>
 		<location id="id22" x="704" y="144" color="#ffc0cb">
-			<name x="721" y="110">AssistingDirectly</name>
+			<name x="722" y="93">AssistingDirectly</name>
+			<label kind="invariant" x="723" y="110">t &lt;= T_zr[id]</label>
 		</location>
 		<location id="id23" x="858" y="-323" color="#ff0000">
 			<name x="875" y="-374">InNeed</name>
@@ -647,11 +648,11 @@ bool is_exit_near() {
 			<committed/>
 		</location>
 		<location id="id28" x="552" y="-17" color="#ffc0cb">
-			<name x="561" y="-51">WaitingCompletion</name>
+			<name x="569" y="-51">WaitingCompletion</name>
 		</location>
 		<location id="id29" x="314" y="-18" color="#00ffff">
-			<name x="323" y="-68">CallingFirstResponder</name>
-			<label kind="invariant" x="323" y="-51">t &lt;= distance(pos, fr)</label>
+			<name x="331" y="-68">CallingFirstResponder</name>
+			<label kind="invariant" x="331" y="-51">t &lt;= distance(pos, fr)</label>
 		</location>
 		<location id="id30" x="93" y="144" color="#c0c0c0">
 			<name x="110" y="110">AwaitingJob</name>
@@ -661,14 +662,16 @@ bool is_exit_near() {
 			<label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label>
 		</location>
 		<location id="id32" x="390" y="144" color="#00ffff">
-			<name x="408" y="110">StartingAssistance</name>
-			<committed/>
+			<name x="408" y="93">MovingToInNeed</name>
+			<label kind="invariant" x="408" y="110">t &lt;= distance(pos, in)</label>
 		</location>
 		<init ref="id24"/>
 		<transition id="id33">
 			<source ref="id32"/>
 			<target ref="id22"/>
-			<label kind="synchronisation" x="407" y="144">starting_assistance[in.x][in.y]!</label>
+			<label kind="guard" x="408" y="144">t &gt;= distance(pos, in)</label>
+			<label kind="synchronisation" x="408" y="161">starting_assistance[in.x][in.y]!</label>
+			<label kind="assignment" x="408" y="178">t = 0</label>
 		</transition>
 		<transition id="id34">
 			<source ref="id31"/>
@@ -748,9 +751,9 @@ in = target_in_need</label>
 		<transition id="id45">
 			<source ref="id22"/>
 			<target ref="id26"/>
-			<label kind="guard" x="721" y="144">t &gt;= T_zr[id] + distance(pos, in)</label>
-			<label kind="synchronisation" x="721" y="161">assist_complete[in.x][in.y]!</label>
-			<label kind="assignment" x="721" y="178">set_map(pos, CELL_EMPTY)</label>
+			<label kind="guard" x="782" y="34">t &gt;= T_zr[id]</label>
+			<label kind="synchronisation" x="782" y="51">assist_complete[in.x][in.y]!</label>
+			<label kind="assignment" x="782" y="68">set_map(pos, CELL_EMPTY)</label>
 			<nail x="705" y="110"/>
 		</transition>
 		<transition id="id46">
@@ -965,10 +968,10 @@ void send_state() {
     send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
 }
 
-// before_update { send_state() }
+before_update { send_state() }
 // after_update { send_state() }
 
-system FirstResponder, Initializer;
+system Drone, Survivor, FirstResponder, Initializer;
 
 /* TODOs
  * [X] All payload passing must happen when channels are triggered
