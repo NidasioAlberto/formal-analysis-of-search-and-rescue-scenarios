@@ -996,5 +996,9 @@ system Drone, Survivor, FirstResponder, Initializer;
 			<formula>A[] forall (i : survivor_id_t) forall (j : first_resp_id_t) (not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply (Survivor(i).pos.x != FirstResponder(j).pos.x || Survivor(i).pos.y != FirstResponder(j).pos.y)</formula>
 			<comment>Survivors and first responders cannot occupy the same cell at the same time</comment>
 		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : survivor_id_t) Survivor(i).Safe || Survivor(i).Dead</formula>
+			<comment>All Survivors either reach safety or die, but they cannot get stuck in any in-between state</comment>
+		</query>
 	</queries>
 </nta>
