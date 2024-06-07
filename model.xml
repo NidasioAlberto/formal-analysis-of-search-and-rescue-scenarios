@@ -981,19 +981,35 @@ system Drone, Survivor, FirstResponder, Initializer;
 			<comment/>
 		</query>
 		<query>
-			<formula>A[] forall (i : drone_id_t) forall (j : drone_id_t) (i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply (Drone(i).pos.x != Drone(j).pos.x || Drone(i).pos.y != Drone(j).pos.y)</formula>
+			<formula>A[]
+forall (i : drone_id_t)
+	forall (j : drone_id_t)
+		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
+		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
 			<comment>Drones cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
-			<formula>A[] forall (i : survivor_id_t) forall (j : survivor_id_t) (i != j &amp;&amp; not Survivor(i).Init &amp;&amp; not Survivor(j).Init) imply (Survivor(i).pos.x != Survivor(j).pos.x || Survivor(i).pos.y != Survivor(j).pos.y)</formula>
+			<formula>A[]
+forall (i : survivor_id_t)
+	forall (j : survivor_id_t)
+		(i != j &amp;&amp; not Survivor(i).Init &amp;&amp; not Survivor(j).Init) imply
+		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
 			<comment>Survivors cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
-			<formula>A[] forall (i : first_resp_id_t) forall (j : first_resp_id_t) (i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply (FirstResponder(i).pos.x != FirstResponder(j).pos.x || FirstResponder(i).pos.y != FirstResponder(j).pos.y)</formula>
+			<formula>A[]
+forall (i : first_resp_id_t)
+	forall (j : first_resp_id_t)
+		(i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply
+		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula>
 			<comment/>
 		</query>
 		<query>
-			<formula>A[] forall (i : survivor_id_t) forall (j : first_resp_id_t) (not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply (Survivor(i).pos.x != FirstResponder(j).pos.x || Survivor(i).pos.y != FirstResponder(j).pos.y)</formula>
+			<formula>A[]
+forall (i : survivor_id_t)
+	forall (j : first_resp_id_t)
+		(not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply
+		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula>
 			<comment>Survivors and first responders cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
