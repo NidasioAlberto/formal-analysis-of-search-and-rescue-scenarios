@@ -1,30 +1,30 @@
 # Assignemt model's specifications
 
 Layout:
-- [ ] Emergency exits are places on the boundary layout
-- [ ] Positions of boundary cells corresponding to exists must be configurable
-- [ ] Positions of fires must be configurable
-- [ ] Agents occupy one cell at a time
-- [ ] Each cell is occupied be only one human agent at a time
-- [ ] Drones can hover over cells occupied by a human
-- [ ] Agents position refresh each time unit
+- [X] Emergency exits are places on the boundary layout
+- [X] Positions of boundary cells corresponding to exists must be configurable
+- [X] Positions of fires must be configurable
+- [X] Agents occupy one cell at a time
+- [X] Each cell is occupied by only one human agent at a time
+- [X] Drones can hover over cells occupied by a human
+- [X] Agents position refresh each time unit
 
 Drones:
-- [ ] The drones' movement patterns is pre-determined
-- [ ] You design the drones' movement pattern
-- [ ] The drones communicates with survivor when it detects both a survivor and a person in need within its vision range
-- [ ] You design the decision-making policy. The simplest one is purely random choice. Potential refinements can take into account for example distances
+- [X] The drones' movement patterns is pre-determined
+- [X] You design the drones' movement pattern
+- [X] The drones communicates with survivor when it detects both a survivor and a person in need within its vision range
+- [X] You design the decision-making policy. The simplest one is purely random choice. Potential refinements can take into account for example distances
 
 First responders rules:
-1. [ ] If a person is within a 1cell range, the first responder will assist them for $T_{fr}$. After such time, the assisted survivor is considered safe
-2. [ ] Otherwise the first responder can move. You design the moving policy
+1. [X] If a person is within a 1cell range, the first responder will assist them for $T_{fr}$. After such time, the assisted survivor is considered safe
+2. [X] Otherwise the first responder can move. You design the moving policy
 
 Survivors rules:
-1. [ ] If an exit is within a 1cell range, they are considered safe
-2. [ ] If a tile occupied by a fire is within a 1cell range, they are considered in need. If they remain near a fire for more than $T_v$ they die
-3. [ ] If the survivor has been instructed to help, they are busy acting as a zero responder. After $T_{zr}$ both the zero responder and the survivor in need
-4. [ ] If the survivor has been instructed to contact the first responder, they are busy enacting this instruction. When the first responder has completed the assistance, both survivors are considered safe
-5. [ ] The survivor can move. You design the moving policy
+1. [X] If an exit is within a 1cell range, they are considered safe
+2. [X] If a tile occupied by a fire is within a 1cell range, they are considered in need. If they remain near a fire for more than $T_v$ they die
+3. [X] If the survivor has been instructed to help, they are busy acting as a zero responder. After $T_{zr}$ both the zero responder and the survivor in need
+4. [X] If the survivor has been instructed to contact the first responder, they are busy enacting this instruction. When the first responder has completed the assistance, both survivors are considered safe
+5. [X] The survivor can move. You design the moving policy
 
 # Stochastic Version
 
