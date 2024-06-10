@@ -10,6 +10,20 @@ typedef struct {
     int y;
 } pos_t;
 
+
+/******************************************************************************
+ *                            Moving policies enum                            *
+ ******************************************************************************/
+
+const int POLICY_FIRST =  0;
+
+const int POLICY_RANDOM = 0;
+const int POLICY_DIRECT = 1;
+
+const int POLICY_LAST =   1;
+
+typedef int[POLICY_FIRST, POLICY_LAST] policy_t;
+
 /******************************************************************************
  *                          Configuration Parameters                          *
  ******************************************************************************/
@@ -36,12 +50,14 @@ typedef int[0, N_SURVIVORS-1] survivor_id_t;
 const pos_t survivors_starting_pos[N_SURVIVORS] = {{2, 1}, {4, 2}, {5, 8}};
 const int T_zr[N_SURVIVORS] = {8, 8, 8}; // Zero reponders assistance duration
 const int T_v[N_SURVIVORS] = {15, 15, 15}; // Time after which a survivor in need dies
+const policy_t survivors_policies[N_SURVIVORS] = {POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT};
 
 // Number of first responders and their starting positions
 const int N_FIRST_RESPONDERS = 2;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
 const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}, {8, 5}};
 const int T_fr[N_FIRST_RESPONDERS] = {5, 5}; // First reponders assistance duration
+const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {POLICY_DIRECT, POLICY_DIRECT};
 
 // Super simple scenario
 
@@ -78,20 +94,22 @@ const int CELL_EMPTY =      CELL_FIRST + 0;
 const int CELL_FIRE =       CELL_FIRST + 1;
 const int CELL_EXIT =       CELL_FIRST + 2;
 const int CELL_FIRST_RESP = CELL_FIRST + 3;
-const int CELL_SURVIVOR =   CELL_FIRST + 4;
-const int CELL_ZERO_RESP =  CELL_FIRST + 5;
-const int CELL_IN_NEED =    CELL_FIRST + 6;
+const int CELL_SURVIVOR =   CELL_FIRST + 4; // Survivor not near a fire and idle
+const int CELL_ZERO_RESP =  CELL_FIRST + 5; // Survivor acting as a zero responder
+const int CELL_IN_NEED =    CELL_FIRST + 6; // Survivor near a fire that is not being assisted
 const int CELL_ASSISTED =   CELL_FIRST + 7; // Survivor that is being assisted (by either zero or first responders)
 const int CELL_ASSISTING =  CELL_FIRST + 8; // First responder busy assisting a survivor
 
 const int CELL_LAST =           CELL_ASSISTING;
+
+typedef int[CELL_FIRST, CELL_LAST] cell_t;
 
 /******************************************************************************
  *                              Global variables                              *
  ******************************************************************************/
 
 // Maps
-int[CELL_FIRST, CELL_LAST] map[N_COLS][N_ROWS];
+cell_t map[N_COLS][N_ROWS];
 bool drone_map[N_COLS][N_ROWS];
 
 // Channels
@@ -113,7 +131,7 @@ broadcast chan assist_complete[N_COLS][N_ROWS]; // For signaling that an assista
 // Every first responder in the system increments this value during init
 int available_fr;
 
-/******************************************************************************a
+/******************************************************************************
  *                             Utility functions                              *
  ******************************************************************************/
 
@@ -233,6 +251,97 @@ pos_t map_find_nearest_val(pos_t pos, int value) {
     }
     
     return nearest_pos;
+}
+
+pos_t find_nearest_target(pos_t pos, cell_t target_type) {
+    pos_t best_target;
+    int min_distance = N_COLS + N_ROWS; // Just a big number
+
+    for (x : int[0, N_COLS - 1]) {
+        for (y : int[0, N_ROWS - 1]) {
+            // If searching for exists, look only on the boundaries
+            if(target_type != CELL_EXIT || x == 0 || x == N_COLS - 1 || y == 0 || y == N_ROWS - 1) {
+                pos_t current = {x, y};
+                if (map_check_val(current, target_type)) {
+                    int distance = distance(pos, current);
+                    if (distance &lt; min_distance) {
+                        min_distance = distance;
+                        best_target = current;
+                    }
+                }
+            }
+        }
+    }
+
+    return best_target;
+}
+
+bool is_move_feasible(pos_t pos, pos_t move, cell_t type) {
+    // We can only move inside the map and we canot stay in the same position
+    if (is_pos_in_map(move) &amp;&amp; move != pos) {
+        bool valid = true;
+
+        // Survivors cannot move near a fire
+        if (type == CELL_SURVIVOR)
+            valid &amp;= !is_val_in_radius(move, CELL_FIRE, 1);
+
+        // We can move only towards empty cells
+        valid &amp;= map_check_val(move, CELL_EMPTY);
+
+        return valid;
+    }
+
+    return false;
+}
+
+int compute_best_move_distance(pos_t pos, pos_t target, cell_t type) {
+    int min_distance = N_COLS + N_ROWS; // Just a big number
+
+    for (i : int[-1, 1]) {
+        for (j : int[-1, 1]) {
+            pos_t move = {pos.x + i, pos.y + j};
+            if (is_move_feasible(pos, move, type)) {
+                int distance = distance(move, target);
+                if (distance &lt; min_distance)
+                    min_distance = distance;
+            }
+        }
+    }
+
+    return min_distance;
+}
+
+/******************************************************************************
+ *                              Moving policies                               *
+ ******************************************************************************/
+
+// Random policy allows all movements that are feasible
+bool random_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    return is_move_feasible(pos, move, type);
+}
+
+// Directo policy follows the best direct path (i.e. without considering obstacles)
+bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    int min_distance;
+
+    if(!is_move_feasible(pos, move, type))
+        return false;
+
+    // Find the distance to the target of the best possible move
+    min_distance = compute_best_move_distance(pos, target, type);
+
+    // A move to be valid must have minimum distance among the possible moves
+    return distance(move, target) == min_distance;
+}
+
+bool is_move_valid_g(pos_t pos, pos_t move, pos_t target, cell_t type, policy_t policy) {
+    if (policy == POLICY_RANDOM) {
+        return random_is_move_valid(pos, move, target, type);
+    } else if (policy == POLICY_DIRECT) {
+        return direct_is_move_valid(pos, move, target, type);
+    }
+
+    return false;
 }
 </declaration>
 	<template>
@@ -518,90 +627,18 @@ pos_t target;
 pos_t fr;
 pos_t in;
 
-// Some constant that are not parameters but are still usefull to abstract
-const int FIRE_RADIUS = 1; // Distance from fire when this survivor becomes in need
-const int EXIT_RADIUS = 1; // Distance from exit when this survivor becomes in safe
-
-/******************************************************************************
- *                               Other functions                              *
- ******************************************************************************/
-
-pos_t find_nearest_exit() {
-    pos_t best_exit;
-    int min_distance = N_COLS + N_ROWS; // Just a big number
-
-    for (x : int[0, N_COLS - 1]) {
-        for (y : int[0, N_ROWS - 1]) {
-            // Search only on the boundaries
-            if(x == 0 || x == N_COLS - 1 || y == 0 || y == N_ROWS - 1) {
-                pos_t curr_exit = {x, y};
-                if (map_check_val(curr_exit, CELL_EXIT)) {
-                    int distance = distance(pos, curr_exit);
-                    if (distance &lt; min_distance) {
-                        min_distance = distance;
-                        best_exit = curr_exit;
-                    }
-                }
-            }
-        }
-    }
-    
-    return best_exit;
-}
-
-// Check if the given position can be occupied by a survivor
-bool is_pos_feasible(pos_t target) {
-    // We can only move inside the map and we canot stay in the same position
-    if (is_pos_in_map(target) &amp;&amp; target != pos) {
-
-        // We cannot move near a fire
-        bool valid = !is_val_in_radius(target, CELL_FIRE, FIRE_RADIUS);
-
-        // We can move only towards empty cells
-        valid &amp;= map_check_val(target, CELL_EMPTY);
-        
-        return valid;
-    }
-
-    return false;
-}
-
-int compute_best_move_distance(pos_t target) {
-    int min_distance = N_COLS + N_ROWS; // Just a big number
-
-    for (i : int[-1, 1]) {
-        for (j : int[-1, 1]) {
-            pos_t move = {pos.x + i, pos.y + j};
-            if (is_pos_feasible(move)) {
-                int distance = distance(move, target);
-                if (distance &lt; min_distance)
-                    min_distance = distance;
-            }
-        }
-    }
-    
-    return min_distance;
-}
-
 /******************************************************************************
  *                                Moving policy                               *
  ******************************************************************************/
 
-// The current moving policy allows only the best possible moves (the ones that minize the distance to the target)
-
 bool is_move_valid(int i, int j) {
-    pos_t next_pos = {pos.x + i, pos.y + j};
-    pos_t target = find_nearest_exit();
+    pos_t move = {pos.x + i, pos.y + j};
+    pos_t target = find_nearest_target(pos, CELL_EXIT);
 
-    // Find the distance of the best move
-    int min_distance = compute_best_move_distance(target);
-
-    // A move to be valid must be feasible and must have minimum distance among the possible moves
-    return is_pos_feasible(next_pos) &amp;&amp; distance(next_pos, target) == min_distance;
+    return is_move_valid_g(pos, move, target, CELL_SURVIVOR, survivors_policies[id]);
 }
 
 void move(int i, int j) {
-    // Apply movement
     set_map(pos, CELL_EMPTY);
     pos.x += i;
     pos.y += j;
@@ -613,15 +650,15 @@ void move(int i, int j) {
  ******************************************************************************/
 
 bool starting_near_a_fire() {
-    return is_val_in_radius(survivors_starting_pos[id], CELL_FIRE, FIRE_RADIUS);
+    return is_val_in_radius(survivors_starting_pos[id], CELL_FIRE, 1);
 }
 
 bool is_fire_near() {
-    return is_val_in_radius(pos, CELL_FIRE, FIRE_RADIUS);
+    return is_val_in_radius(pos, CELL_FIRE, 1);
 }
 
 bool is_exit_near() {
-    return is_val_in_radius(pos, CELL_EXIT, EXIT_RADIUS);
+    return is_val_in_radius(pos, CELL_EXIT, 1);
 }
 </declaration>
 		<location id="id21" x="153" y="-170" color="#ffa500">
@@ -789,18 +826,12 @@ pos_t target; // Target position to move to
 
 bool is_move_valid(int i, int j) {
     pos_t move = {pos.x + i, pos.y + j};
+    pos_t target = find_nearest_target(pos, CELL_IN_NEED);
 
-    // We can only move inside the map and we canot stay in the same position
-    if (is_pos_in_map(move) &amp;&amp; move != pos) {
-        // As a first responder we can move near a fire and we can move only towards empty cells
-        return get_map(move) == CELL_EMPTY;
-    }
-
-    return false;
+    return is_move_valid_g(pos, move, target, CELL_FIRST_RESP, first_resp_policies[id]);
 }
 
 void move(int i, int j) {
-    // Apply movement
     set_map(pos, CELL_EMPTY);
     pos.x += i;
     pos.y += j;
@@ -928,7 +959,7 @@ available_fr += 1</label>
 	</template>
 	<system>/*import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
-};*/
+};
 
 meta int flat_map[N_CELLS];
 meta bool flat_drone_map[N_CELLS];
@@ -945,10 +976,10 @@ void prepare_flat_map() {
 
 void send_state() {
     prepare_flat_map();
-    //send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
-}
+    send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
+}*/
 
-before_update { send_state() }
+// before_update { send_state() }
 // after_update { send_state() }
 
 system Drone, Survivor, FirstResponder, Initializer;
@@ -969,13 +1000,15 @@ system Drone, Survivor, FirstResponder, Initializer;
  * [X] Color the locations
  * [X] Change the Survivor moving policy -&gt; Improved Federico's policy
  * [X] When a survivor assist directly he does not send starting_assistance signal
+ * [ ] Make the drone select the closest first responder
+ * [ ] Add smarter moving policy to first responder
  *
  * [ ] Read again the assignment and check model consistency
  * [ ] Read again the prof's answers to email questions and check consistency
  */</system>
 	<queries>
-		<option key="--hashtable-size" value="32"/>
-		<option key="--statespace-consumption" value="2"/>
+		<option key="--state-representation" value="0"/>
+		<option key="--diagnostic" value="1"/>
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
