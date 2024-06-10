@@ -129,7 +129,7 @@ broadcast chan assist_complete[N_COLS][N_ROWS]; // For signaling that an assista
 
 // Number of available first responders at any given moment
 // Every first responder in the system increments this value during init
-int available_fr;
+int[0, N_FIRST_RESPONDERS] available_fr;
 
 /******************************************************************************
  *                             Utility functions                              *
