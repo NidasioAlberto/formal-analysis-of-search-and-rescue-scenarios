@@ -130,6 +130,16 @@ broadcast chan assist_complete[N_COLS][N_ROWS]; // For signaling that an assista
 // Number of available first responders at any given moment
 // Every first responder in the system increments this value during init
 int[0, N_FIRST_RESPONDERS] available_fr;
+int[0, N_SURVIVORS] safe_survivors;
+int[0, N_SURVIVORS] dead_survivors;
+
+/******************************************************************************
+ *                           Properties parameters                            *
+ ******************************************************************************/
+
+const int N_SAFE_SURVIVORS_P = 3; // Number of civillians that can possibly be safe after T_scs
+const int N_SAFE_SURVIVORS_M = 1; // Number of civillians that must be safe after T_scs
+const int T_scs = 30;
 
 /******************************************************************************
  *                             Utility functions                              *
@@ -346,7 +356,9 @@ bool is_move_valid_g(pos_t pos, pos_t move, pos_t target, cell_t type, policy_t 
 </declaration>
 	<template>
 		<name>Initializer</name>
-		<declaration>void init_assignment_example() {
+		<declaration>clock t = 0;
+
+void init_assignment_example() {
     // Init the map will all empty cells
     for(x : int[0, N_ROWS-1])
         for(y : int[0, N_COLS-1]) {
@@ -665,32 +677,32 @@ bool is_exit_near() {
 			<name x="170" y="-162">Moving</name>
 			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
 		</location>
-		<location id="id22" x="833" y="136" color="#ffc0cb">
-			<name x="816" y="161">AssistingDirectly</name>
-			<label kind="invariant" x="817" y="178">t &lt;= T_zr[id]</label>
+		<location id="id22" x="833" y="153" color="#ffc0cb">
+			<name x="816" y="178">AssistingDirectly</name>
+			<label kind="invariant" x="817" y="195">t &lt;= T_zr[id]</label>
 		</location>
-		<location id="id23" x="858" y="-323" color="#ff0000">
-			<name x="875" y="-374">InNeed</name>
-			<label kind="invariant" x="875" y="-357">t &lt;= T_v[id]</label>
+		<location id="id23" x="858" y="-340" color="#ff0000">
+			<name x="875" y="-391">InNeed</name>
+			<label kind="invariant" x="875" y="-374">t &lt;= T_v[id]</label>
 		</location>
 		<location id="id24" x="493" y="-170" color="#ffffff">
 			<name x="484" y="-153">Init</name>
 		</location>
-		<location id="id25" x="1164" y="-323" color="#000000">
-			<name x="1113" y="-357">Dead</name>
+		<location id="id25" x="1164" y="-340" color="#000000">
+			<name x="1113" y="-374">Dead</name>
 		</location>
-		<location id="id26" x="833" y="-17" color="#00ff00">
-			<name x="857" y="-26">Safe</name>
+		<location id="id26" x="833" y="0" color="#00ff00">
+			<name x="857" y="-9">Safe</name>
 		</location>
-		<location id="id27" x="552" y="-17" color="#ffc0cb">
-			<name x="569" y="-51">WaitingCompletion</name>
+		<location id="id27" x="552" y="0" color="#ffc0cb">
+			<name x="569" y="-34">WaitingCompletion</name>
 		</location>
-		<location id="id28" x="314" y="-18" color="#00ffff">
-			<name x="331" y="-68">CallingFirstResponder</name>
-			<label kind="invariant" x="331" y="-51">t &lt;= distance(pos, fr)</label>
+		<location id="id28" x="314" y="-1" color="#00ffff">
+			<name x="331" y="-51">CallingFirstResponder</name>
+			<label kind="invariant" x="331" y="-34">t &lt;= distance(pos, fr)</label>
 		</location>
-		<location id="id29" x="93" y="136" color="#c0c0c0">
-			<name x="-25" y="145">AwaitingJob</name>
+		<location id="id29" x="93" y="153" color="#c0c0c0">
+			<name x="-25" y="162">AwaitingJob</name>
 		</location>
 		<location id="id30" x="858" y="-170" color="#ffff00">
 			<name x="874" y="-221">BeingAssisted</name>
@@ -701,7 +713,8 @@ bool is_exit_near() {
 			<source ref="id30"/>
 			<target ref="id25"/>
 			<label kind="guard" x="875" y="-170">t &gt;= T_v[id]</label>
-			<label kind="assignment" x="875" y="-153">set_map(pos, CELL_EMPTY)</label>
+			<label kind="assignment" x="875" y="-153">set_map(pos, CELL_EMPTY),
+dead_survivors += 1</label>
 			<nail x="1164" y="-170"/>
 		</transition>
 		<transition id="id32">
@@ -721,28 +734,30 @@ set_map(pos, CELL_SURVIVOR)</label>
 		<transition id="id34">
 			<source ref="id29"/>
 			<target ref="id22"/>
-			<label kind="synchronisation" x="110" y="144">assist_directly[pos.x][pos.y]?</label>
-			<label kind="assignment" x="110" y="161">in = target_in_need</label>
+			<label kind="synchronisation" x="110" y="161">assist_directly[pos.x][pos.y]?</label>
+			<label kind="assignment" x="110" y="178">in = target_in_need</label>
 		</transition>
 		<transition id="id35">
 			<source ref="id28"/>
 			<target ref="id27"/>
-			<label kind="guard" x="331" y="-17">t &gt;= distance(pos, fr)</label>
-			<label kind="synchronisation" x="331" y="0">arrived[fr.x][fr.y]!</label>
-			<label kind="assignment" x="331" y="17">target_in_need = in</label>
+			<label kind="guard" x="331" y="0">t &gt;= distance(pos, fr)</label>
+			<label kind="synchronisation" x="331" y="17">arrived[fr.x][fr.y]!</label>
+			<label kind="assignment" x="331" y="34">target_in_need = in</label>
 		</transition>
 		<transition id="id36">
 			<source ref="id27"/>
 			<target ref="id26"/>
-			<label kind="synchronisation" x="569" y="-17">assist_complete[in.x][in.y]?</label>
-			<label kind="assignment" x="569" y="0">set_map(pos, CELL_EMPTY)</label>
+			<label kind="synchronisation" x="569" y="0">assist_complete[in.x][in.y]?</label>
+			<label kind="assignment" x="569" y="17">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label>
 		</transition>
 		<transition id="id37">
 			<source ref="id21"/>
 			<target ref="id26"/>
 			<label kind="guard" x="620" y="-119">t &gt;= 1 &amp;&amp;
 is_exit_near()</label>
-			<label kind="assignment" x="620" y="-77">set_map(pos, CELL_EMPTY)</label>
+			<label kind="assignment" x="620" y="-77">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label>
 			<nail x="153" y="-119"/>
 			<nail x="833" y="-119"/>
 		</transition>
@@ -750,30 +765,33 @@ is_exit_near()</label>
 			<source ref="id30"/>
 			<target ref="id26"/>
 			<label kind="synchronisation" x="867" y="-85">assist_complete[pos.x][pos.y]?</label>
-			<label kind="assignment" x="867" y="-68">set_map(pos, CELL_EMPTY)</label>
+			<label kind="assignment" x="867" y="-68">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label>
 			<nail x="858" y="-42"/>
 		</transition>
 		<transition id="id39">
 			<source ref="id29"/>
 			<target ref="id28"/>
-			<label kind="synchronisation" x="102" y="8">go_call_a_fr[pos.x][pos.y]?</label>
-			<label kind="assignment" x="102" y="25">fr = target_first_resp,
+			<label kind="synchronisation" x="102" y="25">go_call_a_fr[pos.x][pos.y]?</label>
+			<label kind="assignment" x="102" y="42">fr = target_first_resp,
 in = target_in_need,
 t = 0</label>
-			<nail x="93" y="-17"/>
+			<nail x="93" y="0"/>
 		</transition>
 		<transition id="id40">
 			<source ref="id23"/>
 			<target ref="id25"/>
-			<label kind="guard" x="875" y="-323">t &gt;= T_v[id]</label>
-			<label kind="assignment" x="875" y="-306">set_map(pos, CELL_EMPTY)</label>
+			<label kind="guard" x="875" y="-340">t &gt;= T_v[id]</label>
+			<label kind="assignment" x="875" y="-323">set_map(pos, CELL_EMPTY),
+dead_survivors += 1</label>
 		</transition>
 		<transition id="id41">
 			<source ref="id22"/>
 			<target ref="id26"/>
-			<label kind="guard" x="850" y="34">t &gt;= T_zr[id]</label>
-			<label kind="synchronisation" x="850" y="51">assist_complete[in.x][in.y]!</label>
-			<label kind="assignment" x="850" y="68">set_map(pos, CELL_EMPTY)</label>
+			<label kind="guard" x="850" y="51">t &gt;= T_zr[id]</label>
+			<label kind="synchronisation" x="850" y="68">assist_complete[in.x][in.y]!</label>
+			<label kind="assignment" x="850" y="85">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label>
 		</transition>
 		<transition id="id42">
 			<source ref="id21"/>
@@ -806,7 +824,7 @@ set_map(pos, CELL_IN_NEED)</label>
 			<label kind="synchronisation" x="68" y="-102">await_job[pos.x][pos.y]?</label>
 			<label kind="assignment" x="68" y="-85">set_map(pos, CELL_ZERO_RESP)</label>
 			<nail x="59" y="-93"/>
-			<nail x="59" y="110"/>
+			<nail x="59" y="127"/>
 		</transition>
 	</template>
 	<template>
@@ -900,7 +918,8 @@ and then waits for him to move</label>
 j : int[-1, 1]</label>
 			<label kind="guard" x="-527" y="-26">is_in_need(i, j)</label>
 			<label kind="synchronisation" x="-527" y="-9">starting_assistance[pos.x+i][pos.y+j]!</label>
-			<label kind="assignment" x="-527" y="8">set_target(i, j)</label>
+			<label kind="assignment" x="-527" y="8">set_target(i, j),
+available_fr -= 1</label>
 			<nail x="-459" y="-76"/>
 		</transition>
 		<transition id="id53">
@@ -1046,8 +1065,80 @@ forall (i : survivor_id_t)
 			<comment>Survivors and first responders cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; forall (i : survivor_id_t) Survivor(i).Safe || Survivor(i).Dead</formula>
+			<formula>A&lt;&gt; forall (i : survivor_id_t) Survivor(i).Safe || Survivor(i).Dead</formula>
 			<comment>All Survivors either reach safety or die, but they cannot get stuck in any in-between state</comment>
+			<result outcome="success" type="quality" timestamp="2024-06-10 12:22:18 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS // There is no state where the safe and dead counters hold a bigger value that the total number of survivors</formula>
+			<comment>There is no state where the safe and dead counters hold a bigger value that the total number of survivors</comment>
+			<result outcome="success" type="quality" timestamp="2024-06-10 12:12:09 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
+			<comment>The simulation must reach a state where all survivors are either safe or dead</comment>
+			<result outcome="success" type="quality" timestamp="2024-06-10 12:09:35 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="3" timestamp="2024-06-10 12:13:53 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+				<details>3</details>
+			</result>
+		</query>
+		<query>
+			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="2" timestamp="2024-06-10 12:15:08 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+				<details>2</details>
+			</result>
+		</query>
+		<query>
+			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="1" timestamp="2024-06-10 12:16:23 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+				<details>1</details>
+			</result>
+		</query>
+		<query>
+			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="0" timestamp="2024-06-10 12:16:31 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+				<details>0</details>
+			</result>
+		</query>
+		<query>
+			<formula>A&lt;&gt; Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_P</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-06-10 13:06:45 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_M</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-06-10 13:09:24 +0200">
+				<option key="--state-representation" value="0"/>
+				<option key="--diagnostic" value="1"/>
+			</result>
 		</query>
 	</queries>
 </nta>
