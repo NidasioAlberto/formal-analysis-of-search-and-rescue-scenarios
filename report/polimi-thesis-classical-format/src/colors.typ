@@ -1,0 +1,1 @@
+#let blue_polimi = cmyk(40%, 10%, 0%, 40%)
