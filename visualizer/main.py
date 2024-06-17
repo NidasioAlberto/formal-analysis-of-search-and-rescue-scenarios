@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import pyuppaal
 import re
 import numpy
 import pygame
@@ -10,9 +9,6 @@ from flask import Flask
 from flask import request
 import threading
 import queue
-
-# Set Uppaal verifyta path
-pyuppaal.set_verifyta_path('~/uppaal-5.0.0-linux64/bin/verifyta')
 
 MODEL_FILE_NAME = 'model.xml'
 MODEL_PATH = '../' + MODEL_FILE_NAME
@@ -69,13 +65,6 @@ def load_assets(pixels_per_cell):
     survivor_image = pygame.transform.scale(survivor_image, (pixels_per_cell, pixels_per_cell))
     in_need_image = pygame.transform.scale(in_need_image, (pixels_per_cell, pixels_per_cell))
     drone_image = pygame.transform.scale(drone_image, (pixels_per_cell, pixels_per_cell))
-
-def load_trace():
-    # For some reason pyuppaal modifies the model file, so we just copy it locally
-
-    shutil.copy(MODEL_PATH, 'model.xml')
-    umodel = pyuppaal.UModel('model.xml')
-    return umodel.load_xtr_trace(TRACE_PATH)
 
 def parse_map_size():
     cols = 0
@@ -148,8 +137,8 @@ def parse_drone_positions(global_variables):
     return positions
 
 def draw_grid():
-    for x in range(1, N_COLS):
-        for y in range(1, N_ROWS):
+    for x in range(0, N_COLS+1):
+        for y in range(0, N_ROWS+1):
             pygame.draw.line(screen, (0, 0, 0), (x * PIXELS_PER_CELL, 0), (x * PIXELS_PER_CELL, N_ROWS * PIXELS_PER_CELL - 1))
             pygame.draw.line(screen, (0, 0, 0), (0, y * PIXELS_PER_CELL), (N_COLS * PIXELS_PER_CELL - 1, y * PIXELS_PER_CELL))
 
@@ -208,13 +197,16 @@ def run_gui():
     (N_COLS, N_ROWS) = parse_map_size()
 
     # Create the window
-    screen = pygame.display.set_mode((N_COLS * PIXELS_PER_CELL, N_ROWS * PIXELS_PER_CELL))
+    screen = pygame.display.set_mode((N_COLS * PIXELS_PER_CELL + 1, N_ROWS * PIXELS_PER_CELL + 1))
     load_assets(PIXELS_PER_CELL)
     draw_state(None)
 
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                pygame.image.save(screen, "screenshot.jpg")
+                print("Screenshot saved")
+            elif event.type == pygame.QUIT:
                 pygame.quit()
                 os._exit(0)
         
