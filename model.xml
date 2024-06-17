@@ -124,8 +124,8 @@ chan fr_assist[N_COLS][N_ROWS];                 // Used by survivors to instruct
 broadcast chan assist_complete[N_COLS][N_ROWS]; // For signaling that an assistance was completed successfully
 
 // Meta variables used to share target positions
-/*meta*/ pos_t target_in_need;
-/*meta*/ pos_t target_first_resp;
+meta pos_t target_in_need;
+meta pos_t target_first_resp;
 
 // Number of available first responders at any given moment
 // Every first responder in the system increments this value during init
@@ -184,7 +184,7 @@ bool is_pos_in_map(pos_t pos) {
     return pos.x &gt;= 0 &amp;&amp; pos.x &lt; N_COLS &amp;&amp; pos.y &gt;= 0 &amp;&amp; pos.y &lt; N_ROWS;
 }
 
-// Checks if a position is inside the given bounds (included) and inside the map 
+// Checks if a position is inside the given bounds (included) and inside the map
 bool is_pos_in_bound(pos_t pos, pos_t lower_bound, pos_t upper_bound) {
     return pos.x &gt;= lower_bound.x &amp;&amp; pos.x &lt;= upper_bound.x &amp;&amp; pos.y &gt;= lower_bound.y &amp;&amp; pos.y &lt;= upper_bound.y;
 }
@@ -270,7 +270,7 @@ pos_t find_nearest_target(pos_t pos, cell_t target_type) {
     for (x : int[0, N_COLS - 1]) {
         for (y : int[0, N_ROWS - 1]) {
             // If searching for exists, look only on the boundaries
-            if(target_type != CELL_EXIT || x == 0 || x == N_COLS - 1 || y == 0 || y == N_ROWS - 1) {
+            if (target_type != CELL_EXIT || x == 0 || x == N_COLS - 1 || y == 0 || y == N_ROWS - 1) {
                 pos_t current = {x, y};
                 if (map_check_val(current, target_type)) {
                     int distance = distance(pos, current);
@@ -330,11 +330,11 @@ bool random_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
     return is_move_feasible(pos, move, type);
 }
 
-// Directo policy follows the best direct path (i.e. without considering obstacles)
+// Direct policy follows the best direct path (i.e. without considering obstacles)
 bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
     int min_distance;
 
-    if(!is_move_feasible(pos, move, type))
+    if (!is_move_feasible(pos, move, type))
         return false;
 
     // Find the distance to the target of the best possible move
@@ -344,6 +344,7 @@ bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
     return distance(move, target) == min_distance;
 }
 
+// Checks that a move is valid for the given moving policy
 bool is_move_valid_g(pos_t pos, pos_t move, pos_t target, cell_t type, policy_t policy) {
     if (policy == POLICY_RANDOM) {
         return random_is_move_valid(pos, move, target, type);
@@ -418,8 +419,6 @@ pos_t zr; // Selected zero_responder
 pos_t in; // Selected in_need
 pos_t fr; // Selected first_responder
 
-int nv;
-
 /******************************************************************************
  *                                Moving policy                               *
  ******************************************************************************/
@@ -438,7 +437,7 @@ pos_t next_step() {
         pos.x += 0;
         pos.y += 1;
     }
-    else if (move_policy_next_move_idx &lt; 3*MOVE_POLICY_LEN / 4) { // We have to move left
+    else if (move_policy_next_move_idx &lt; 3 * MOVE_POLICY_LEN / 4) { // We have to move left
         pos.x += -1;
         pos.y += 0;
     }
@@ -449,7 +448,7 @@ pos_t next_step() {
 
     // Increment/wrap up index
     move_policy_next_move_idx += 1;
-    if(move_policy_next_move_idx &gt;= MOVE_POLICY_LEN)
+    if (move_policy_next_move_idx &gt;= MOVE_POLICY_LEN)
         move_policy_next_move_idx = 0;
 
     return pos;
@@ -621,8 +620,7 @@ and tells him to assist</label>
 			<target ref="id11"/>
 			<label kind="synchronisation" x="-1683" y="-790">init_done?</label>
 			<label kind="assignment" x="-1683" y="-773">pos = drones_starting_pos[id],
-set_drone_map(pos, true),
-nv = N_v[id]</label>
+set_drone_map(pos, true)</label>
 		</transition>
 	</template>
 	<template>
@@ -838,6 +836,7 @@ clock t = 0;
 pos_t pos;
 
 pos_t target; // Target position to move to
+
 /******************************************************************************
  *                                Moving policy                               *
  ******************************************************************************/
@@ -976,7 +975,13 @@ set_map(pos, CELL_FIRST_RESP),
 available_fr += 1</label>
 		</transition>
 	</template>
-	<system>/*import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
+	<system>/******************************************************************************
+ *                            Map Visualizer                                   *
+ ******************************************************************************/
+
+// Uncomment to enable the live map visualizer
+/*
+import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
 };
 
@@ -996,35 +1001,13 @@ void prepare_flat_map() {
 void send_state() {
     prepare_flat_map();
     send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
-}*/
+}
 
-// before_update { send_state() }
-// after_update { send_state() }
+after_update { send_state() }
+*/
 
 system Drone, Survivor, FirstResponder, Initializer;
-
-/* TODOs
- * [X] All payload passing must happen when channels are triggered
- *     Payload passing happens in:
- *     - Drone -assist_directly-&gt; Survivor: target_in_need
- *     - Drone -go_call_a_fr-&gt; Survivor: target_first_resp, target_in_need
- *     - Survivor -zr_arrived-&gt; FirstResponder: target_in_need
- * [X] Make all agents update their status in the map (e.g. the drone should not update the cell of a survivor from survivor to zero responder)
- * [ ] Move Drone decison making policy into a function (possible?). This way it should be easy to define multiple ones
- * [ ] Change go_call_a_fr in first_responder. This should disappear if we model all movements
- * [ ] Make drone move selection ranges be relative instead of global, like in first_reponders
- * [ ] Model the death of an in_need when occurring before being saved and notify who is helping to stop (this will most likely require a channel)
- * [X] Abstract is_fire_near, is_exit_near and similar functions into a single implementation to reduce code duplication
- * [X] Rename radius_cell_check to something better, improve comment
- * [X] Color the locations
- * [X] Change the Survivor moving policy -&gt; Improved Federico's policy
- * [X] When a survivor assist directly he does not send starting_assistance signal
- * [ ] Make the drone select the closest first responder
- * [ ] Add smarter moving policy to first responder
- *
- * [ ] Read again the assignment and check model consistency
- * [ ] Read again the prof's answers to email questions and check consistency
- */</system>
+</system>
 	<queries>
 		<option key="--state-representation" value="0"/>
 		<option key="--diagnostic" value="1"/>
