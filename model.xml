@@ -25,17 +25,31 @@ const int POLICY_LAST =   1;
 typedef int[POLICY_FIRST, POLICY_LAST] policy_t;
 
 /******************************************************************************
+ *                            Map scenarios enum                            *
+ ******************************************************************************/
+
+const int MAP_SCENARIO_FIRST = 0;
+
+const int MAP_SCENARIO_1 =  0;
+const int MAP_SCENARIO_2 =  1;
+const int MAP_SCENARIO_3 =  2;
+
+const int MAP_SCENARIO_LAST = 2;
+
+typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
+
+/******************************************************************************
  *                          Configuration Parameters                          *
  ******************************************************************************/
 
+// Scenario 1: basic scenario from the assignment document
+/*
 // Map size
 const int N_COLS = 10; // x
 const int N_ROWS = 10; // y
 
 // Number of total cells, used when flatten out the map for the visualizer
 const int N_CELLS = N_COLS * N_ROWS;
-
-// Scenario found in the project documentation
 
 // Number of drones and their starting positions
 const int N_DRONES = 2;
@@ -59,29 +73,48 @@ const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}, {8, 5}}
 const int T_fr[N_FIRST_RESPONDERS] = {5, 5}; // First reponders assistance duration
 const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {POLICY_DIRECT, POLICY_DIRECT};
 
-// Super simple scenario
+// Initial map state
+const map_id_t map_id = MAP_SCENARIO_1;
+*/
 
-/*
+// Scenario 2: 16 survivors and 4 first-responders on a 20x20 grid
+
+// Map size
+const int N_COLS = 20; // x
+const int N_ROWS = 20; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
 // Number of drones and their starting positions
-const int N_DRONES = 1;
+const int N_DRONES = 2;
 typedef int[0, N_DRONES-1] drone_id_t;
-const pos_t drones_starting_pos[N_DRONES] = {{3, 1}};
-const int N_v[N_DRONES] = {1}; // Drones vision range
-const int N_r[N_DRONES] = {2}; // Drones movement side
+const pos_t drones_starting_pos[N_DRONES] = {{3, 1}, {6, 6}};
+const int N_v[N_DRONES] = {1, 2}; // Drones vision range
+const int N_r[N_DRONES] = {2, 2}; // Drones movement
 
 // Number of survivors and their starting positions
-const int N_SURVIVORS = 2;
+const int N_SURVIVORS = 16;
 typedef int[0, N_SURVIVORS-1] survivor_id_t;
-const pos_t survivors_starting_pos[N_SURVIVORS] = {{2, 1}, {4, 2}};
-const int T_zr[N_SURVIVORS] = {8, 8}; // Zero reponders assistance duration
-const int T_v[N_SURVIVORS] = {15, 15}; // Time after which a survivor in need dies
+const pos_t survivors_starting_pos[N_SURVIVORS] = {{1, 1}, {3, 1}, {1, 2}, {3, 3}, {4, 4},
+                                                  {7, 3}, {6, 5}, {4, 7}, {1, 8}, {3, 9},
+                                                  {1, 10}, {4, 12}, {2, 14}, {6, 13}, {14, 10}, {16, 7}};
+const int T_zr[N_SURVIVORS] = {8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8};
+const int T_v[N_SURVIVORS] = {15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
+const policy_t survivors_policies[N_SURVIVORS] = {POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, 
+                                                 POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, 
+                                                 POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT};
 
 // Number of first responders and their starting positions
-const int N_FIRST_RESPONDERS = 1;
+const int N_FIRST_RESPONDERS = 4;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
-const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}};
-const int T_fr[N_FIRST_RESPONDERS] = {5}; // First reponders assistance duration
-*/
+const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{14, 18}, {15, 18}, {18, 14}, {18, 15}};
+const int T_fr[N_FIRST_RESPONDERS] = {5, 5, 5, 5};
+const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT};
+
+// Initial map state
+const map_id_t map_id = MAP_SCENARIO_2;
+
 
 /******************************************************************************
  *                                 Constants                                  *
@@ -359,35 +392,42 @@ bool is_move_valid_g(pos_t pos, pos_t move, pos_t target, cell_t type, policy_t 
 		<name>Initializer</name>
 		<declaration>clock t = 0;
 
-void init_assignment_example() {
+void init_map() {
     // Init the map will all empty cells
-    for(x : int[0, N_ROWS-1])
+    for(x : int[0, N_ROWS-1]) {
         for(y : int[0, N_COLS-1]) {
             map[x][y] = CELL_EMPTY;
             drone_map[x][y] = false;
         }
+    }
 
-    // Set fires
-    map[5][1] = CELL_FIRE;
-    map[6][1] = CELL_FIRE;
-    map[5][2] = CELL_FIRE;
-    map[6][2] = CELL_FIRE;
-    map[4][3] = CELL_FIRE;
-    map[5][3] = CELL_FIRE;
-    map[6][3] = CELL_FIRE;
-    map[4][4] = CELL_FIRE;
-    map[5][4] = CELL_FIRE;
+    if (map_id == MAP_SCENARIO_1) {
+        // Fires
+        map[5][1] = CELL_FIRE;
+        map[6][1] = CELL_FIRE;
+        map[5][2] = CELL_FIRE;
+        map[6][2] = CELL_FIRE;
+        map[4][3] = CELL_FIRE;
+        map[5][3] = CELL_FIRE;
+        map[6][3] = CELL_FIRE;
+        map[4][4] = CELL_FIRE;
+        map[5][4] = CELL_FIRE;
 
-    // Set exits
-    map[0][4] = CELL_EXIT;
-    map[9][4] = CELL_EXIT;
-    map[0][5] = CELL_EXIT;
-    map[9][5] = CELL_EXIT;
+        // Exits
+        map[0][4] = CELL_EXIT;
+        map[9][4] = CELL_EXIT;
+        map[0][5] = CELL_EXIT;
+        map[9][5] = CELL_EXIT;
+    } else if (map_id == MAP_SCENARIO_2) {
+        
+    } else if (map_id == MAP_SCENARIO_3) {
+        
+    }
 }
 </declaration>
-		<location id="id0" x="213" y="0">
+		<location id="id0" x="129" y="0">
 		</location>
-		<location id="id1" x="42" y="0">
+		<location id="id1" x="-42" y="0">
 			<committed/>
 		</location>
 		<location id="id2" x="-221" y="0">
@@ -397,12 +437,12 @@ void init_assignment_example() {
 		<transition id="id3">
 			<source ref="id1"/>
 			<target ref="id0"/>
-			<label kind="synchronisation" x="59" y="0">init_done!</label>
+			<label kind="synchronisation" x="-25" y="0">init_done!</label>
 		</transition>
 		<transition id="id4">
 			<source ref="id2"/>
 			<target ref="id1"/>
-			<label kind="assignment" x="-204" y="0">init_assignment_example()</label>
+			<label kind="assignment" x="-204" y="0">init_map()</label>
 		</transition>
 	</template>
 	<template>
