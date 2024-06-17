@@ -547,7 +547,7 @@ otherwise assit directly</label>
 t = 0</label>
 			<label kind="comments" x="-1385" y="-901">This edge is the only one that resets the clock.
 This way the drone must make one move per time unit</label>
-			<nail x="-1445" y="-841"/>
+			<nail x="-1445" y="-833"/>
 			<nail x="-1402" y="-858"/>
 		</transition>
 		<transition id="id13">
@@ -764,10 +764,10 @@ safe_survivors += 1</label>
 		<transition id="id38">
 			<source ref="id30"/>
 			<target ref="id26"/>
-			<label kind="synchronisation" x="867" y="-85">assist_complete[pos.x][pos.y]?</label>
-			<label kind="assignment" x="867" y="-68">set_map(pos, CELL_EMPTY),
+			<label kind="synchronisation" x="867" y="-68">assist_complete[pos.x][pos.y]?</label>
+			<label kind="assignment" x="867" y="-51">set_map(pos, CELL_EMPTY),
 safe_survivors += 1</label>
-			<nail x="858" y="-42"/>
+			<nail x="858" y="-25"/>
 		</transition>
 		<transition id="id39">
 			<source ref="id29"/>
@@ -805,8 +805,8 @@ is_move_valid(i, j) &amp;&amp;
 t = 0</label>
 			<label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
 This way the survivor must make one move per time unit</label>
-			<nail x="136" y="-230"/>
-			<nail x="93" y="-187"/>
+			<nail x="153" y="-229"/>
+			<nail x="110" y="-204"/>
 		</transition>
 		<transition id="id43">
 			<source ref="id24"/>
@@ -816,7 +816,7 @@ This way the survivor must make one move per time unit</label>
 			<label kind="assignment" x="510" y="-212">pos = survivors_starting_pos[id],
 set_map(pos, CELL_IN_NEED)</label>
 			<nail x="833" y="-170"/>
-			<nail x="833" y="-297"/>
+			<nail x="833" y="-314"/>
 		</transition>
 		<transition id="id44">
 			<source ref="id21"/>
@@ -900,7 +900,7 @@ void teleport_to_in_need() {
 		</location>
 		<location id="id50" x="-195" y="-255" color="#c0c0c0">
 			<name x="-178" y="-289">WaitingSurvivorMoveTime</name>
-			<label kind="comments" x="-399" y="-357">The first_responder is locked by the zero_responder
+			<label kind="comments" x="-399" y="-340">The first_responder is locked by the zero_responder
 and then waits for him to move</label>
 		</location>
 		<init ref="id47"/>
@@ -933,18 +933,18 @@ t = 0</label>
 		<transition id="id54">
 			<source ref="id46"/>
 			<target ref="id46"/>
-			<label kind="select" x="-629" y="-366">i : int[-1, 1],
+			<label kind="select" x="-620" y="-349">i : int[-1, 1],
 j : int[-1, 1]</label>
-			<label kind="guard" x="-629" y="-323">t &gt;= 1 &amp;&amp;
+			<label kind="guard" x="-620" y="-306">t &gt;= 1 &amp;&amp;
 is_move_valid(i, j)</label>
-			<label kind="assignment" x="-629" y="-280">move(i, j),
+			<label kind="assignment" x="-620" y="-263">move(i, j),
 t = 0</label>
-			<label kind="comments" x="-867" y="-357">While not busy assisting
+			<label kind="comments" x="-858" y="-340">While not busy assisting
 survivors, first reponders
 can move with a custom
 moving policy</label>
-			<nail x="-629" y="-238"/>
-			<nail x="-552" y="-238"/>
+			<nail x="-595" y="-195"/>
+			<nail x="-552" y="-221"/>
 		</transition>
 		<transition id="id55">
 			<source ref="id48"/>
