@@ -1,4 +1,5 @@
 #import "polimi-thesis-classical-format/src/lib.typ": puttitle
+#import "@preview/wrap-it:0.1.0": wrap-content
 
 #show: doc => puttitle(
   title: [Formal Analysis of Search-and-Rescue Scenarios],
@@ -28,7 +29,12 @@ aspects and identify optimal configurations for maximizing civilian safety.
 = High Level Model Description
 
 The model adopted for the search-and-resque mission involves 3 different types
-of agents:
+of agents: Civilians, First-responders and Drones. They are placed in different
+numbers inside a rectangular map, where exits (i.e. safe zones reached by
+civilians to get to safety) and fires are fixed in placed from the beginning of
+the scenario.
+
+The key characteristics of the agents are:
 - *Civilians*: Can be in 3 different states, depending whether they find
   themselves near a fire or if they are following instructions
   - *In-need* (i.e. near a fire): They cannot move and needs to be assisted. After $T_v$ time
@@ -48,10 +54,46 @@ of agents:
   When two civilians, one _in_need_ and one free, the drones can assign instruct
   the free civilian to either assist directly or contacting a _first-responder_
 
-= Component Description
+= Model Description and Design Choices
+
+// image("images/assignment_scenario.jpg", width: 7cm)
+#wrap-content(rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
+```cpp
+// Map cell status enumeration
+const int CELL_EMPTY =      0;
+const int CELL_FIRE =       1;
+const int CELL_EXIT =       2;
+const int CELL_FIRST_RESP = 3;
+const int CELL_SURVIVOR =   4;
+const int CELL_ZERO_RESP =  5;
+const int CELL_IN_NEED =    6;
+const int CELL_ASSISTED =   7;
+const int CELL_ASSISTING =  8;
+
+typedef int[0, 8] cell_t;
+
+// Map array
+cell_t map[N_COLS][N_ROWS];
+```
+]), align: right)[
+  #lorem(100)
+]
+
+== Civilian
+#lorem(50)
+
+== First-responder
+#lorem(50)
+
+== Drone
+#lorem(50)
 
 == Design Choices
 
+#lorem(100)
+
 = Properties
+#lorem(50)
 
 = Conclusion
+#lorem(50)
