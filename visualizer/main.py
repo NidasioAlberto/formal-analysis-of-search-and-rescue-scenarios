@@ -5,15 +5,16 @@ import numpy
 import pygame
 import sys, os
 import shutil
-from flask import Flask
-from flask import request
 import threading
 import queue
+import pygame_menu
 
 MODEL_FILE_NAME = 'model.xml'
 MODEL_PATH = '../' + MODEL_FILE_NAME
 
 TRACE_PATH = 'test_trace.xtr'
+
+EDITOR_STATE_PATH = 'editor_state.dat'
 
 ASSETS_PATH = 'assets'
 
@@ -22,7 +23,7 @@ N_COLS = 10
 N_ROWS = 10
 
 # Size of each cell in pixels
-PIXELS_PER_CELL = 100
+PIXELS_PER_CELL = 50
 
 # Map cell status enumeration
 CELL_FIRST = 0
@@ -36,6 +37,18 @@ CELL_ZERO_RESP =  CELL_FIRST + 5
 CELL_IN_NEED =    CELL_FIRST + 6
 CELL_ASSISTED =   CELL_FIRST + 7 # Survivor in need busy being assisted
 CELL_ASSISTING =  CELL_FIRST + 8 # First responder busy assisting
+
+CELL_MAP = {
+    CELL_EMPTY: "CELL_EMPTY",
+    CELL_FIRE: "CELL_FIRE",
+    CELL_EXIT: "CELL_EXIT",
+    CELL_FIRST_RESP: "CELL_FIRST_RESP",
+    CELL_SURVIVOR: "CELL_SURVIVOR",
+    CELL_ZERO_RESP: "CELL_ZERO_RESP",
+    CELL_IN_NEED: "CELL_IN_NEED",
+    CELL_ASSISTED: "CELL_ASSISTED",
+    CELL_ASSISTING: "CELL_ASSISTING"
+}
 
 FIRE_COLOR = pygame.Color(255, 139, 131)
 EXIT_COLOR = pygame.Color(204, 251, 115)
@@ -190,6 +203,84 @@ def draw_state(state):
     # Commit
     pygame.display.flip()
 
+def save_state(state):
+    # save state to file for later reloading
+    with open(EDITOR_STATE_PATH, 'w') as f:
+        f.write(f"{N_COLS} {N_ROWS}\n")
+        for x in range(N_COLS):
+            for y in range(N_ROWS):
+                f.write(f"{int(state["map"][x][y])} ")
+            f.write("\n")
+    
+def load_state():
+    global N_COLS, N_ROWS
+
+    # load state from file
+    with open(EDITOR_STATE_PATH, 'r') as f:
+        N_COLS, N_ROWS = [int(x) for x in f.readline().split()]
+        map = numpy.zeros((N_COLS, N_ROWS))
+        for x in range(N_COLS):
+            map[x] = [int(x) for x in f.readline().split()]
+
+    state = {}
+    state["map"] = map
+    state["drone_map"] = numpy.zeros((N_COLS, N_ROWS))
+    return state
+
+def print_editor_state(map):
+    print(f"\n=> Map size: {N_COLS}x{N_ROWS}")
+
+    print("=> Survivors:")
+    count = 0
+    pos_list = ""
+    tzr_list = ""
+    tv_list = ""
+    policy_list = ""
+
+    for x in range(N_COLS):
+        for y in range(N_ROWS):
+            if map[x][y] == CELL_SURVIVOR or map[x][y] == CELL_IN_NEED:
+                count += 1
+                pos_list += f"{{{x}, {y}}}, "
+                tzr_list += "8, "
+                tv_list += "15, "
+                policy_list += "POLICY_DIRECT, "
+
+    print(f"""\
+const int N_SURVIVORS = {count};
+typedef int[0, N_SURVIVORS-1] survivor_id_t;
+const pos_t survivors_starting_pos[N_SURVIVORS] = {{{pos_list[:-2]}}};
+const int T_zr[N_SURVIVORS] = {{{tzr_list[:-2]}}};
+const int T_v[N_SURVIVORS] = {{{tv_list[:-2]}}};
+const policy_t survivors_policies[N_SURVIVORS] = {{{policy_list[:-2]}}};""")
+
+    print("=> First responders:")
+    count = 0
+    pos_list = ""
+    tfr_list = ""
+    policy_list = ""
+
+    for x in range(N_COLS):
+        for y in range(N_ROWS):
+            if map[x][y] == CELL_FIRST_RESP:
+                count += 1
+                pos_list += f"{{{x}, {y}}}, "
+                tfr_list += "5, "
+                policy_list += "POLICY_DIRECT, "
+
+    print(f"""\
+const int N_FIRST_RESPONDERS = {count};
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
+const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{{pos_list[:-2]}}};
+const int T_fr[N_FIRST_RESPONDERS] = {{{tfr_list[:-2]}}};
+const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {{{policy_list[:-2]}}};""")
+
+    print("=> Map: ")
+    for x in range(N_COLS):
+        for y in range(N_ROWS):
+            if map[x][y] == CELL_FIRE or map[x][y] == CELL_EXIT:
+                print(f"map[{x}][{y}] = {CELL_MAP[map[x][y]]}")
+
 def run_gui():
     global screen, N_COLS, N_ROWS
 
@@ -216,16 +307,102 @@ def run_gui():
 
         pygame.time.wait(100)
 
-app = Flask(__name__)
+def launch_visualizer():
+    from flask import Flask
+    from flask import request
 
-@app.route('/state', methods = ['POST'])
-def state():
+    def state():
+        global screen, N_COLS, N_ROWS
+        state_queue.put(request.get_json())
+        return "Ok"
+
+    app = Flask(__name__)
+    app.add_url_rule('/state', 'state', state, methods=['POST']) 
+
+    # Run Flask server in separate thread
+    threading.Thread(target=lambda: app.run(debug=False, use_reloader=False)).start()
+
+    # Start GUI
+    run_gui()
+
+def launch_last_editor():
+    try:
+        state = load_state()
+    except:
+        print("Failed to load last editor state, starting new session")
+        launch_new_editor()
+        return
+    
+    launch_editor(state)
+
+def launch_new_editor():
+    global N_COLS, N_ROWS
+
+    N_COLS = int(map_cols.get_value())
+    N_ROWS = int(map_rows.get_value())
+
+    state = {}
+    state["map"] = numpy.zeros((N_COLS, N_ROWS))
+    state["drone_map"] = numpy.zeros((N_COLS, N_ROWS))
+
+    launch_editor(state)
+
+def launch_editor(state):
     global screen, N_COLS, N_ROWS
-    state_queue.put(request.get_json())
-    return 'Ok'
+    
+    screen = pygame.display.set_mode((N_COLS * PIXELS_PER_CELL + 1, N_ROWS * PIXELS_PER_CELL + 1))
+    load_assets(PIXELS_PER_CELL)
 
-# Run Flask server in separate thread
-threading.Thread(target=lambda: app.run(debug=False, use_reloader=False)).start()
+    changed = False
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                pygame.image.save(screen, "screenshot.jpg")
+                print("Screenshot saved")
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                x = x // PIXELS_PER_CELL
+                y = y // PIXELS_PER_CELL
 
-# Start GUI
-run_gui()
+                if event.button == 1: # left click
+                    state["map"][x][y] = (state["map"][x][y] + 1) % (CELL_ASSISTING + 1)
+                elif event.button == 2: # middle click
+                    state["map"][x][y] = 0
+                elif event.button == 3: # right click
+                    state["map"][x][y] = (state["map"][x][y] - 1) % (CELL_ASSISTING + 1)
+                
+                changed = True
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                print_editor_state(state["map"])
+            elif event.type == pygame.QUIT:
+                print_editor_state(state["map"])
+                pygame.quit()
+                os._exit(0)
+
+        draw_state(state)
+        if changed:
+            changed = False
+            save_state(state)
+
+        pygame.time.wait(100)
+
+pygame.init()
+
+# Show the initial menu
+surface = pygame.display.set_mode((1280, 720))
+menu = pygame_menu.Menu("Welcome", 1280, 720, theme=pygame_menu.themes.THEME_BLUE)
+
+editor_menu = pygame_menu.Menu('Editor Settings', 1280, 720, onclose=pygame_menu.events.BACK)
+
+map_rows = editor_menu.add.range_slider('Map Rows', default=10, range_values=(1, 100), increment=1, 
+                                        value_format=lambda x: str(int(x)))
+map_cols = editor_menu.add.range_slider('Map Cols', default=10, range_values=(1, 100), increment=1,
+                                        value_format=lambda x: str(int(x)))
+editor_menu.add.button("New", launch_new_editor)
+if os.path.exists(EDITOR_STATE_PATH):
+    editor_menu.add.button("Resume Last Session", launch_last_editor)
+
+menu.add.button("Visualizer", launch_visualizer)
+menu.add.button("Editor", editor_menu)
+
+menu.mainloop(surface)
