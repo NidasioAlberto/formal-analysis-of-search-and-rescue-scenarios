@@ -1,4 +1,1 @@
-visualizer/model.xml
-visualizer/__pycache__
-visualizer/build
-visualizer/test_trace.xtr
+build
