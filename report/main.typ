@@ -34,7 +34,7 @@ numbers inside a rectangular map, where exits (i.e. safe zones reached by
 civilians to get to safety) and fires are fixed in placed from the beginning of
 the scenario.
 
-The key characteristics of the agents are:
+The key characteristics of the agents are these:
 - *Civilians*: Can be in 3 different states, depending whether they find
   themselves near a fire or if they are following instructions
   - *In-need* (i.e. near a fire): They cannot move and needs to be assisted. After $T_v$ time
@@ -57,14 +57,12 @@ The key characteristics of the agents are:
 == Model Assumptions
 
 To simplify the model described in the assignment the following assumptions have been made:
-- The map is a 2D grid with a fixed number of rows and columns, a fixed number of fires and exits that cannot change during the simulation.
-- Distance between 2 cells is considered as the number of step needed to move from one cell to the other allowing diagonal movement, not the Euclidean distance.
-- When a _civilian_ is busy following an instruction the model consider it busy for the whole duration of the instruction, considering it safe at the end of the instruction, without modeling the actual movement of the _civilian_.
-- Drones know the status of all the cells in their field of view, including the status of the _civilians_.
-- Drones know the global position of all the _first-responders_ and their status.
-- All _civilian_ when moving know the location of the nearest exit and can move towards it.
+- The map is a 2D grid with a fixed number of rows and columns, and fires and exits are static (i.e. they won't change during simulation);
+- The distance between 2 cells is considered as the number of step needed to move from one cell to the other allowing diagonal movement, not the Euclidean distance;
+- When a _civilian_ need to move towards someone _in_need_ or a _first-responder_, the model consider it moving for the whole duration of the movement and considering it safe at the end, without modeling the actual movement of the _civilian_;
+- Drones know the global position of all the _first-responders_ and their status, at any given time;
+- All _civilians_ know the location of the exits and can determine the nearest one;
 - _survivors_ cannot start the simulation inside a fire cell.
-
 
 = Model Description and Design Choices
 
@@ -103,9 +101,9 @@ cell_t map[N_COLS][N_ROWS];
 The map is populated by the actors described in the following sections.
 
 == Civilian
-The civilian agent is the actor in danger that needs to be rescued or to rescue himself. 
+The civilian agent is the actor in danger that needs to get to safety.
 
-At the beginning of the simulation the civilians position themselves in the map in their position; if they are near a fire they become _in_need_ otherwise they are considered _survivors_.
+At the beginning of the simulation the civilians position themselves in the map; if they are near a fire they become _in_need_ otherwise they are considered _survivors_.
 
 + _in_need_: The civilian cannot move and needs to be assisted. After $T_v$ time units near a fire, they became a casualty, if assisted in time they are considered safe. In both cases they leave the simulation freeing the map cell they were occupying.
 + _survivors_: The civilian moves towards an exit following a _moving policy_. If they are within a 1-cell range from an exit they are considered safe and leave the simulation freeing the map cell they were occupying.
