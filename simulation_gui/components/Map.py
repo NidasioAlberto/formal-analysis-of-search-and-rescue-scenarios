@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication, QShortcut, QKeySequence, QAction
+from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication, QKeySequence, QAction, QMouseEvent
 from PySide6.QtCore import QRect, QSize, Qt, Slot
 
 from components.Enums import CellType, CellColor
@@ -11,7 +11,7 @@ import os
 class MapWidget(QLabel):
     assets = {}
 
-    def __init__(self, N_COLS, N_ROWS, PIXELS_PER_CELL=50):
+    def __init__(self, N_COLS: int, N_ROWS: int, PIXELS_PER_CELL: int = 50):
         super().__init__()
 
         # Initialize variables
@@ -29,7 +29,7 @@ class MapWidget(QLabel):
 
         self.load_assets()
 
-    def load_assets(self):
+    def load_assets(self) -> None:
         asset = QPixmap(self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
         asset.fill(CellColor.FIRE.value)
         self.assets[CellType.FIRE] = asset
@@ -53,7 +53,7 @@ class MapWidget(QLabel):
         asset = QPixmap("assets/drone_50.png")
         self.assets[CellType.DRONE] = asset
 
-    def draw_grid(self):
+    def draw_grid(self) -> None:
         canvas = self.pixmap()
         painter = QPainter(canvas)
 
@@ -67,13 +67,13 @@ class MapWidget(QLabel):
         painter.end()
         self.setPixmap(canvas)
 
-    def clear(self):
+    def clear(self) -> None:
         canvas = QPixmap(self.size())
         canvas.fill(QColorConstants.White)
         self.setPixmap(canvas)
         self.draw_grid()
 
-    def draw_cell(self, cell_type, x, y):
+    def draw_cell(self, cell_type: CellType, x: int, y: int) -> None:
         canvas = self.pixmap()
         painter = QPainter(canvas)
 
@@ -85,19 +85,19 @@ class MapWidget(QLabel):
         painter.end()
         self.setPixmap(canvas)
 
-    def draw_cells(self, cells):
+    def draw_cells(self, cells: list[list[int]]) -> None:
         for x in range(self.N_COLS):
             for y in range(self.N_ROWS):
                 if cells[x][y] != CellType.EMPTY.value:
                     self.draw_cell(CellType(cells[x][y]), x, y)
 
-    def draw_drones(self, drones):
+    def draw_drones(self, drones: list[list[int]]):
         for x in range(self.N_COLS):
             for y in range(self.N_ROWS):
                 if drones[x][y]:
                     self.draw_cell(CellType.DRONE, x, y)
 
-    def draw_map(self, map):
+    def draw_map(self, map: dict[str, list[list[int]]]) -> None:
         self.clear()
         self.draw_cells(map["cells"])
         self.draw_drones(map["drones"])
@@ -115,7 +115,7 @@ class MapEditorWidget(MapWidget):
     # so the object must not be destroyed when the constructor ends
     save_action = None
 
-    def __init__(self, N_COLS, N_ROWS, PIXELS_PER_CELL=50):
+    def __init__(self, N_COLS: int, N_ROWS: int, PIXELS_PER_CELL: int = 50):
         super().__init__(N_COLS, N_ROWS, PIXELS_PER_CELL)
 
         self.map = {
@@ -133,7 +133,7 @@ class MapEditorWidget(MapWidget):
         self.addAction(self.save_action)
 
     @Slot()
-    def on_save(self):
+    def on_save(self) -> None:
         i = 0
 
         # Find a suitable file name
@@ -145,10 +145,10 @@ class MapEditorWidget(MapWidget):
             json.dump(self.map, write_file)
             print(f"Current map saved to map_save_{i}.json")
 
-    def set_cell(map, cell_type, pos):
+    def set_cell(map, cell_type, pos) -> None:
         map["cells"][pos[0]][pos[1]] = cell_type.value
 
-    def set_cell_rect(map, cell_type, pos1, pos2):
+    def set_cell_rect(map, cell_type, pos1, pos2) -> None:
         (x1, y1) = pos1
         (x2, y2) = pos2
 
@@ -156,13 +156,13 @@ class MapEditorWidget(MapWidget):
             for y in range(y1, y2 + 1):
                 MapEditorWidget.set_cell(map, cell_type, (x, y))
 
-    def set_drone(map, cell_type, pos):
+    def set_drone(map, cell_type, pos) -> None:
         if cell_type == CellType.EMPTY:
             map["drones"][pos[0]][pos[1]] = 0
         elif cell_type == CellType.DRONE:
             map["drones"][pos[0]][pos[1]] = 1
 
-    def set_map_drone_rect(map, cell_type, pos1, pos2):
+    def set_map_drone_rect(map, cell_type, pos1, pos2) -> None:
         (x1, y1) = pos1
         (x2, y2) = pos2
 
@@ -170,7 +170,7 @@ class MapEditorWidget(MapWidget):
             for y in range(y1, y2 + 1):
                 MapEditorWidget.set_drone(map, cell_type, (x, y))
 
-    def map_position_from_pixel(self, pos):
+    def map_position_from_pixel(self, pos: tuple[int, int]) -> tuple[int, int]:
         x = int(pos.x() // self.PIXELS_PER_CELL)
         y = int(pos.y() // self.PIXELS_PER_CELL)
 
@@ -186,7 +186,7 @@ class MapEditorWidget(MapWidget):
 
         return (x, y)
 
-    def choose_tools(self, press_pos, release_pos, button):
+    def choose_tools(self, press_pos: tuple[int, int], release_pos: tuple[int, int], button: Qt.MouseButton) -> CellType:
         # Use the press position as source
         (x, y) = press_pos
 
@@ -215,11 +215,11 @@ class MapEditorWidget(MapWidget):
             else:
                 return self.last_cell_tool
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         self.press_position = self.map_position_from_pixel(event.position())
         self.tool_active = True
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         release_pos = self.map_position_from_pixel(event.position())
         self.tool_active = False
 
@@ -250,7 +250,7 @@ class MapEditorWidget(MapWidget):
         # Redraw the map
         self.draw_map(self.map)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         current_pos = self.map_position_from_pixel(event.position())
 
         if self.press_position != None and self.tool_active:
