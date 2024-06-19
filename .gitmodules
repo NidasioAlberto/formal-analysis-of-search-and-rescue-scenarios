@@ -1,6 +1,6 @@
-[submodule "visualizer/curlpp"]
-	path = visualizer/uppaal_external_functions/curlpp
+[submodule "simulation_gui/uppaal_external_functions/curlpp"]
+	path = simulation_gui/uppaal_external_functions/curlpp
 	url = https://github.com/jpbarrette/curlpp.git
-[submodule "visualizer/json"]
-	path = visualizer/uppaal_external_functions/nlohmann_json
+[submodule "simulation_gui/uppaal_external_functions/nlohmann_json"]
+	path = simulation_gui/uppaal_external_functions/nlohmann_json
 	url = https://github.com/nlohmann/json.git
