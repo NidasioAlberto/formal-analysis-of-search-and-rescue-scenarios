@@ -1,9 +1,11 @@
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QMouseEvent, QPainter, QPixmap, QColorConstants, QGuiApplication
-from PySide6.QtCore import QRect, QSize, Qt
+from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication, QShortcut, QKeySequence, QAction
+from PySide6.QtCore import QRect, QSize, Qt, Slot
 
 from components.Enums import CellType, CellColor
 from copy import deepcopy
+import json
+import os
 
 
 class MapWidget(QLabel):
@@ -109,6 +111,10 @@ class MapEditorWidget(MapWidget):
     last_cell_tool = CellType.FIRE
     tool_active = False
 
+    # The ownership of the action is not passed to the widget,
+    # so the object must not be destroyed when the constructor ends
+    save_action = None
+
     def __init__(self, N_COLS, N_ROWS, PIXELS_PER_CELL=50):
         super().__init__(N_COLS, N_ROWS, PIXELS_PER_CELL)
 
@@ -119,6 +125,25 @@ class MapEditorWidget(MapWidget):
 
         self.draw_map(self.map)
         self.setMouseTracking(True)
+
+        # Setup save shortcut
+        self.save_action = QAction()
+        self.save_action.triggered.connect(self.on_save)
+        self.save_action.setShortcut(QKeySequence.Save)
+        self.addAction(self.save_action)
+
+    @Slot()
+    def on_save(self):
+        i = 0
+
+        # Find a suitable file name
+        while os.path.exists(f"map_save_{i}.json"):
+            i += 1
+
+        # Dump the map into a file
+        with open(f"map_save_{i}.json", "w") as write_file:
+            json.dump(self.map, write_file)
+            print(f"Current map saved to map_save_{i}.json")
 
     def set_cell(map, cell_type, pos):
         map["cells"][pos[0]][pos[1]] = cell_type.value
