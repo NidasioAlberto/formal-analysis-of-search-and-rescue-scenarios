@@ -8,7 +8,9 @@ from PySide6.QtWidgets import QApplication
 from components.Map import MapWidget, MapEditorWidget
 
 parser = argparse.ArgumentParser(description='Optional app description')
-parser.add_argument('mode', choices=["visualizer", "editor"], default="editor")
+parser.add_argument("mode", choices=["visualizer", "editor"], default="editor")
+parser.add_argument("--map_file", type=argparse.FileType("r"),
+                    default="examples/simple_map.json", help="Map file to visualize")
 
 
 if __name__ == "__main__":
@@ -18,10 +20,7 @@ if __name__ == "__main__":
     if args.mode == "visualizer":
         map = MapWidget(10, 10)
         map.clear()
-
-        with open("examples/simple_map.json", "r") as read_file:
-            print(map)
-            map.draw_map(json.load(read_file))
+        map.draw_map(json.load(args.map_file))
     elif args.mode == "editor":
         map = MapEditorWidget(10, 10)
         map.clear()

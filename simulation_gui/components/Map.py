@@ -186,7 +186,6 @@ class MapEditorWidget(MapWidget):
         # Determine what to put in the cell
         next_cell_tool = self.choose_tools(
             self.press_position, release_pos, event.button())
-        print(f"Choosen tool: {next_cell_tool}")
 
         # Update the target area
         if next_cell_tool == CellType.EMPTY:
