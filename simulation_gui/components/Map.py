@@ -166,7 +166,7 @@ class MapEditorWidget(MapWidget):
         (x, y) = press_pos
 
         # In all cases, if the middle button is pressed we clear everything
-        if button == Qt.MouseButton.MiddleButton:
+        if button == Qt.MouseButton.MiddleButton or Qt.MouseButton.MiddleButton in QGuiApplication.mouseButtons():
             return CellType.EMPTY
 
         # If shift is pressed, draw drones
