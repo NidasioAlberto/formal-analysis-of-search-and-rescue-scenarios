@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication
+from PySide6.QtGui import QMouseEvent, QPainter, QPixmap, QColorConstants, QGuiApplication
 from PySide6.QtCore import QRect, QSize, Qt
 
 from components.Enums import CellType, CellColor
+from copy import deepcopy
 
 
 class MapWidget(QLabel):
@@ -104,7 +105,9 @@ class MapEditorWidget(MapWidget):
     map = {}
 
     press_position = None
+    last_move_position = None
     last_cell_tool = CellType.FIRE
+    tool_active = False
 
     def __init__(self, N_COLS, N_ROWS, PIXELS_PER_CELL=50):
         super().__init__(N_COLS, N_ROWS, PIXELS_PER_CELL)
@@ -115,34 +118,48 @@ class MapEditorWidget(MapWidget):
         }
 
         self.draw_map(self.map)
+        self.setMouseTracking(True)
 
-    def set_cell(self, cell_type, pos):
-        self.map["cells"][pos[0]][pos[1]] = cell_type.value
+    def set_cell(map, cell_type, pos):
+        map["cells"][pos[0]][pos[1]] = cell_type.value
 
-    def set_cell_rect(self, cell_type, pos1, pos2):
+    def set_cell_rect(map, cell_type, pos1, pos2):
         (x1, y1) = pos1
         (x2, y2) = pos2
 
         for x in range(x1, x2 + 1):
             for y in range(y1, y2 + 1):
-                self.set_cell(cell_type, (x, y))
+                MapEditorWidget.set_cell(map, cell_type, (x, y))
 
-    def set_drone(self, cell_type, pos):
+    def set_drone(map, cell_type, pos):
         if cell_type == CellType.EMPTY:
-            self.map["drones"][pos[0]][pos[1]] = 0
+            map["drones"][pos[0]][pos[1]] = 0
         elif cell_type == CellType.DRONE:
-            self.map["drones"][pos[0]][pos[1]] = 1
+            map["drones"][pos[0]][pos[1]] = 1
 
-    def set_map_drone_rect(self, cell_type, pos1, pos2):
+    def set_map_drone_rect(map, cell_type, pos1, pos2):
         (x1, y1) = pos1
         (x2, y2) = pos2
 
         for x in range(x1, x2 + 1):
             for y in range(y1, y2 + 1):
-                self.set_drone(cell_type, (x, y))
+                MapEditorWidget.set_drone(map, cell_type, (x, y))
 
-    def map_position_from_pixel(self, x, y):
-        return int(x // self.PIXELS_PER_CELL), int(y // self.PIXELS_PER_CELL)
+    def map_position_from_pixel(self, pos):
+        x = int(pos.x() // self.PIXELS_PER_CELL)
+        y = int(pos.y() // self.PIXELS_PER_CELL)
+
+        # Clamp values
+        if x < 0:
+            x = 0
+        elif x >= self.N_COLS:
+            x = self.N_COLS - 1
+        if y < 0:
+            y = 0
+        elif y >= self.N_ROWS:
+            y = self.N_ROWS - 1
+
+        return (x, y)
 
     def choose_tools(self, press_pos, release_pos, button):
         # Use the press position as source
@@ -171,41 +188,72 @@ class MapEditorWidget(MapWidget):
                 # Previous tool
                 return CellType((self.map["cells"][x][y] - 1) % (len(CellType) - 1))
             else:
-                print("Unrecognized mouse button, using last tool")
                 return self.last_cell_tool
 
     def mousePressEvent(self, event):
-        # Capture the press coordinates
-        self.press_position = self.map_position_from_pixel(
-            event.position().x(), event.position().y())
+        self.press_position = self.map_position_from_pixel(event.position())
+        self.tool_active = True
 
     def mouseReleaseEvent(self, event):
-        release_pos = self.map_position_from_pixel(
-            event.position().x(), event.position().y())
+        release_pos = self.map_position_from_pixel(event.position())
+        self.tool_active = False
 
-        # Determine what to put in the cell
+        # Determine what to put in the cells
         next_cell_tool = self.choose_tools(
             self.press_position, release_pos, event.button())
 
         # Update the target area
         if next_cell_tool == CellType.EMPTY:
             # If the tool is EMPTY, we clear out both cells and drones
-            self.set_cell_rect(
-                next_cell_tool, self.press_position, release_pos)
-            self.set_map_drone_rect(
-                next_cell_tool, self.press_position, release_pos)
+            MapEditorWidget.set_cell_rect(self.map, next_cell_tool,
+                                          self.press_position, release_pos)
+            MapEditorWidget.set_map_drone_rect(self.map, next_cell_tool,
+                                               self.press_position, release_pos)
 
             # In this case we reset the last tool used to FIRE
             self.last_cell_tool = CellType.FIRE
-        if next_cell_tool == CellType.DRONE:
-            self.set_map_drone_rect(
-                next_cell_tool, self.press_position, release_pos)
+        elif next_cell_tool == CellType.DRONE:
+            MapEditorWidget.set_map_drone_rect(self.map, CellType.DRONE,
+                                               self.press_position, release_pos)
         else:
-            self.set_cell_rect(
-                next_cell_tool, self.press_position, release_pos)
+            MapEditorWidget.set_cell_rect(self.map, next_cell_tool,
+                                          self.press_position, release_pos)
 
             # Update the last cell tool
             self.last_cell_tool = next_cell_tool
 
         # Redraw the map
         self.draw_map(self.map)
+
+    def mouseMoveEvent(self, event):
+        current_pos = self.map_position_from_pixel(event.position())
+
+        if self.press_position != None and self.tool_active:
+            map_copy = deepcopy(self.map)
+
+            # Determine what to put in the cells
+            next_cell_tool = self.choose_tools(
+                self.press_position, current_pos, event.button())
+
+            # Update the target area
+            if next_cell_tool == CellType.EMPTY:
+                # If the tool is EMPTY, we clear out both cells and drones
+                MapEditorWidget.set_cell_rect(map_copy, next_cell_tool,
+                                              self.press_position, current_pos)
+                MapEditorWidget.set_map_drone_rect(map_copy, next_cell_tool,
+                                                   self.press_position, current_pos)
+
+                # In this case we reset the last tool used to FIRE
+                self.last_cell_tool = CellType.FIRE
+            elif next_cell_tool == CellType.DRONE:
+                MapEditorWidget.set_map_drone_rect(map_copy, CellType.DRONE,
+                                                   self.press_position, current_pos)
+            else:
+                MapEditorWidget.set_cell_rect(map_copy, next_cell_tool,
+                                              self.press_position, current_pos)
+
+                # Update the last cell tool
+                self.last_cell_tool = next_cell_tool
+
+            # Redraw the map
+            self.draw_map(map_copy)
