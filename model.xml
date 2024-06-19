@@ -1031,8 +1031,8 @@ available_fr += 1</label>
  ******************************************************************************/
 
 // Uncomment to enable the live map visualizer
-/*
-import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/build/libvisualizer.so" {
+
+import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/uppaal_external_functions/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
 };
 
@@ -1054,8 +1054,8 @@ void send_state() {
     send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
 }
 
+// before_update { send_state() }
 after_update { send_state() }
-*/
 
 system Drone, Survivor, FirstResponder, Initializer;
 </system>
