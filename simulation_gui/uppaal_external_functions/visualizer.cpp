@@ -5,21 +5,21 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-extern "C" void send_state_via_post_request(int n_cols, int n_rows, int map[],
-                                            bool drone_map[]) {
+extern "C" void send_state_via_post_request(int n_cols, int n_rows, int cells[],
+                                            bool drones[]) {
   nlohmann::json state;
 
   state["N_COLS"] = n_cols;
   state["N_ROWS"] = n_rows;
-  state["map"] = nlohmann::json::array();
-  state["drone_map"] = nlohmann::json::array();
+  state["cells"] = nlohmann::json::array();
+  state["drones"] = nlohmann::json::array();
 
   for (int x = 0; x < n_cols; x++) {
-    state["map"][x] = nlohmann::json::array();
-    state["drone_map"][x] = nlohmann::json::array();
+    state["cells"][x] = nlohmann::json::array();
+    state["drones"][x] = nlohmann::json::array();
     for (int y = 0; y < n_rows; y++) {
-      state["map"][x][y] = map[x * n_cols + y];
-      state["drone_map"][x][y] = drone_map[x * n_cols + y];
+      state["cells"][x][y] = cells[x * n_cols + y];
+      state["drones"][x][y] = drones[x * n_cols + y];
     }
   }
 

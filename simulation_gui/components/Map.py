@@ -1,11 +1,9 @@
 from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication, QKeySequence, QAction, QMouseEvent
-from PySide6.QtCore import QRect, QSize, Qt, Slot
+from PySide6.QtCore import QRect, QSize, Qt, Slot, QJsonArray
 
 from components.Enums import CellType, CellColor
 from copy import deepcopy
-import json
-import os
 
 
 class MapWidget(QLabel):
@@ -85,19 +83,20 @@ class MapWidget(QLabel):
         painter.end()
         self.setPixmap(canvas)
 
-    def draw_cells(self, cells: list[list[int]]) -> None:
+    def draw_cells(self, cells: QJsonArray) -> None:
         for x in range(self.N_COLS):
             for y in range(self.N_ROWS):
                 if cells[x][y] != CellType.EMPTY.value:
                     self.draw_cell(CellType(cells[x][y]), x, y)
 
-    def draw_drones(self, drones: list[list[int]]):
+    def draw_drones(self, drones: QJsonArray) -> None:
         for x in range(self.N_COLS):
             for y in range(self.N_ROWS):
                 if drones[x][y]:
                     self.draw_cell(CellType.DRONE, x, y)
 
-    def draw_map(self, map: dict[str, list[list[int]]]) -> None:
+    @Slot()
+    def draw_map(self, map: dict[str, QJsonArray]) -> None:
         self.clear()
         self.draw_cells(map["cells"])
         self.draw_drones(map["drones"])

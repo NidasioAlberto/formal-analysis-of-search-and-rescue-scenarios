@@ -1,16 +1,17 @@
 #!/usr/bin/python3
 
 import argparse
-import json
 import sys
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QJsonDocument
 
 from components.Map import MapWidget, MapEditorWidget
+from components.HttpServer import HttpServer
 
 parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument(
-    "--mode", choices=["visualizer", "editor"], default="visualizer")
-parser.add_argument("--map_file", type=argparse.FileType("r"),
+    "--mode", choices=["file_visualizer", "live_visualizer", "editor"], default="visualizer")
+parser.add_argument("--map_file", type=argparse.FileType("rb"),
                     default="examples/simple_map.json", help="Map file to visualize")
 parser.add_argument("--cols", type=int, default=10, help="Number of columns")
 parser.add_argument("--rows", type=int, default=10, help="Number of rows")
@@ -21,10 +22,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
     app = QApplication([])
 
-    if args.mode == "visualizer":
+    if args.mode == "file_visualizer":
         map = MapWidget(args.cols, args.rows, args.cell_size)
         map.clear()
-        map.draw_map(json.load(args.map_file))
+        map.draw_map(QJsonDocument.fromJson(args.map_file.read()).object())
+    if args.mode == "live_visualizer":
+        map = MapWidget(args.cols, args.rows, args.cell_size)
+        map.clear()
+        server = HttpServer(map.draw_map)
+        server.start()
     elif args.mode == "editor":
         map = MapEditorWidget(args.cols, args.rows, args.cell_size)
         map.clear()
