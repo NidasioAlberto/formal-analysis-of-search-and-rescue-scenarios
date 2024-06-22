@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<?xml version='1.0' encoding='utf-8'?>
 <nta>
-	<declaration>/******************************************************************************
+<declaration>/******************************************************************************
  *                                  Types                                     *
  ******************************************************************************/
 
@@ -43,7 +42,7 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  ******************************************************************************/
 
 // Scenario 1: basic scenario from the assignment document
-/*
+
 // Map size
 const int N_COLS = 10; // x
 const int N_ROWS = 10; // y
@@ -75,10 +74,9 @@ const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {POLICY_DIRECT, POLICY_
 
 // Initial map state
 const map_id_t map_id = MAP_SCENARIO_1;
-*/
 
 // Scenario 2: 16 survivors and 4 first-responders on a 20x20 grid
-
+/*
 // Map size
 const int N_COLS = 20; // x
 const int N_ROWS = 20; // y
@@ -114,7 +112,7 @@ const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {POLICY_DIRECT, POLICY_
 
 // Initial map state
 const map_id_t map_id = MAP_SCENARIO_2;
-
+*/
 
 /******************************************************************************
  *                                 Constants                                  *
@@ -387,10 +385,7 @@ bool is_move_valid_g(pos_t pos, pos_t move, pos_t target, cell_t type, policy_t 
 
     return false;
 }
-</declaration>
-	<template>
-		<name>Initializer</name>
-		<declaration>clock t = 0;
+</declaration><template><name>Initializer</name><declaration>clock t = 0;
 
 void init_map() {
     // Init the map will all empty cells
@@ -424,31 +419,7 @@ void init_map() {
         
     }
 }
-</declaration>
-		<location id="id0" x="129" y="0">
-		</location>
-		<location id="id1" x="-42" y="0">
-			<committed/>
-		</location>
-		<location id="id2" x="-221" y="0">
-			<committed/>
-		</location>
-		<init ref="id2"/>
-		<transition id="id3">
-			<source ref="id1"/>
-			<target ref="id0"/>
-			<label kind="synchronisation" x="-25" y="0">init_done!</label>
-		</transition>
-		<transition id="id4">
-			<source ref="id2"/>
-			<target ref="id1"/>
-			<label kind="assignment" x="-204" y="0">init_map()</label>
-		</transition>
-	</template>
-	<template>
-		<name>Drone</name>
-		<parameter>const drone_id_t id</parameter>
-		<declaration>/******************************************************************************
+</declaration><location id="id0" x="129" y="0" /><location id="id1" x="-42" y="0"><committed /></location><location id="id2" x="-221" y="0"><committed /></location><init ref="id2" /><transition><source ref="id1" /><target ref="id0" /><label kind="synchronisation" x="-25" y="0">init_done!</label></transition><transition><source ref="id2" /><target ref="id1" /><label kind="assignment" x="-204" y="0">init_map()</label></transition></template><template><name>Drone</name><parameter>const drone_id_t id</parameter><declaration>/******************************************************************************
  *                                  Variables                                 *
  ******************************************************************************/
 
@@ -545,128 +516,24 @@ void save_first_resp(int x, int y) {
     fr.x = x;
     fr.y = y;
 }
-</declaration>
-		<location id="id5" x="-1232" y="-450">
-			<name x="-1215" y="-484">FirstResponderFound</name>
-			<committed/>
-		</location>
-		<location id="id6" x="-944" y="-561">
-			<name x="-927" y="-595">AssistingDirectly</name>
-			<committed/>
-		</location>
-		<location id="id7" x="-943" y="-450">
-			<name x="-926" y="-484">SearchingFirstResponder</name>
-			<committed/>
-		</location>
-		<location id="id8" x="-680" y="-510">
-			<name x="-909" y="-518">SurvivorAndInNeedSelected</name>
-			<label kind="comments" x="-918" y="-416">If there is a first responder
+</declaration><location id="id5" x="-1232" y="-450"><name x="-1215" y="-484">FirstResponderFound</name><committed /></location><location id="id6" x="-944" y="-561"><name x="-927" y="-595">AssistingDirectly</name><committed /></location><location id="id7" x="-943" y="-450"><name x="-926" y="-484">SearchingFirstResponder</name><committed /></location><location id="id8" x="-680" y="-510"><name x="-909" y="-518">SurvivorAndInNeedSelected</name><label kind="comments" x="-918" y="-416">If there is a first responder
 available, instruct the selected
 zero reponder to call him,
-otherwise assit directly</label>
-			<committed/>
-		</location>
-		<location id="id9" x="-952" y="-799">
-			<name x="-935" y="-833">SurvivorSelected</name>
-			<committed/>
-		</location>
-		<location id="id10" x="-1700" y="-799" color="#ffffff">
-			<name x="-1683" y="-833">Init</name>
-		</location>
-		<location id="id11" x="-1402" y="-799" color="#ffa500">
-			<name x="-1385" y="-850">Moving</name>
-			<label kind="invariant" x="-1385" y="-833">t &lt;= 1</label>
-		</location>
-		<init ref="id10"/>
-		<transition id="id12">
-			<source ref="id11"/>
-			<target ref="id11"/>
-			<label kind="guard" x="-1470" y="-909">t &gt;= 1</label>
-			<label kind="assignment" x="-1470" y="-892">move(),
-t = 0</label>
-			<label kind="comments" x="-1385" y="-901">This edge is the only one that resets the clock.
-This way the drone must make one move per time unit</label>
-			<nail x="-1445" y="-833"/>
-			<nail x="-1402" y="-858"/>
-		</transition>
-		<transition id="id13">
-			<source ref="id5"/>
-			<target ref="id11"/>
-			<label kind="synchronisation" x="-1462" y="-442">go_call_a_fr[zr.x][zr.y]!</label>
-			<label kind="assignment" x="-1462" y="-425">target_first_resp = fr,
-target_in_need = in</label>
-			<nail x="-1428" y="-450"/>
-			<nail x="-1428" y="-773"/>
-		</transition>
-		<transition id="id14">
-			<source ref="id6"/>
-			<target ref="id11"/>
-			<label kind="synchronisation" x="-1215" y="-552">assist_directly[zr.x][zr.y]!</label>
-			<label kind="assignment" x="-1215" y="-535">target_in_need = in</label>
-			<nail x="-1402" y="-561"/>
-		</transition>
-		<transition id="id15">
-			<source ref="id7"/>
-			<target ref="id5"/>
-			<label kind="select" x="-1207" y="-441">x : int[0, N_COLS-1],
-y : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-1207" y="-399">is_first_resp(x, y)</label>
-			<label kind="synchronisation" x="-1207" y="-382">lock_fr[x][y]!</label>
-			<label kind="assignment" x="-1207" y="-365">save_first_resp(x, y)</label>
-			<label kind="comments" x="-1207" y="-331">Selects one first_reponder
-for the zero_responder to call</label>
-		</transition>
-		<transition id="id16">
-			<source ref="id8"/>
-			<target ref="id6"/>
-			<label kind="guard" x="-918" y="-552">available_fr == 0</label>
-			<nail x="-731" y="-561"/>
-		</transition>
-		<transition id="id17">
-			<source ref="id8"/>
-			<target ref="id7"/>
-			<label kind="guard" x="-918" y="-442">available_fr &gt; 0</label>
-			<nail x="-731" y="-450"/>
-		</transition>
-		<transition id="id18">
-			<source ref="id9"/>
-			<target ref="id8"/>
-			<label kind="select" x="-935" y="-791">x : int[0, N_COLS-1],
-y : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-935" y="-749">is_in_need(x, y)</label>
-			<label kind="synchronisation" x="-935" y="-731">starting_assistance[x][y]!</label>
-			<label kind="assignment" x="-935" y="-714">save_in_need(x, y)</label>
-			<label kind="comments" x="-935" y="-688">Finds one in_need in the
+otherwise assit directly</label><committed /></location><location id="id9" x="-952" y="-799"><name x="-935" y="-833">SurvivorSelected</name><committed /></location><location id="id10" x="-1700" y="-799"><name x="-1683" y="-833">Init</name></location><location id="id11" x="-1402" y="-799"><name x="-1385" y="-850">Moving</name><label kind="invariant" x="-1385" y="-833">t &lt;= 1</label></location><init ref="id10" /><transition><source ref="id11" /><target ref="id11" /><label kind="guard" x="-1470" y="-909">t &gt;= 1</label><label kind="assignment" x="-1470" y="-892">move(),
+t = 0</label><label kind="comments" x="-1385" y="-901">This edge is the only one that resets the clock.
+This way the drone must make one move per time unit</label><nail x="-1445" y="-833" /><nail x="-1402" y="-858" /></transition><transition><source ref="id5" /><target ref="id11" /><label kind="synchronisation" x="-1462" y="-442">go_call_a_fr[zr.x][zr.y]!</label><label kind="assignment" x="-1462" y="-425">target_first_resp = fr,
+target_in_need = in</label><nail x="-1428" y="-450" /><nail x="-1428" y="-773" /></transition><transition><source ref="id6" /><target ref="id11" /><label kind="synchronisation" x="-1215" y="-552">assist_directly[zr.x][zr.y]!</label><label kind="assignment" x="-1215" y="-535">target_in_need = in</label><nail x="-1402" y="-561" /></transition><transition><source ref="id7" /><target ref="id5" /><label kind="select" x="-1207" y="-441">x : int[0, N_COLS-1],
+y : int[0, N_ROWS-1]</label><label kind="guard" x="-1207" y="-399">is_first_resp(x, y)</label><label kind="synchronisation" x="-1207" y="-382">lock_fr[x][y]!</label><label kind="assignment" x="-1207" y="-365">save_first_resp(x, y)</label><label kind="comments" x="-1207" y="-331">Selects one first_reponder
+for the zero_responder to call</label></transition><transition><source ref="id8" /><target ref="id6" /><label kind="guard" x="-918" y="-552">available_fr == 0</label><nail x="-731" y="-561" /></transition><transition><source ref="id8" /><target ref="id7" /><label kind="guard" x="-918" y="-442">available_fr &gt; 0</label><nail x="-731" y="-450" /></transition><transition><source ref="id9" /><target ref="id8" /><label kind="select" x="-935" y="-791">x : int[0, N_COLS-1],
+y : int[0, N_ROWS-1]</label><label kind="guard" x="-935" y="-749">is_in_need(x, y)</label><label kind="synchronisation" x="-935" y="-731">starting_assistance[x][y]!</label><label kind="assignment" x="-935" y="-714">save_in_need(x, y)</label><label kind="comments" x="-935" y="-688">Finds one in_need in the
 field of view and saves
-its coordinates</label>
-			<nail x="-679" y="-799"/>
-		</transition>
-		<transition id="id19">
-			<source ref="id11"/>
-			<target ref="id9"/>
-			<label kind="select" x="-1385" y="-790">x : int[0, N_COLS-1],
-y : int[0, N_ROWS-1]</label>
-			<label kind="guard" x="-1385" y="-747">t &gt;= 1 &amp;&amp;
+its coordinates</label><nail x="-679" y="-799" /></transition><transition><source ref="id11" /><target ref="id9" /><label kind="select" x="-1385" y="-790">x : int[0, N_COLS-1],
+y : int[0, N_ROWS-1]</label><label kind="guard" x="-1385" y="-747">t &gt;= 1 &amp;&amp;
 in_need_near() &amp;&amp;
-is_possible_zero_responder(x, y)</label>
-			<label kind="synchronisation" x="-1385" y="-688">await_job[x][y]!</label>
-			<label kind="assignment" x="-1385" y="-671">save_zero_resp(x, y)</label>
-			<label kind="comments" x="-1385" y="-637">Finds one possible zero_responder in
+is_possible_zero_responder(x, y)</label><label kind="synchronisation" x="-1385" y="-688">await_job[x][y]!</label><label kind="assignment" x="-1385" y="-671">save_zero_resp(x, y)</label><label kind="comments" x="-1385" y="-637">Finds one possible zero_responder in
 the field of view, saves its coordinates
-and tells him to assist</label>
-		</transition>
-		<transition id="id20">
-			<source ref="id10"/>
-			<target ref="id11"/>
-			<label kind="synchronisation" x="-1683" y="-790">init_done?</label>
-			<label kind="assignment" x="-1683" y="-773">pos = drones_starting_pos[id],
-set_drone_map(pos, true)</label>
-		</transition>
-	</template>
-	<template>
-		<name>Survivor</name>
-		<parameter>const survivor_id_t id</parameter>
-		<declaration>/******************************************************************************
+and tells him to assist</label></transition><transition><source ref="id10" /><target ref="id11" /><label kind="synchronisation" x="-1683" y="-790">init_done?</label><label kind="assignment" x="-1683" y="-773">pos = drones_starting_pos[id],
+set_drone_map(pos, true)</label></transition></template><template><name>Survivor</name><parameter>const survivor_id_t id</parameter><declaration>/******************************************************************************
  *                                  Variables                                 *
  ******************************************************************************/
 
@@ -710,175 +577,23 @@ bool is_fire_near() {
 bool is_exit_near() {
     return is_val_in_radius(pos, CELL_EXIT, 1);
 }
-</declaration>
-		<location id="id21" x="153" y="-170" color="#ffa500">
-			<name x="170" y="-162">Moving</name>
-			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
-		</location>
-		<location id="id22" x="833" y="153" color="#ffc0cb">
-			<name x="816" y="178">AssistingDirectly</name>
-			<label kind="invariant" x="817" y="195">t &lt;= T_zr[id]</label>
-		</location>
-		<location id="id23" x="858" y="-340" color="#ff0000">
-			<name x="875" y="-391">InNeed</name>
-			<label kind="invariant" x="875" y="-374">t &lt;= T_v[id]</label>
-		</location>
-		<location id="id24" x="493" y="-170" color="#ffffff">
-			<name x="484" y="-153">Init</name>
-		</location>
-		<location id="id25" x="1164" y="-340" color="#000000">
-			<name x="1113" y="-374">Dead</name>
-		</location>
-		<location id="id26" x="833" y="0" color="#00ff00">
-			<name x="857" y="-9">Safe</name>
-		</location>
-		<location id="id27" x="552" y="0" color="#ffc0cb">
-			<name x="569" y="-34">WaitingCompletion</name>
-		</location>
-		<location id="id28" x="314" y="-1" color="#00ffff">
-			<name x="331" y="-51">CallingFirstResponder</name>
-			<label kind="invariant" x="331" y="-34">t &lt;= distance(pos, fr)</label>
-		</location>
-		<location id="id29" x="93" y="153" color="#c0c0c0">
-			<name x="-25" y="162">AwaitingJob</name>
-		</location>
-		<location id="id30" x="858" y="-170" color="#ffff00">
-			<name x="874" y="-221">BeingAssisted</name>
-			<label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label>
-		</location>
-		<location id="id31" x="486" y="153">
-			<name x="476" y="93">ReachingInNeed</name>
-			<label kind="invariant" x="476" y="110">t &lt;= distance(pos, in)</label>
-		</location>
-		<init ref="id24"/>
-		<transition id="id32">
-			<source ref="id31"/>
-			<target ref="id22"/>
-			<label kind="guard" x="578" y="153">t &gt;= distance(pos, in)</label>
-			<label kind="assignment" x="637" y="170">t = 0</label>
-		</transition>
-		<transition id="id33">
-			<source ref="id30"/>
-			<target ref="id25"/>
-			<label kind="guard" x="875" y="-170">t &gt;= T_v[id]</label>
-			<label kind="assignment" x="875" y="-153">set_map(pos, CELL_EMPTY),
-dead_survivors += 1</label>
-			<nail x="1164" y="-170"/>
-		</transition>
-		<transition id="id34">
-			<source ref="id23"/>
-			<target ref="id30"/>
-			<label kind="synchronisation" x="867" y="-272">starting_assistance[pos.x][pos.y]?</label>
-			<label kind="assignment" x="867" y="-255">set_map(pos, CELL_ASSISTED)</label>
-		</transition>
-		<transition id="id35">
-			<source ref="id24"/>
-			<target ref="id21"/>
-			<label kind="guard" x="212" y="-246">!starting_near_a_fire()</label>
-			<label kind="synchronisation" x="212" y="-229">init_done?</label>
-			<label kind="assignment" x="212" y="-212">pos = survivors_starting_pos[id],
-set_map(pos, CELL_SURVIVOR)</label>
-		</transition>
-		<transition id="id36">
-			<source ref="id29"/>
-			<target ref="id31"/>
-			<label kind="synchronisation" x="110" y="161">assist_directly[pos.x][pos.y]?</label>
-			<label kind="assignment" x="110" y="178">in = target_in_need</label>
-		</transition>
-		<transition id="id37">
-			<source ref="id28"/>
-			<target ref="id27"/>
-			<label kind="guard" x="331" y="0">t &gt;= distance(pos, fr)</label>
-			<label kind="synchronisation" x="331" y="17">arrived[fr.x][fr.y]!</label>
-			<label kind="assignment" x="331" y="34">target_in_need = in</label>
-		</transition>
-		<transition id="id38">
-			<source ref="id27"/>
-			<target ref="id26"/>
-			<label kind="synchronisation" x="569" y="0">assist_complete[in.x][in.y]?</label>
-			<label kind="assignment" x="569" y="17">set_map(pos, CELL_EMPTY),
-safe_survivors += 1</label>
-		</transition>
-		<transition id="id39">
-			<source ref="id21"/>
-			<target ref="id26"/>
-			<label kind="guard" x="620" y="-119">t &gt;= 1 &amp;&amp;
-is_exit_near()</label>
-			<label kind="assignment" x="620" y="-77">set_map(pos, CELL_EMPTY),
-safe_survivors += 1</label>
-			<nail x="153" y="-119"/>
-			<nail x="833" y="-119"/>
-		</transition>
-		<transition id="id40">
-			<source ref="id30"/>
-			<target ref="id26"/>
-			<label kind="synchronisation" x="867" y="-68">assist_complete[pos.x][pos.y]?</label>
-			<label kind="assignment" x="867" y="-51">set_map(pos, CELL_EMPTY),
-safe_survivors += 1</label>
-			<nail x="858" y="-25"/>
-		</transition>
-		<transition id="id41">
-			<source ref="id29"/>
-			<target ref="id28"/>
-			<label kind="synchronisation" x="102" y="25">go_call_a_fr[pos.x][pos.y]?</label>
-			<label kind="assignment" x="102" y="42">fr = target_first_resp,
+</declaration><location id="id21" x="153" y="-170"><name x="170" y="-162">Moving</name><label kind="invariant" x="170" y="-145">t &lt;= 1</label></location><location id="id22" x="833" y="153"><name x="816" y="178">AssistingDirectly</name><label kind="invariant" x="817" y="195">t &lt;= T_zr[id]</label></location><location id="id23" x="858" y="-340"><name x="875" y="-391">InNeed</name><label kind="invariant" x="875" y="-374">t &lt;= T_v[id]</label></location><location id="id24" x="493" y="-170"><name x="484" y="-153">Init</name></location><location id="id25" x="1164" y="-340"><name x="1113" y="-374">Dead</name></location><location id="id26" x="833" y="0"><name x="857" y="-9">Safe</name></location><location id="id27" x="552" y="0"><name x="569" y="-34">WaitingCompletion</name></location><location id="id28" x="314" y="-1"><name x="331" y="-51">CallingFirstResponder</name><label kind="invariant" x="331" y="-34">t &lt;= distance(pos, fr)</label></location><location id="id29" x="93" y="153"><name x="-25" y="162">AwaitingJob</name></location><location id="id30" x="858" y="-170"><name x="874" y="-221">BeingAssisted</name><label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label></location><location id="id31" x="486" y="153"><name x="476" y="93">ReachingInNeed</name><label kind="invariant" x="476" y="110">t &lt;= distance(pos, in)</label></location><init ref="id24" /><transition><source ref="id31" /><target ref="id22" /><label kind="guard" x="578" y="153">t &gt;= distance(pos, in)</label><label kind="assignment" x="637" y="170">t = 0</label></transition><transition><source ref="id30" /><target ref="id25" /><label kind="guard" x="875" y="-170">t &gt;= T_v[id]</label><label kind="assignment" x="875" y="-153">set_map(pos, CELL_EMPTY),
+dead_survivors += 1</label><nail x="1164" y="-170" /></transition><transition><source ref="id23" /><target ref="id30" /><label kind="synchronisation" x="867" y="-272">starting_assistance[pos.x][pos.y]?</label><label kind="assignment" x="867" y="-255">set_map(pos, CELL_ASSISTED)</label></transition><transition><source ref="id24" /><target ref="id21" /><label kind="guard" x="212" y="-246">!starting_near_a_fire()</label><label kind="synchronisation" x="212" y="-229">init_done?</label><label kind="assignment" x="212" y="-212">pos = survivors_starting_pos[id],
+set_map(pos, CELL_SURVIVOR)</label></transition><transition><source ref="id29" /><target ref="id31" /><label kind="synchronisation" x="110" y="161">assist_directly[pos.x][pos.y]?</label><label kind="assignment" x="110" y="178">in = target_in_need</label></transition><transition><source ref="id28" /><target ref="id27" /><label kind="guard" x="331" y="0">t &gt;= distance(pos, fr)</label><label kind="synchronisation" x="331" y="17">arrived[fr.x][fr.y]!</label><label kind="assignment" x="331" y="34">target_in_need = in</label></transition><transition><source ref="id27" /><target ref="id26" /><label kind="synchronisation" x="569" y="0">assist_complete[in.x][in.y]?</label><label kind="assignment" x="569" y="17">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label></transition><transition><source ref="id21" /><target ref="id26" /><label kind="guard" x="620" y="-119">t &gt;= 1 &amp;&amp;
+is_exit_near()</label><label kind="assignment" x="620" y="-77">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label><nail x="153" y="-119" /><nail x="833" y="-119" /></transition><transition><source ref="id30" /><target ref="id26" /><label kind="synchronisation" x="867" y="-68">assist_complete[pos.x][pos.y]?</label><label kind="assignment" x="867" y="-51">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label><nail x="858" y="-25" /></transition><transition><source ref="id29" /><target ref="id28" /><label kind="synchronisation" x="102" y="25">go_call_a_fr[pos.x][pos.y]?</label><label kind="assignment" x="102" y="42">fr = target_first_resp,
 in = target_in_need,
-t = 0</label>
-			<nail x="93" y="0"/>
-		</transition>
-		<transition id="id42">
-			<source ref="id23"/>
-			<target ref="id25"/>
-			<label kind="guard" x="875" y="-340">t &gt;= T_v[id]</label>
-			<label kind="assignment" x="875" y="-323">set_map(pos, CELL_EMPTY),
-dead_survivors += 1</label>
-		</transition>
-		<transition id="id43">
-			<source ref="id22"/>
-			<target ref="id26"/>
-			<label kind="guard" x="850" y="51">t &gt;= T_zr[id]</label>
-			<label kind="synchronisation" x="850" y="68">assist_complete[in.x][in.y]!</label>
-			<label kind="assignment" x="850" y="85">set_map(pos, CELL_EMPTY),
-safe_survivors += 1</label>
-		</transition>
-		<transition id="id44">
-			<source ref="id21"/>
-			<target ref="id21"/>
-			<label kind="select" x="60" y="-357">i : int[-1, 1],
-j : int[-1, 1]</label>
-			<label kind="guard" x="59" y="-315">t &gt;= 1 &amp;&amp;
+t = 0</label><nail x="93" y="0" /></transition><transition><source ref="id23" /><target ref="id25" /><label kind="guard" x="875" y="-340">t &gt;= T_v[id]</label><label kind="assignment" x="875" y="-323">set_map(pos, CELL_EMPTY),
+dead_survivors += 1</label></transition><transition><source ref="id22" /><target ref="id26" /><label kind="guard" x="850" y="51">t &gt;= T_zr[id]</label><label kind="synchronisation" x="850" y="68">assist_complete[in.x][in.y]!</label><label kind="assignment" x="850" y="85">set_map(pos, CELL_EMPTY),
+safe_survivors += 1</label></transition><transition><source ref="id21" /><target ref="id21" /><label kind="select" x="60" y="-357">i : int[-1, 1],
+j : int[-1, 1]</label><label kind="guard" x="59" y="-315">t &gt;= 1 &amp;&amp;
 is_move_valid(i, j) &amp;&amp;
-!is_exit_near()</label>
-			<label kind="assignment" x="60" y="-255">move(i, j),
-t = 0</label>
-			<label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
-This way the survivor must make one move per time unit</label>
-			<nail x="153" y="-229"/>
-			<nail x="110" y="-204"/>
-		</transition>
-		<transition id="id45">
-			<source ref="id24"/>
-			<target ref="id23"/>
-			<label kind="guard" x="510" y="-246">starting_near_a_fire()</label>
-			<label kind="synchronisation" x="510" y="-229">init_done?</label>
-			<label kind="assignment" x="510" y="-212">pos = survivors_starting_pos[id],
-set_map(pos, CELL_IN_NEED)</label>
-			<nail x="833" y="-170"/>
-			<nail x="833" y="-314"/>
-		</transition>
-		<transition id="id46">
-			<source ref="id21"/>
-			<target ref="id29"/>
-			<label kind="synchronisation" x="68" y="-102">await_job[pos.x][pos.y]?</label>
-			<label kind="assignment" x="68" y="-85">set_map(pos, CELL_ZERO_RESP)</label>
-			<nail x="59" y="-93"/>
-			<nail x="59" y="127"/>
-		</transition>
-	</template>
-	<template>
-		<name>FirstResponder</name>
-		<parameter>const first_resp_id_t id</parameter>
-		<declaration>/******************************************************************************
+!is_exit_near()</label><label kind="assignment" x="60" y="-255">move(i, j),
+t = 0</label><label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
+This way the survivor must make one move per time unit</label><nail x="153" y="-229" /><nail x="110" y="-204" /></transition><transition><source ref="id24" /><target ref="id23" /><label kind="guard" x="510" y="-246">starting_near_a_fire()</label><label kind="synchronisation" x="510" y="-229">init_done?</label><label kind="assignment" x="510" y="-212">pos = survivors_starting_pos[id],
+set_map(pos, CELL_IN_NEED)</label><nail x="833" y="-170" /><nail x="833" y="-314" /></transition><transition><source ref="id21" /><target ref="id29" /><label kind="synchronisation" x="68" y="-102">await_job[pos.x][pos.y]?</label><label kind="assignment" x="68" y="-85">set_map(pos, CELL_ZERO_RESP)</label><nail x="59" y="-93" /><nail x="59" y="127" /></transition></template><template><name>FirstResponder</name><parameter>const first_resp_id_t id</parameter><declaration>/******************************************************************************
  *                                  Variables                                 *
  ******************************************************************************/
 
@@ -928,111 +643,29 @@ void teleport_to_in_need() {
     pos = target;
     set_map(pos, CELL_FIRST_RESP); // From CELL_ASSISTING back to CELL_FIRST_RESP
 }
-</declaration>
-		<location id="id47" x="-195" y="-76" color="#ffc0cb">
-			<name x="-178" y="-127">Assisting</name>
-			<label kind="invariant" x="-178" y="-110">t &lt;= T_fr[id]</label>
-		</location>
-		<location id="id48" x="-552" y="-161" color="#ffa500">
-			<name x="-527" y="-178">Available</name>
-			<label kind="invariant" x="-510" y="-153">t &lt;= 1</label>
-		</location>
-		<location id="id49" x="-926" y="-161" color="#ffffff">
-			<name x="-909" y="-195">Init</name>
-		</location>
-		<location id="id50" x="85" y="-255" color="#00ffff">
-			<name x="102" y="-306">MovingToInNeed</name>
-			<label kind="invariant" x="102" y="-289">t &lt;= distance(pos, target)</label>
-		</location>
-		<location id="id51" x="-195" y="59" color="#00ff00">
-			<committed/>
-		</location>
-		<location id="id52" x="-195" y="-255" color="#c0c0c0">
-			<name x="-178" y="-289">WaitingSurvivorMoveTime</name>
-			<label kind="comments" x="-399" y="-340">The first_responder is locked by the zero_responder
-and then waits for him to move</label>
-		</location>
-		<init ref="id49"/>
-		<transition id="id53">
-			<source ref="id48"/>
-			<target ref="id52"/>
-			<label kind="synchronisation" x="-450" y="-246">lock_fr[pos.x][pos.y]?</label>
-			<label kind="assignment" x="-450" y="-221">set_map(pos, CELL_ASSISTING)</label>
-			<nail x="-459" y="-255"/>
-		</transition>
-		<transition id="id54">
-			<source ref="id48"/>
-			<target ref="id47"/>
-			<label kind="select" x="-527" y="-68">i : int[-1, 1],
-j : int[-1, 1]</label>
-			<label kind="guard" x="-527" y="-26">is_in_need(i, j)</label>
-			<label kind="synchronisation" x="-527" y="-9">starting_assistance[pos.x+i][pos.y+j]!</label>
-			<label kind="assignment" x="-527" y="8">set_target(i, j),
+</declaration><location id="id47" x="-195" y="-76"><name x="-178" y="-127">Assisting</name><label kind="invariant" x="-178" y="-110">t &lt;= T_fr[id]</label></location><location id="id48" x="-552" y="-161"><name x="-527" y="-178">Available</name><label kind="invariant" x="-510" y="-153">t &lt;= 1</label></location><location id="id49" x="-926" y="-161"><name x="-909" y="-195">Init</name></location><location id="id50" x="85" y="-255"><name x="102" y="-306">MovingToInNeed</name><label kind="invariant" x="102" y="-289">t &lt;= distance(pos, target)</label></location><location id="id51" x="-195" y="59"><committed /></location><location id="id52" x="-195" y="-255"><name x="-178" y="-289">WaitingSurvivorMoveTime</name><label kind="comments" x="-399" y="-340">The first_responder is locked by the zero_responder
+and then waits for him to move</label></location><init ref="id49" /><transition><source ref="id48" /><target ref="id52" /><label kind="synchronisation" x="-450" y="-246">lock_fr[pos.x][pos.y]?</label><label kind="assignment" x="-450" y="-221">set_map(pos, CELL_ASSISTING)</label><nail x="-459" y="-255" /></transition><transition><source ref="id48" /><target ref="id47" /><label kind="select" x="-527" y="-68">i : int[-1, 1],
+j : int[-1, 1]</label><label kind="guard" x="-527" y="-26">is_in_need(i, j)</label><label kind="synchronisation" x="-527" y="-9">starting_assistance[pos.x+i][pos.y+j]!</label><label kind="assignment" x="-527" y="8">set_target(i, j),
 available_fr -= 1,
-set_map(pos, CELL_ASSISTING)</label>
-			<nail x="-459" y="-76"/>
-		</transition>
-		<transition id="id55">
-			<source ref="id51"/>
-			<target ref="id48"/>
-			<label kind="assignment" x="-417" y="59">teleport_to_in_need(),
+set_map(pos, CELL_ASSISTING)</label><nail x="-459" y="-76" /></transition><transition><source ref="id51" /><target ref="id48" /><label kind="assignment" x="-417" y="59">teleport_to_in_need(),
 available_fr += 1,
-t = 0</label>
-			<nail x="-553" y="59"/>
-		</transition>
-		<transition id="id56">
-			<source ref="id48"/>
-			<target ref="id48"/>
-			<label kind="select" x="-620" y="-349">i : int[-1, 1],
-j : int[-1, 1]</label>
-			<label kind="guard" x="-620" y="-306">t &gt;= 1 &amp;&amp;
-is_move_valid(i, j)</label>
-			<label kind="assignment" x="-620" y="-263">move(i, j),
-t = 0</label>
-			<label kind="comments" x="-858" y="-340">While not busy assisting
+t = 0</label><nail x="-553" y="59" /></transition><transition><source ref="id48" /><target ref="id48" /><label kind="select" x="-620" y="-349">i : int[-1, 1],
+j : int[-1, 1]</label><label kind="guard" x="-620" y="-306">t &gt;= 1 &amp;&amp;
+is_move_valid(i, j)</label><label kind="assignment" x="-620" y="-263">move(i, j),
+t = 0</label><label kind="comments" x="-858" y="-340">While not busy assisting
 survivors, first reponders
 can move with a custom
-moving policy</label>
-			<nail x="-595" y="-195"/>
-			<nail x="-552" y="-221"/>
-		</transition>
-		<transition id="id57">
-			<source ref="id50"/>
-			<target ref="id47"/>
-			<label kind="guard" x="-169" y="-76">t &gt;= distance(pos, target)</label>
-			<label kind="assignment" x="-170" y="-42">t = 0</label>
-			<nail x="85" y="-76"/>
-		</transition>
-		<transition id="id58">
-			<source ref="id52"/>
-			<target ref="id50"/>
-			<label kind="synchronisation" x="-186" y="-246">arrived[pos.x][pos.y]?</label>
-			<label kind="assignment" x="-186" y="-229">target = target_in_need,
+moving policy</label><nail x="-595" y="-195" /><nail x="-552" y="-221" /></transition><transition><source ref="id50" /><target ref="id47" /><label kind="guard" x="-169" y="-76">t &gt;= distance(pos, target)</label><label kind="assignment" x="-170" y="-42">t = 0</label><nail x="85" y="-76" /></transition><transition><source ref="id52" /><target ref="id50" /><label kind="synchronisation" x="-186" y="-246">arrived[pos.x][pos.y]?</label><label kind="assignment" x="-186" y="-229">target = target_in_need,
 available_fr -= 1,
-t = 0</label>
-		</transition>
-		<transition id="id59">
-			<source ref="id47"/>
-			<target ref="id51"/>
-			<label kind="guard" x="-187" y="0">t &gt;= T_fr[id]</label>
-			<label kind="synchronisation" x="-187" y="17">assist_complete[target.x][target.y]!</label>
-		</transition>
-		<transition id="id60">
-			<source ref="id49"/>
-			<target ref="id48"/>
-			<label kind="synchronisation" x="-909" y="-153">init_done?</label>
-			<label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
+t = 0</label></transition><transition><source ref="id47" /><target ref="id51" /><label kind="guard" x="-187" y="0">t &gt;= T_fr[id]</label><label kind="synchronisation" x="-187" y="17">assist_complete[target.x][target.y]!</label></transition><transition><source ref="id49" /><target ref="id48" /><label kind="synchronisation" x="-909" y="-153">init_done?</label><label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
 set_map(pos, CELL_FIRST_RESP),
-available_fr += 1</label>
-		</transition>
-	</template>
-	<system>/******************************************************************************
+available_fr += 1</label></transition></template><system>/******************************************************************************
  *                            Map Visualizer                                   *
  ******************************************************************************/
 
 // Uncomment to enable the live map visualizer
-
-import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/visualizer/uppaal_external_functions/build/libvisualizer.so" {
+/*
+import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/simulation_gui/uppaal_external_functions/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
 };
 
@@ -1054,125 +687,24 @@ void send_state() {
     send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
 }
 
-// before_update { send_state() }
-after_update { send_state() }
-
+before_update { send_state() }
+// after_update { send_state() }
+*/
 system Drone, Survivor, FirstResponder, Initializer;
-</system>
-	<queries>
-		<option key="--state-representation" value="0"/>
-		<option key="--diagnostic" value="1"/>
-		<query>
-			<formula>A[] not deadlock</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[]
+</system><queries><query><formula>A[] not deadlock</formula><comment /></query><query><formula>A[]
 forall (i : drone_id_t)
 	forall (j : drone_id_t)
 		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
-		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
-			<comment>Drones cannot occupy the same cell at the same time</comment>
-		</query>
-		<query>
-			<formula>A[]
+		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula><comment /></query><query><formula>A[]
 forall (i : survivor_id_t)
 	forall (j : survivor_id_t)
 		(i != j &amp;&amp; not Survivor(i).Init &amp;&amp; not Survivor(j).Init) imply
-		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
-			<comment>Survivors cannot occupy the same cell at the same time</comment>
-		</query>
-		<query>
-			<formula>A[]
+		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula><comment /></query><query><formula>A[]
 forall (i : first_resp_id_t)
 	forall (j : first_resp_id_t)
 		(i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply
-		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[]
+		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula><comment /></query><query><formula>A[]
 forall (i : survivor_id_t)
 	forall (j : first_resp_id_t)
 		(not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply
-		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment>Survivors and first responders cannot occupy the same cell at the same time</comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : survivor_id_t) Survivor(i).Safe || Survivor(i).Dead</formula>
-			<comment>All Survivors either reach safety or die, but they cannot get stuck in any in-between state</comment>
-			<result outcome="success" type="quality" timestamp="2024-06-10 12:22:18 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
-		</query>
-		<query>
-			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS // There is no state where the safe and dead counters hold a bigger value that the total number of survivors</formula>
-			<comment>There is no state where the safe and dead counters hold a bigger value that the total number of survivors</comment>
-			<result outcome="success" type="quality" timestamp="2024-06-10 12:12:09 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
-		</query>
-		<query>
-			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
-			<comment>The simulation must reach a state where all survivors are either safe or dead</comment>
-			<result outcome="success" type="quality" timestamp="2024-06-10 12:09:35 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
-		</query>
-		<query>
-			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment/>
-			<result outcome="success" type="quantity" value="3" timestamp="2024-06-10 12:13:53 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-				<details>3</details>
-			</result>
-		</query>
-		<query>
-			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment/>
-			<result outcome="success" type="quantity" value="2" timestamp="2024-06-10 12:15:08 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-				<details>2</details>
-			</result>
-		</query>
-		<query>
-			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment/>
-			<result outcome="success" type="quantity" value="1" timestamp="2024-06-10 12:16:23 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-				<details>1</details>
-			</result>
-		</query>
-		<query>
-			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment/>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-06-10 12:16:31 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-				<details>0</details>
-			</result>
-		</query>
-		<query>
-			<formula>A&lt;&gt; Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_P</formula>
-			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-06-10 13:06:45 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
-		</query>
-		<query>
-			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_M</formula>
-			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-06-10 13:09:24 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
-		</query>
-	</queries>
-</nta>
+		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula><comment /></query><query><formula>A&lt;&gt; forall (i : survivor_id_t) Survivor(i).Safe || Survivor(i).Dead</formula><comment /></query><query><formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS // There is no state where the safe and dead counters hold a bigger value that the total number of survivors</formula><comment /></query><query><formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula><comment /></query><query><formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula><comment /></query><query><formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula><comment /></query><query><formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula><comment /></query><query><formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula><comment /></query><query><formula>A&lt;&gt; Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_P</formula><comment /></query><query><formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_M</formula><comment /></query></queries></nta>
