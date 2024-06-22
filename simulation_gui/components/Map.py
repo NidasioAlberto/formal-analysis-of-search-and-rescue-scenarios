@@ -26,6 +26,7 @@ class MapWidget(QLabel):
         self.setPixmap(canvas)
 
         self.load_assets()
+        self.clear()
 
     def load_assets(self) -> None:
         asset = QPixmap(self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
