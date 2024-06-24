@@ -39,7 +39,8 @@ if __name__ == "__main__":
         map.show()
     elif args.mode == "trace_visualizer":
         map = MapWidget(args.cols, args.rows, args.cell_size)
-        trace = TraceWidget(args.model_file, args.trace_file, map.draw_map)
+        trace = TraceWidget(args.cols, args.rows,
+                            args.model_file, args.trace_file, map.draw_map)
 
         layout = QVBoxLayout()
         layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)

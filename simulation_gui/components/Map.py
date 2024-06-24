@@ -44,8 +44,8 @@ class MapWidget(QLabel):
 
         asset = QPixmap("assets/first_responder_50.png")
         painter = QPainter(asset)
-        text_rect = QRect(self.PIXELS_PER_CELL * 2/3, self.PIXELS_PER_CELL *
-                          2/3, self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
+        text_rect = QRect(self.PIXELS_PER_CELL * 3/4, self.PIXELS_PER_CELL *
+                          2/3, self.PIXELS_PER_CELL * 1/4, self.PIXELS_PER_CELL * 1/3)
         painter.drawText(text_rect, "A")
         painter.end()
         self.assets[CellType.ASSISTING] = asset
@@ -55,8 +55,8 @@ class MapWidget(QLabel):
 
         asset = QPixmap("assets/survivor_50.png")
         painter = QPainter(asset)
-        text_rect = QRect(self.PIXELS_PER_CELL * 2/3, self.PIXELS_PER_CELL *
-                          2/3, self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
+        text_rect = QRect(self.PIXELS_PER_CELL * 3/4, self.PIXELS_PER_CELL *
+                          2/3, self.PIXELS_PER_CELL * 1/4, self.PIXELS_PER_CELL * 1/3)
         painter.drawText(text_rect, "Z")
         painter.end()
         self.assets[CellType.ZERO_RESP] = asset
@@ -66,8 +66,8 @@ class MapWidget(QLabel):
 
         asset = QPixmap("assets/in_need_50.png")
         painter = QPainter(asset)
-        text_rect = QRect(self.PIXELS_PER_CELL * 2/3, self.PIXELS_PER_CELL *
-                          2/3, self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
+        text_rect = QRect(self.PIXELS_PER_CELL * 3/4, self.PIXELS_PER_CELL *
+                          2/3, self.PIXELS_PER_CELL * 1/4, self.PIXELS_PER_CELL * 1/3)
         painter.drawText(text_rect, "A")
         painter.end()
         self.assets[CellType.ASSISTED] = asset
@@ -118,11 +118,28 @@ class MapWidget(QLabel):
                 if drones[x][y]:
                     self.draw_cell(CellType.DRONE, x, y)
 
+    def draw_indexes(self, indexes: QJsonArray) -> None:
+        for idx, (x, y) in enumerate(indexes):
+            canvas = self.pixmap()
+            painter = QPainter(canvas)
+
+            target_rect = QRect(x * self.PIXELS_PER_CELL + 1 + self.PIXELS_PER_CELL * 3/4, y * self.PIXELS_PER_CELL + 1,
+                                self.PIXELS_PER_CELL * 1/4, self.PIXELS_PER_CELL * 1/3)
+            painter.drawText(target_rect, f"{idx}")
+
+            painter.end()
+            self.setPixmap(canvas)
+
     @Slot()
     def draw_map(self, map: dict[str, QJsonArray]) -> None:
         self.clear()
         self.draw_cells(map["cells"])
         self.draw_drones(map["drones"])
+
+        if map["first_responders"]:
+            self.draw_indexes(map["first_responders"])
+        if map["survivors"]:
+            self.draw_indexes(map["survivors"])
 
 
 class MapEditorWidget(MapWidget):
