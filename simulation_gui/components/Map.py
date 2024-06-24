@@ -152,32 +152,11 @@ class MapEditorWidget(MapWidget):
         else:
             raise RuntimeError(f"Unable to open map_{i}/map.json")
 
-        # Count the number of drones and save their positions
-        drones = 0
-        drones_pos = []
-        for x in range(self.N_COLS):
-            for y in range(self.N_ROWS):
-                if self.map["drones"][x][y] == 1:
-                    drones += 1
-                    drones_pos.append(f"{{{x}, {y}}}")
-
-        # Count the number of survivors and save their positions
-        survivors = 0
-        survivors_pos = []
-        for x in range(self.N_COLS):
-            for y in range(self.N_ROWS):
-                if self.map["cells"][x][y] == CellType.SURVIVOR.value:
-                    survivors += 1
-                    survivors_pos.append(f"{{{x}, {y}}}")
-
-        # Count the number of first responders and save their positions
-        first_responders = 0
-        first_responders_pos = []
-        for x in range(self.N_COLS):
-            for y in range(self.N_ROWS):
-                if self.map["cells"][x][y] == CellType.FIRST_RESP.value:
-                    first_responders += 1
-                    first_responders_pos.append(f"{{{x}, {y}}}")
+        # Count numbers and positions of entities
+        (drones, drones_pos) = self.count_entity(CellType.DRONE)
+        (survivors, survivors_pos) = self.count_entity(CellType.SURVIVOR)
+        (first_responders, first_responders_pos) = self.count_entity(
+            CellType.FIRST_RESP)
 
         # Generate the code for constants
         constants_template_file = QFile("templates/constants.txt")
@@ -228,6 +207,24 @@ class MapEditorWidget(MapWidget):
             raise RuntimeError(f"Unable to open map_{i}/map.txt")
 
         print(f"Current map seved in map_{i}/")
+
+    def count_entity(self, entity: CellType) -> tuple[int, list[str]]:
+        if entity == CellType.DRONE:
+            map = self.map["drones"]
+            value = 1
+        else:
+            map = self.map["cells"]
+            value = entity.value
+
+        count = 0
+        positions = []
+        for x in range(self.N_COLS):
+            for y in range(self.N_ROWS):
+                if map[x][y] == value:
+                    count += 1
+                    positions.append(f"{{{x}, {y}}}")
+
+        return (count, positions)
 
     def set_cell(map, cell_type, pos) -> None:
         map["cells"][pos[0]][pos[1]] = cell_type.value
