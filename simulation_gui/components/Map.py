@@ -109,9 +109,12 @@ class MapWidget(QLabel):
 class MapEditorWidget(MapWidget):
     map = {}
 
+    tools = [CellType.FIRE, CellType.EXIT,
+             CellType.FIRST_RESP, CellType.SURVIVOR]
+
     press_position = None
     last_move_position = None
-    last_cell_tool = CellType.FIRE
+    last_cell_tool = tools[0]
     tool_active = False
 
     # The ownership of the action is not passed to the widget,
@@ -238,7 +241,7 @@ class MapEditorWidget(MapWidget):
 
         return (x, y)
 
-    def choose_tools(self, press_pos: tuple[int, int], release_pos: tuple[int, int], button: Qt.MouseButton) -> CellType:
+    def choose_next_tool(self, press_pos: tuple[int, int], release_pos: tuple[int, int], button: Qt.MouseButton) -> CellType:
         # Use the press position as source
         (x, y) = press_pos
 
@@ -255,15 +258,16 @@ class MapEditorWidget(MapWidget):
 
         # In other cases we change the cells
         # If this is a drag operation, we do not change the tool
-        if self.press_position != release_pos:
+        if self.press_position != release_pos or CellType(self.map["cells"][x][y]) not in self.tools:
             return self.last_cell_tool
         else:
+            idx = self.tools.index(CellType(self.map["cells"][x][y]))
             if button == Qt.MouseButton.LeftButton:
                 # Next tool
-                return CellType((self.map["cells"][x][y] + 1) % (len(CellType) - 1))
+                return self.tools[(idx + 1) % len(self.tools)]
             elif button == Qt.MouseButton.RightButton:
                 # Previous tool
-                return CellType((self.map["cells"][x][y] - 1) % (len(CellType) - 1))
+                return self.tools[(idx - 1) % len(self.tools)]
             else:
                 return self.last_cell_tool
 
@@ -276,7 +280,7 @@ class MapEditorWidget(MapWidget):
         self.tool_active = False
 
         # Determine what to put in the cells
-        next_cell_tool = self.choose_tools(
+        next_cell_tool = self.choose_next_tool(
             self.press_position, release_pos, event.button())
 
         # Update the target area
@@ -288,7 +292,7 @@ class MapEditorWidget(MapWidget):
                                                self.press_position, release_pos)
 
             # In this case we reset the last tool used to FIRE
-            self.last_cell_tool = CellType.FIRE
+            self.last_cell_tool = self.tools[0]
         elif next_cell_tool == CellType.DRONE:
             MapEditorWidget.set_map_drone_rect(self.map, CellType.DRONE,
                                                self.press_position, release_pos)
@@ -309,7 +313,7 @@ class MapEditorWidget(MapWidget):
             map_copy = deepcopy(self.map)
 
             # Determine what to put in the cells
-            next_cell_tool = self.choose_tools(
+            next_cell_tool = self.choose_next_tool(
                 self.press_position, current_pos, event.button())
 
             # Update the target area
@@ -321,7 +325,7 @@ class MapEditorWidget(MapWidget):
                                                    self.press_position, current_pos)
 
                 # In this case we reset the last tool used to FIRE
-                self.last_cell_tool = CellType.FIRE
+                self.last_cell_tool = self.tools[0]
             elif next_cell_tool == CellType.DRONE:
                 MapEditorWidget.set_map_drone_rect(map_copy, CellType.DRONE,
                                                    self.press_position, current_pos)
