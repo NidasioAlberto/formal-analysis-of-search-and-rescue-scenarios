@@ -152,6 +152,24 @@ class MapEditorWidget(MapWidget):
         else:
             raise RuntimeError(f"Unable to open map_{i}/map.json")
 
+        # Count the number of drones and save their positions
+        drones = 0
+        drones_pos = []
+        for x in range(self.N_COLS):
+            for y in range(self.N_ROWS):
+                if self.map["drones"][x][y] == 1:
+                    drones += 1
+                    drones_pos.append(f"{{{x}, {y}}}")
+
+        # Count the number of survivors and save their positions
+        survivors = 0
+        survivors_pos = []
+        for x in range(self.N_COLS):
+            for y in range(self.N_ROWS):
+                if self.map["cells"][x][y] == CellType.SURVIVOR.value:
+                    survivors += 1
+                    survivors_pos.append(f"{{{x}, {y}}}")
+
         # Count the number of first responders and save their positions
         first_responders = 0
         first_responders_pos = []
@@ -167,6 +185,17 @@ class MapEditorWidget(MapWidget):
         constants_template = constants_template_file.readAll().toStdString()
 
         constants_code = constants_template.format(
+            self.N_COLS,
+            self.N_ROWS,
+            drones,
+            ", ".join(drones_pos),
+            ", ".join(["1" for _ in range(drones)]),
+            ", ".join(["2" for _ in range(drones)]),
+            survivors,
+            ", ".join(survivors_pos),
+            ", ".join(["8" for _ in range(survivors)]),
+            ", ".join(["15" for _ in range(survivors)]),
+            ", ".join(["POLICY_DIRECT" for _ in range(survivors)]),
             first_responders,
             ", ".join(first_responders_pos),
             ", ".join(["5" for _ in range(first_responders)]),

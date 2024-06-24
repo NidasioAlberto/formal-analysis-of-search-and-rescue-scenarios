@@ -1,5 +1,28 @@
+// Map size
+const int N_COLS = {}; // x
+const int N_ROWS = {}; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
+// Number of drones and their starting positions
+const int N_DRONES = {};
+typedef int[0, N_DRONES-1] drone_id_t;
+const pos_t drones_starting_pos[N_DRONES] = {{{}}};
+const int N_v[N_DRONES] = {{{}}}; // Drones vision range
+const int N_r[N_DRONES] = {{{}}}; // Drones movement
+
+// Number of survivors and their starting positions
+const int N_SURVIVORS = {};
+typedef int[0, N_SURVIVORS-1] survivor_id_t;
+const pos_t survivors_starting_pos[N_SURVIVORS] = {{{}}};
+const int T_zr[N_SURVIVORS] = {{{}}}; // Zero reponders assistance duration
+const int T_v[N_SURVIVORS] = {{{}}}; // Time after which a survivor in need dies
+const policy_t survivors_policies[N_SURVIVORS] = {{{}}};
+
+// Number of first responders and their starting positions
 const int N_FIRST_RESPONDERS = {};
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
 const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{{}}};
-const int T_fr[N_FIRST_RESPONDERS] = {{{}}};
+const int T_fr[N_FIRST_RESPONDERS] = {{{}}}; // First reponders assistance duration
 const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {{{}}};
