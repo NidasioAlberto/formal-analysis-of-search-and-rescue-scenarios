@@ -303,6 +303,8 @@ class MapEditorWidget(MapWidget):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         release_pos = self.map_position_from_pixel(event.position())
+        (top_left, bottom_right) = self.fix_positions_order(
+            self.press_position, release_pos)
         self.tool_active = False
 
         # Determine what to put in the cells
@@ -313,18 +315,18 @@ class MapEditorWidget(MapWidget):
         if next_cell_tool == CellType.EMPTY:
             # If the tool is EMPTY, we clear out both cells and drones
             MapEditorWidget.set_cell_rect(self.map, next_cell_tool,
-                                          self.press_position, release_pos)
+                                          top_left, bottom_right)
             MapEditorWidget.set_map_drone_rect(self.map, next_cell_tool,
-                                               self.press_position, release_pos)
+                                               top_left, bottom_right)
 
             # In this case we reset the last tool used to FIRE
             self.last_cell_tool = self.tools[0]
         elif next_cell_tool == CellType.DRONE:
             MapEditorWidget.set_map_drone_rect(self.map, CellType.DRONE,
-                                               self.press_position, release_pos)
+                                               top_left, bottom_right)
         else:
             MapEditorWidget.set_cell_rect(self.map, next_cell_tool,
-                                          self.press_position, release_pos)
+                                          top_left, bottom_right)
 
             # Update the last cell tool
             self.last_cell_tool = next_cell_tool
@@ -336,6 +338,9 @@ class MapEditorWidget(MapWidget):
         current_pos = self.map_position_from_pixel(event.position())
 
         if self.press_position != None and self.tool_active:
+            (top_left, bottom_right) = self.fix_positions_order(
+                self.press_position, current_pos)
+
             map_copy = deepcopy(self.map)
 
             # Determine what to put in the cells
@@ -345,22 +350,28 @@ class MapEditorWidget(MapWidget):
             # Update the target area
             if next_cell_tool == CellType.EMPTY:
                 # If the tool is EMPTY, we clear out both cells and drones
-                MapEditorWidget.set_cell_rect(map_copy, next_cell_tool,
-                                              self.press_position, current_pos)
-                MapEditorWidget.set_map_drone_rect(map_copy, next_cell_tool,
-                                                   self.press_position, current_pos)
+                MapEditorWidget.set_cell_rect(
+                    map_copy, next_cell_tool, top_left, bottom_right)
+                MapEditorWidget.set_map_drone_rect(
+                    map_copy, next_cell_tool, top_left, bottom_right)
 
                 # In this case we reset the last tool used to FIRE
                 self.last_cell_tool = self.tools[0]
             elif next_cell_tool == CellType.DRONE:
-                MapEditorWidget.set_map_drone_rect(map_copy, CellType.DRONE,
-                                                   self.press_position, current_pos)
+                MapEditorWidget.set_map_drone_rect(
+                    map_copy, CellType.DRONE, top_left, bottom_right)
             else:
-                MapEditorWidget.set_cell_rect(map_copy, next_cell_tool,
-                                              self.press_position, current_pos)
+                MapEditorWidget.set_cell_rect(
+                    map_copy, next_cell_tool, top_left, bottom_right)
 
                 # Update the last cell tool
                 self.last_cell_tool = next_cell_tool
 
             # Redraw the map
             self.draw_map(map_copy)
+
+    # Fixes the positions in order to have the press_pos alwayb be on the top left and release_pos on the bottom right
+    def fix_positions_order(self, press_pos: tuple[int, int], release_pos: tuple[int, int]):
+        (x1, y1) = press_pos
+        (x2, y2) = release_pos
+        return ((min(x1, x2), min(y1, y2)), (max(x1, x2), max(y1, y2)))
