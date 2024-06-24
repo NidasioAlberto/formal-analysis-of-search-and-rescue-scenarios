@@ -6,7 +6,6 @@ from components.Enums import CellType, CellColor
 from copy import deepcopy
 
 from os import path
-from copy import copy
 
 
 class MapWidget(QLabel):
@@ -42,14 +41,35 @@ class MapWidget(QLabel):
 
         asset = QPixmap("assets/first_responder_50.png")
         self.assets[CellType.FIRST_RESP] = asset
+
+        asset = QPixmap("assets/first_responder_50.png")
+        painter = QPainter(asset)
+        text_rect = QRect(self.PIXELS_PER_CELL * 2/3, self.PIXELS_PER_CELL *
+                          2/3, self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
+        painter.drawText(text_rect, "A")
+        painter.end()
         self.assets[CellType.ASSISTING] = asset
 
         asset = QPixmap("assets/survivor_50.png")
         self.assets[CellType.SURVIVOR] = asset
+
+        asset = QPixmap("assets/survivor_50.png")
+        painter = QPainter(asset)
+        text_rect = QRect(self.PIXELS_PER_CELL * 2/3, self.PIXELS_PER_CELL *
+                          2/3, self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
+        painter.drawText(text_rect, "Z")
+        painter.end()
         self.assets[CellType.ZERO_RESP] = asset
 
         asset = QPixmap("assets/in_need_50.png")
         self.assets[CellType.IN_NEED] = asset
+
+        asset = QPixmap("assets/in_need_50.png")
+        painter = QPainter(asset)
+        text_rect = QRect(self.PIXELS_PER_CELL * 2/3, self.PIXELS_PER_CELL *
+                          2/3, self.PIXELS_PER_CELL, self.PIXELS_PER_CELL)
+        painter.drawText(text_rect, "A")
+        painter.end()
         self.assets[CellType.ASSISTED] = asset
 
         asset = QPixmap("assets/drone_50.png")
@@ -81,7 +101,6 @@ class MapWidget(QLabel):
 
         target_rect = QRect(x * self.PIXELS_PER_CELL + 1, y * self.PIXELS_PER_CELL + 1,
                             self.PIXELS_PER_CELL - 1, self.PIXELS_PER_CELL - 1)
-        # painter.setRenderHint(QPainter.SmoothPixmapTransform)
         painter.drawPixmap(target_rect, self.assets[cell_type].copy())
 
         painter.end()
