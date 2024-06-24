@@ -3,7 +3,7 @@
 import argparse
 import sys
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
-from PySide6.QtCore import QJsonDocument, Qt
+from PySide6.QtCore import QJsonDocument
 from PySide6.QtGui import QKeySequence
 
 from components.Map import MapWidget, MapEditorWidget
@@ -11,10 +11,10 @@ from components.HttpServer import HttpServer
 from components.Trace import TraceWidget
 
 parser = argparse.ArgumentParser(description='Optional app description')
-parser.add_argument(
-    "--mode", choices=["json_visualizer", "live_visualizer", "trace_visualizer", "editor"], default="visualizer")
+parser.add_argument("--mode", choices=["json_visualizer", "live_visualizer", "trace_visualizer", "editor"],
+                    default="visualizer", required=True, help="Mode to run the application")
 parser.add_argument("--map_file", type=argparse.FileType("rb"),
-                    help="Map file to visualize")
+                    help="Map file to visualize or to open in editor mode")
 parser.add_argument("--cols", type=int, default=10, help="Number of columns")
 parser.add_argument("--rows", type=int, default=10, help="Number of rows")
 parser.add_argument("--cell_size", type=int, default=50,
