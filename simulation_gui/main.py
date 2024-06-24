@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument(
     "--mode", choices=["json_visualizer", "live_visualizer", "trace_visualizer", "editor"], default="visualizer")
 parser.add_argument("--map_file", type=argparse.FileType("rb"),
-                    default="examples/simple_map.json", help="Map file to visualize")
+                    help="Map file to visualize")
 parser.add_argument("--cols", type=int, default=10, help="Number of columns")
 parser.add_argument("--rows", type=int, default=10, help="Number of rows")
 parser.add_argument("--cell_size", type=int, default=50,
@@ -52,6 +52,8 @@ if __name__ == "__main__":
         window.show()
     elif args.mode == "editor":
         map = MapEditorWidget(args.cols, args.rows, args.cell_size)
+        if (args.map_file):
+            map.draw_map(QJsonDocument.fromJson(args.map_file.read()).object())
         save_button = QPushButton("Save")
         save_button.clicked.connect(map.save_map)
         save_button.setShortcut(QKeySequence.Save)

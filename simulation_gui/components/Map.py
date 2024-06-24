@@ -169,6 +169,11 @@ class MapEditorWidget(MapWidget):
         self.setMouseTracking(True)
 
     @Slot()
+    def draw_map(self, map: dict[str, QJsonArray]) -> None:
+        super().draw_map(map)
+        self.map = map
+
+    @Slot()
     def save_map(self) -> None:
         i = 0
 
