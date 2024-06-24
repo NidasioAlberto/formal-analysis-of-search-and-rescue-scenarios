@@ -136,9 +136,9 @@ class MapWidget(QLabel):
         self.draw_cells(map["cells"])
         self.draw_drones(map["drones"])
 
-        if map["first_responders"]:
+        if "first_responders" in map.keys():
             self.draw_indexes(map["first_responders"])
-        if map["survivors"]:
+        if "survivors" in map.keys():
             self.draw_indexes(map["survivors"])
 
 
