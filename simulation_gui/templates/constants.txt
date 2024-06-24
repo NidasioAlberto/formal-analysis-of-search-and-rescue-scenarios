@@ -1,0 +1,5 @@
+const int N_FIRST_RESPONDERS = {};
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
+const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{{}}};
+const int T_fr[N_FIRST_RESPONDERS] = {{{}}};
+const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {{{}}};

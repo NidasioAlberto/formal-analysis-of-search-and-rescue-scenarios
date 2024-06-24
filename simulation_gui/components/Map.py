@@ -1,9 +1,12 @@
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication, QKeySequence, QAction, QMouseEvent
-from PySide6.QtCore import QRect, QSize, Qt, Slot, QJsonArray
+from PySide6.QtGui import QPainter, QPixmap, QColorConstants, QGuiApplication, QMouseEvent
+from PySide6.QtCore import QRect, QSize, Qt, Slot, QJsonArray, QJsonDocument, QFile, QIODeviceBase, QDir
 
 from components.Enums import CellType, CellColor
 from copy import deepcopy
+
+from os import path
+from copy import copy
 
 
 class MapWidget(QLabel):
@@ -126,24 +129,73 @@ class MapEditorWidget(MapWidget):
         self.draw_map(self.map)
         self.setMouseTracking(True)
 
-        # Setup save shortcut
-        self.save_action = QAction()
-        self.save_action.triggered.connect(self.on_save)
-        self.save_action.setShortcut(QKeySequence.Save)
-        self.addAction(self.save_action)
-
     @Slot()
-    def on_save(self) -> None:
+    def save_map(self) -> None:
         i = 0
 
         # Find a suitable file name
-        while os.path.exists(f"map_save_{i}.json"):
+        while path.exists(f"map_{i}"):
             i += 1
 
-        # Dump the map into a file
-        with open(f"map_save_{i}.json", "w") as write_file:
-            json.dump(self.map, write_file)
-            print(f"Current map saved to map_save_{i}.json")
+        # Create the directory
+        if not QDir(f".").mkdir(f"map_{i}"):
+            raise RuntimeError(f"Unable to create directory map_{i}")
+
+        # Dump the map into a a json file
+        json_map_file = QFile(f"map_{i}/map.json")
+        if json_map_file.open(QIODeviceBase.OpenModeFlag.WriteOnly):
+            json = QJsonDocument(self.map)
+            json_map_file.write(json.toJson())
+        else:
+            raise RuntimeError(f"Unable to open map_{i}/map.json")
+
+        # Count the number of first responders and save their positions
+        first_responders = 0
+        first_responders_pos = []
+        for x in range(self.N_COLS):
+            for y in range(self.N_ROWS):
+                if self.map["cells"][x][y] == CellType.FIRST_RESP.value:
+                    first_responders += 1
+                    first_responders_pos.append(f"{{{x}, {y}}}")
+
+        # Generate the code for constants
+        constants_template_file = QFile("templates/constants.txt")
+        constants_template_file.open(QIODeviceBase.OpenModeFlag.ReadOnly)
+        constants_template = constants_template_file.readAll().toStdString()
+
+        constants_code = constants_template.format(
+            first_responders,
+            ", ".join(first_responders_pos),
+            ", ".join(["5" for _ in range(first_responders)]),
+            ", ".join(["POLICY_DIRECT" for _ in range(first_responders)])
+        )
+
+        constants_code_file = QFile(f"map_{i}/constants.txt")
+        if constants_code_file.open(QIODeviceBase.OpenModeFlag.WriteOnly):
+            constants_code_file.write(constants_code.encode())
+        else:
+            raise RuntimeError(f"Unable to open map_{i}/constants.txt")
+
+        # Generate the code for the map
+        map_template_file = QFile("templates/map.txt")
+        map_template_file.open(QIODeviceBase.OpenModeFlag.ReadOnly)
+        map_template = map_template_file.readAll().toStdString()
+
+        map_code = ""
+        for x in range(self.N_COLS):
+            for y in range(self.N_ROWS):
+                if self.map["cells"][x][y] != CellType.EMPTY.value:
+                    value = self.map["cells"][x][y]
+                    map_code += map_template.format(
+                        x, y, value, CellType(self.map["cells"][x][y]).name)
+
+        map_code_file = QFile(f"map_{i}/map.txt")
+        if map_code_file.open(QIODeviceBase.OpenModeFlag.WriteOnly):
+            map_code_file.write(map_code.encode())
+        else:
+            raise RuntimeError(f"Unable to open map_{i}/map.txt")
+
+        print(f"Current map seved in map_{i}/")
 
     def set_cell(map, cell_type, pos) -> None:
         map["cells"][pos[0]][pos[1]] = cell_type.value

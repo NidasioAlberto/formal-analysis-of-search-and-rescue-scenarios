@@ -2,8 +2,9 @@
 
 import argparse
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 from PySide6.QtCore import QJsonDocument, Qt
+from PySide6.QtGui import QKeySequence
 
 from components.Map import MapWidget, MapEditorWidget
 from components.HttpServer import HttpServer
@@ -50,6 +51,17 @@ if __name__ == "__main__":
         window.show()
     elif args.mode == "editor":
         map = MapEditorWidget(args.cols, args.rows, args.cell_size)
-        map.show()
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(map.save_map)
+        save_button.setShortcut(QKeySequence.Save)
+
+        layout = QVBoxLayout()
+        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
+        layout.addWidget(map)
+        layout.addWidget(save_button)
+
+        window = QWidget()
+        window.setLayout(layout)
+        window.show()
 
     sys.exit(app.exec())
