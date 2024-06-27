@@ -42,7 +42,7 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  ******************************************************************************/
 
 // Scenario 1: basic scenario from the assignment document
-/*
+
 // Map size
 const int N_COLS = 10; // x
 const int N_ROWS = 10; // y
@@ -51,32 +51,33 @@ const int N_ROWS = 10; // y
 const int N_CELLS = N_COLS * N_ROWS;
 
 // Number of drones and their starting positions
-const int N_DRONES = 2;
-typedef int[0, N_DRONES-1] drone_id_t;
-const pos_t drones_starting_pos[N_DRONES] = {{3, 1}, {6, 6}};
-const int N_v[N_DRONES] = {1, 2}; // Drones vision range
-const int N_r[N_DRONES] = {2, 2}; // Drones movement
+const int N_DRONES = 4;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{1, 3}, {6, 3}, {1, 8}, {6, 8}};
+const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
+const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
 
 // Number of survivors and their starting positions
-const int N_SURVIVORS = 3;
-typedef int[0, N_SURVIVORS-1] survivor_id_t;
-const pos_t survivors_starting_pos[N_SURVIVORS] = {{2, 1}, {4, 2}, {5, 8}};
-const int T_zr[N_SURVIVORS] = {8, 8, 8}; // Zero reponders assistance duration
-const int T_v[N_SURVIVORS] = {15, 15, 15}; // Time after which a survivor in need dies
-const policy_t survivors_policies[N_SURVIVORS] = {POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT};
+const int N_SURVIVORS = 9;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{1, 0}, {2, 5}, {2, 9}, {3, 3}, {4, 7}, {5, 6}, {6, 4}, {6, 8}, {8, 6}};
+const int T_zr[survivor_t] = {8, 8, 8, 8, 8, 8, 8, 8, 8}; // Zero reponders assistance duration
+const int T_v[survivor_t] = {15, 15, 15, 15, 15, 15, 15, 15, 15}; // Time after which a survivor in need dies
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT,
+                                                POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT};
 
 // Number of first responders and their starting positions
-const int N_FIRST_RESPONDERS = 2;
-typedef int[0, N_FIRST_RESPONDERS-1] first_resp_id_t;
-const pos_t first_responders_starting_pos[N_FIRST_RESPONDERS] = {{2, 3}, {8, 5}};
-const int T_fr[N_FIRST_RESPONDERS] = {5, 5}; // First reponders assistance duration
-const policy_t first_resp_policies[N_FIRST_RESPONDERS] = {POLICY_DIRECT, POLICY_DIRECT};
+const int N_FIRST_RESPONDERS = 1;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{6, 5}};
+const int T_fr[first_resp_t] = {5}; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT};
 
 // Initial map state
 const map_id_t map_id = MAP_SCENARIO_1;
-*/
-// Scenario 2: 12 survivors (25% in-need), 2 first-responders on a 16x16 grid, one central fire cluster
 
+// Scenario 2: 12 survivors (25% in-need), 2 first-responders on a 16x16 grid, one central fire cluster
+/*
 const int N_COLS = 16; // x
 const int N_ROWS = 16; // y
 const int N_CELLS = N_COLS * N_ROWS;
@@ -104,7 +105,7 @@ const int T_fr[first_resp_t] = {5, 5};
 const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT, POLICY_DIRECT};
 
 const map_id_t map_id = MAP_SCENARIO_2;
-
+*/
 /******************************************************************************
  *                                 Constants                                  *
  ******************************************************************************/
@@ -159,9 +160,12 @@ int[0, N_SURVIVORS] dead_survivors;
  *                           Properties parameters                            *
  ******************************************************************************/
 
-const int N_SAFE_SURVIVORS_P = 12; // Number of civillians that can possibly be safe after T_scs
-const int N_SAFE_SURVIVORS_M = 1; // Number of civillians that must be safe after T_scs
-const int T_scs = 30;
+const int N_PERCENT = 12; // Percentage of civilians that need to be safe after T_scs time
+const int T_scs = 60;
+
+// The number of civilians that need to be safe after T_scs, always rounded down because of integer ops
+// Ranged between 1 and N_SURVIVORS to avoid verifying for 0 safe survivors
+const int[1, N_SURVIVORS] N_SAFE = N_SURVIVORS * N_PERCENT / 100;
 
 /******************************************************************************
  *                             Utility functions                              *
@@ -392,20 +396,19 @@ void init_map() {
 
     if (map_id == MAP_SCENARIO_1) {
         // Fires
-        map[5][1] = CELL_FIRE;
-        map[6][1] = CELL_FIRE;
-        map[5][2] = CELL_FIRE;
-        map[6][2] = CELL_FIRE;
         map[4][3] = CELL_FIRE;
-        map[5][3] = CELL_FIRE;
-        map[6][3] = CELL_FIRE;
         map[4][4] = CELL_FIRE;
+        map[5][1] = CELL_FIRE;
+        map[5][2] = CELL_FIRE;
+        map[5][3] = CELL_FIRE;
         map[5][4] = CELL_FIRE;
-
+        map[6][1] = CELL_FIRE;
+        map[6][2] = CELL_FIRE;
+        map[6][3] = CELL_FIRE;
         // Exits
         map[0][4] = CELL_EXIT;
-        map[9][4] = CELL_EXIT;
         map[0][5] = CELL_EXIT;
+        map[9][4] = CELL_EXIT;
         map[9][5] = CELL_EXIT;
     } else if (map_id == MAP_SCENARIO_2) {
         map[0][7] = CELL_EXIT;
