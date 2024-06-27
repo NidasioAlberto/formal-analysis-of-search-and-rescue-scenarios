@@ -1144,7 +1144,7 @@ progress { safe_survivors + dead_survivors; }
 		<option key="--diagnostic" value="1"/>
 		<query>
 			<formula>A[] not deadlock</formula>
-			<comment/>
+			<comment>The system is deadlock free</comment>
 		</query>
 		<query>
 			<formula>A[]
@@ -1152,7 +1152,7 @@ forall (i : drone_id_t)
 	forall (j : drone_id_t)
 		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
 		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
-			<comment/>
+			<comment>Drones cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
 			<formula>A[]
@@ -1160,7 +1160,7 @@ forall (i : survivor_id_t)
 	forall (j : survivor_id_t)
 		(i != j &amp;&amp; not Survivor(i).Init &amp;&amp; not Survivor(j).Init) imply
 		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
-			<comment/>
+			<comment>Survivors cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
 			<formula>A[]
@@ -1168,7 +1168,7 @@ forall (i : first_resp_id_t)
 	forall (j : first_resp_id_t)
 		(i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply
 		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment/>
+			<comment>First Responders cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
 			<formula>A[]
@@ -1176,43 +1176,43 @@ forall (i : survivor_id_t)
 	forall (j : first_resp_id_t)
 		(not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply
 		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment/>
+			<comment>Survivors and First Responders cannot occupy the same cell at the same time</comment>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : survivor_id_t) Survivor(i).Safe || Survivor(i).Dead</formula>
-			<comment/>
+			<comment>No deadlocks for Survivors: eventually all survivors either reach safety or die, but they can't get stuck in the middle</comment>
 		</query>
 		<query>
-			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS // There is no state where the safe and dead counters hold a bigger value that the total number of survivors</formula>
-			<comment/>
+			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS</formula>
+			<comment>The sum of safe and dead survivors is always less than or equal to the total number of survivors</comment>
 		</query>
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
-			<comment/>
+			<comment>At the end of the simulation the sum of safe and dead survivors is equal to the total number of survivors</comment>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment/>
+			<comment>The maximum number of survivors that can be saved in this scenario</comment>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment/>
+			<comment>The minimum number of survivors that can be saved in this scenario</comment>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment/>
+			<comment>The maximum number of survivors that can may die in this scenario</comment>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment/>
+			<comment>The minimum number of survivors that may die in this scenario</comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_P</formula>
-			<comment/>
+			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
+			<comment>It is possible for a percentage N_PERCENT of all civilians to reach a safe state within time T_scs</comment>
 		</query>
 		<query>
-			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE_SURVIVORS_M</formula>
-			<comment/>
+			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>
+			<comment>A percentage N_PERCENT of all civilians is always guaranteed to reach a safe state within time T_scs</comment>
 		</query>
 	</queries>
 </nta>
