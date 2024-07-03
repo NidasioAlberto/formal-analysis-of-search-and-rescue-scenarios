@@ -198,11 +198,11 @@ int iclamp(int value, int lower, int upper) {
     return lower &gt;? (value &lt;? upper);
 }
 
-// Returns the distance between two points in the grid
+// Returns the distance between two points
 int distance(pos_t pos1, pos_t pos2) {
     int x_distance = abs(pos1.x - pos2.x);
     int y_distance = abs(pos1.y - pos2.y);
-    return x_distance &gt;? y_distance;
+    return x_distance &gt;? y_distance; // max(x_distance, y_distance)
 }
 
 // Checks if a position is inside of the map

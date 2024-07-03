@@ -28,26 +28,38 @@ The key characteristics of the agents are these:
 - *Civilians*: Can be in 3 different states, depending whether they find themselves near a fire or if they are following instructions
   - *In-need* (i.e. near a fire): They cannot move and needs to be assisted. After $T_v$ time units near a fire, they became a casualty
   - *Busy*: The civilian is following an instructions and can be either assisting directly or contacting a _first-responder_ to get help
-  - *Moving*: When civilians are not near a fire or busy enacting some instruction, they can move towards an exit to get to safety following a some _moving policy_
+  - *Moving*: When civilians are not near a fire or busy enacting some instruction, they can move towards an exit to get to safety following some _moving policy_
 - *First-responders*:
   - *Assisting*: When a civilian _in-need_ is within a 1-cell range, the _first-responder_ will assist them for $T_"fr"$ time units. After that, the assisted civilian is considered safe
   - *Moving*: When free from other tasks, the _first-responder_ can move following some _moving policy_
-- *Drones*: They survey their surroundings, limited by the field of view $N_v$ of the sensors, and follow a pre-determined path moving 1 cell at each time step. When two civilians, one _in_need_ and one free, are detected the drone can instruct the free civilian to assist the _in_need_ directly or to contact a _first-responder_
+- *Drones*: They survey their surroundings, limited by the field of view $N_v$ of the sensors, and following a pre-determined path moving 1 cell at each time step. When two civilians, one _in_need_ and one free, are detected the drone can instruct the free civilian to assist the _in_need_ directly or to contact a _first-responder_
 
 == Model Assumptions
 
-To simplify the model described in the assignment the following assumptions have been made:
-- The map is a 2D grid with a fixed number of rows and columns, and fires and exits are static (i.e. they won't change during simulation);
-- The distance between 2 cells is considered as the number of step needed to move from one cell to the other allowing diagonal movement, not the Euclidean distance;
-- When a _civilian_ need to move towards someone _in_need_ or a _first-responder_, the model consider it moving for the whole duration of the movement and considering it safe at the end, without modeling the actual movement of the _civilian_;
-- Drones know the global position of all the _first-responders_ and their status, at any given time;
-- All _civilians_ know the location of the exits and can determine the nearest one;
-- _survivors_ cannot start the simulation inside a fire cell.
+To simplify the model described in the assignment, the following assumptions have been made:
+- The map is a 2D grid with a fixed number of rows and columns, and fires and exits are static (i.e. they won't change during simulation)
+- Movements from one cell to another allows for diagonal movements. Therefore, the distance can be esily computed as the maximum between the difference of the x and y coordinates
+- Movement of _civilians_ and _first-responders_ towards a human target (e.g. a _survivor_ goes to a _first-responder_), are modeled with a wait state, where the agents remains idle for the duration of the movement, and with a change in coordinates. This is done to reduce the complexity of the model
+- Drones know the global position of all the _first-responders_ and their status, at any given time. This allows them to instruct _civilians_ to contact the nearest _first-responder_
+- All _civilians_ know the location of the exits and can determine the nearest one
+- _survivors_ cannot start the simulation inside a fire cell
+
+#pagebreak()
 
 = Model Description and Design Choices
 
-== Map Representation
-// image("images/assignment_scenario.jpg", width: 7cm)
+== State and Parameters Representation
+
+// The model is implemented in Uppaal, a tool that allows to model, validate and verify NTAs and NSTAs.
+
+Each agent type (_civilian_, _first-responder_, _drone_) is represented by an automaton, called *template* in Uppaal. These templates are characterized by many different parameters, and are implemented in Uppaal in the following way:
+- The template signature (the parameters list) contains only one constant parameter, the agent id, annotated with a custom type defined as an integer with the range of possible ids (e.g. `typedef int[0, N_DRONES-1] drone_t;`). This way, by listing the template names in the _System declaration_ (`system Drone, Survivor, FirstResponder;`), Uppaal can automatically generate the right number of instances of each template;
+- The agents' parameters are defined in constant global arrays. Each template instance can then access its own parameters by using the agent id as an index for these arrays (e.g. `const pos_t drones_starting_pos[drone_t] = {{1, 3}, {6, 3}};`).
+
+This setup allows to easily define the simulation parameters all inside the _Declaration_ section, thus without modifying neither the templates nor the _System declaration_ section, and to easily assign different parameters to each agent instance.
+
+=== Map Representation
+
 #wrap-content(rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
 ```cpp
 // Map cell status enumeration
@@ -67,18 +79,21 @@ typedef int[0, 8] cell_t;
 cell_t map[N_COLS][N_ROWS];
 ```
 ]), align: right)[
-  The map is represented as a 2D grid of cells N_COLS x N_ROWS, each cell can be in one of the following states:
-  - `CELL_EMPTY`: The cell is empty and can be traversed by agents
-  - `CELL_FIRE`: The cell is on fire and cannot be traversed by agents
-  - `CELL_EXIT`: The cell is an exit and can be reached by civilians to get to safety
-  - `CELL_FIRST_RESP`: The cell is occupied by a first-responder
-  - `CELL_SURVIVOR`: The cell is occupied by a civilian in a safe state
-  - `CELL_ZERO_RESP`: The cell is occupied by a civilian following a drone instruction
-  - `CELL_IN_NEED`: The cell is occupied by a civilian in need of assistance
-  - `CELL_ASSISTED`: The cell is occupied by a civilian _in_need_ that is being assisted
-  - `CELL_ASSISTING`: The cell is occupied by a first-responder assisting a civilian
+Desipite each agent holding internally its own position, a global representation of the map is needed for agents who require to know the state of other agents (e.g. drones need to know the position of _first-responders_ to instruct _civilians_ to contact them).
+
+The map is represented as a 2D grid of cells, with each cell indicating which type of human agent is within (drones positions are not neeed, so they are not included in this representation). This choice is made to avoid each agent holding a reference to all other agents, which would make the model more complex and harder to maintain.
+
+When one agent changes position, it updates the map accordingly. For example, when a _civilian_ moves, it empties the cell it was occupying and fills the new cell with its type.
+
+```cpp
+  void move(int i, int j) {
+    set_map(pos, CELL_EMPTY);
+    pos.x += i;
+    pos.y += j;
+    set_map(pos, CELL_SURVIVOR);
+}
+```
 ]
-The map is populated by the actors described in the following sections.
 
 == Civilian
 The civilian agent is the actor in danger that needs to get to safety.
