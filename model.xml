@@ -90,19 +90,16 @@ const int N_r[drone_t] = {3, 3, 3, 3}; // Drones movement
 
 const int N_SURVIVORS = 12;
 typedef int[0, N_SURVIVORS-1] survivor_t;
-const pos_t survivors_starting_pos[survivor_t] = {{3, 2}, {3, 11}, {6, 0}, {6, 4}, {6, 10}, {7, 14}, {8, 1}, {8, 3}, {10, 9},
-                                                 {11, 11}, {12, 2}, {12, 10}};
+const pos_t survivors_starting_pos[survivor_t] = {{3, 2}, {3, 11}, {6, 0}, {6, 4}, {6, 10}, {7, 14}, {8, 1}, {8, 3}, {10, 9}, {11, 11}, {12, 2}, {12, 10}};
 const int T_zr[survivor_t] = {8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8};
 const int T_v[survivor_t] = {15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
-const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT,
-                                                POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT, POLICY_DIRECT,
-                                                POLICY_DIRECT, POLICY_DIRECT};
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
 
 const int N_FIRST_RESPONDERS = 2;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
 const pos_t first_responders_starting_pos[first_resp_t] = {{2, 8}, {13, 6}};
 const int T_fr[first_resp_t] = {5, 5};
-const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT, POLICY_DIRECT};
+const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
 
 const map_id_t map_id = MAP_SCENARIO_2;
 */
