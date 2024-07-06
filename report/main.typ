@@ -116,7 +116,62 @@ Following the previous example, the synchronization follows these steps:
 
 #align(center, image("images/Synchronization and message passing.png", width: 8cm))
 
+== Moving Policies
+
+Both _survivors_ and _first-responders_ are characterized by a custom moving policy. _Survivors_ use this moving policy to reach the nearest exit, while _first-responders_ use it to reach a _survivor_ in need of assistance.
+
+These moving policies all function in the same way, given a target position they produce the next move to take towards the target. Therefore they can be abstracted and implemented in a generalized way.
+
+In order to support random choices, the moving policy implementation works as follows:
+- On the edge where we want to perform the move, a non-deterministic selection of offets `i` and `j` is performed to identify a possible adjacent cell to move to (shown in @moving_policy_edge);
+- The function `is_move_valid(i, j)` evaluates whether a given adjacent cell is a valid move or not, using the selected moving policy.
+
+
+To experiment with different moving policies, we have impleted 2 simple policies:
+- The *random* policy simply checks if the move is feasible (i.e. wheter the cell is not occupied by a fire or another agent). In @moving_policy_random we can see that the move is valid if the cell is empty. By "enablig" all the feasible moves, the model non-deterministically selects one of them;
+- The *direct* policy enables only the moves with the lowest direct distance to the target. As shown by @moving_policy_direct, if more than one adjacent cell have the same distance to the target, the policy enables all of them and the model will randomly select among those.
+
+#align(center, grid(columns: 3, gutter: 1cm, align: bottom,
+  [#figure(
+    image("images/Moving policy edge.png", width: 4cm),
+    caption: [Moving edge],
+  ) <moving_policy_edge>],
+  [#figure(
+    image("images/Moving policy random.png", width: 4cm),
+    caption: [\ Moving policy `RANDOM`]
+  ) <moving_policy_random>],
+  [#figure(
+    image("images/Moving policy direct.png", width: 4cm),
+    caption: [\ Moving policy `DIRECT`]
+  ) <moving_policy_direct>]
+))
+
+Below are the implementations of the two moving policies. The _direct_ policy computes the distance of the best feasible move to the target, and then enables all those moves with that same distance. The policy is implemented this way in order to avoid preferring one direction over another if more than one move has the same distance to the target.
+
+```cpp
+// Random policy allows all movements that are feasible
+bool random_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    return is_move_feasible(pos, move, type);
+}
+
+// Direct policy follows the best direct path (i.e. without considering obstacles)
+bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    int min_distance;
+
+    if (!is_move_feasible(pos, move, type))
+        return false;
+
+    // Find the distance to the target of the best possible move
+    min_distance = compute_best_move_distance(pos, target, type);
+
+    // A move to be valid must have minimum distance among the possible moves
+    return distance(move, target) == min_distance;
+}
+```
+
 == Templates
+
+=== Initializer
 
 === Surivor
 
@@ -141,10 +196,6 @@ At the end of the simulation all survivors are either safe or casualties.
 === Initializer
 
 #lorem(50)
-
-== Design Choices
-
-#lorem(100)
 
 = Properties
 #lorem(50)
