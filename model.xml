@@ -806,28 +806,28 @@ void reset() {
     in.y = 0;
 }
 </declaration>
-		<location id="id21" x="1385" y="-340">
-			<name x="1375" y="-374">Dead</name>
+		<location id="id21" x="1411" y="-340">
+			<name x="1401" y="-374">Dead</name>
 		</location>
-		<location id="id22" x="1139" y="0">
-			<name x="1122" y="-34">Safe</name>
+		<location id="id22" x="1096" y="0">
+			<name x="1113" y="-34">Safe</name>
 		</location>
 		<location id="id23" x="153" y="-170">
 			<name x="170" y="-162">Moving</name>
 			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
 		</location>
 		<location id="id24" x="833" y="153">
-			<name x="816" y="178">AssistingDirectly</name>
-			<label kind="invariant" x="817" y="195">t &lt;= T_zr[id]</label>
+			<name x="849" y="170">AssistingDirectly</name>
+			<label kind="invariant" x="850" y="187">t &lt;= T_zr[id]</label>
 		</location>
 		<location id="id25" x="858" y="-340">
 			<name x="875" y="-391">InNeed</name>
 			<label kind="invariant" x="875" y="-374">t &lt;= T_v[id]</label>
 		</location>
 		<location id="id26" x="493" y="-170">
-			<name x="484" y="-153">Init</name>
+			<name x="501" y="-153">Init</name>
 		</location>
-		<location id="id27" x="1156" y="-340">
+		<location id="id27" x="1164" y="-340">
 			<committed/>
 		</location>
 		<location id="id28" x="833" y="0">
@@ -841,42 +841,42 @@ void reset() {
 			<label kind="invariant" x="331" y="-34">t &lt;= distance(pos, fr)</label>
 		</location>
 		<location id="id31" x="93" y="153">
-			<name x="-25" y="162">AwaitingJob</name>
+			<name x="110" y="119">AwaitingJob</name>
 		</location>
 		<location id="id32" x="858" y="-170">
 			<name x="874" y="-221">BeingAssisted</name>
 			<label kind="invariant" x="874" y="-204">t &lt;= T_v[id]</label>
 		</location>
 		<location id="id33" x="486" y="153">
-			<name x="476" y="93">ReachingInNeed</name>
-			<label kind="invariant" x="476" y="110">t &lt;= distance(pos, in)</label>
+			<name x="501" y="102">ReachingInNeed</name>
+			<label kind="invariant" x="501" y="119">t &lt;= distance(pos, in)</label>
 		</location>
 		<init ref="id26"/>
 		<transition id="id34">
 			<source ref="id27"/>
 			<target ref="id21"/>
-			<label kind="assignment" x="1165" y="-340">set_map(pos, CELL_EMPTY),
+			<label kind="assignment" x="1181" y="-331">set_map(pos, CELL_EMPTY),
 dead_survivors += 1,
 reset()</label>
 		</transition>
 		<transition id="id35">
 			<source ref="id28"/>
 			<target ref="id22"/>
-			<label kind="assignment" x="875" y="0">set_map(pos, CELL_EMPTY),
+			<label kind="assignment" x="858" y="8">set_map(pos, CELL_EMPTY),
 safe_survivors += 1,
 reset()</label>
 		</transition>
 		<transition id="id36">
 			<source ref="id33"/>
 			<target ref="id24"/>
-			<label kind="guard" x="578" y="153">t &gt;= distance(pos, in)</label>
-			<label kind="assignment" x="637" y="170">t = 0</label>
+			<label kind="guard" x="510" y="161">t &gt;= distance(pos, in)</label>
+			<label kind="assignment" x="510" y="178">t = 0</label>
 		</transition>
 		<transition id="id37">
 			<source ref="id32"/>
 			<target ref="id27"/>
 			<label kind="guard" x="875" y="-170">t &gt;= T_v[id]</label>
-			<nail x="1156" y="-170"/>
+			<nail x="1164" y="-170"/>
 		</transition>
 		<transition id="id38">
 			<source ref="id25"/>
@@ -922,7 +922,7 @@ is_exit_near()</label>
 		<transition id="id44">
 			<source ref="id32"/>
 			<target ref="id28"/>
-			<label kind="synchronisation" x="867" y="-76">assist_complete[pos.x][pos.y]?</label>
+			<label kind="synchronisation" x="867" y="-119">assist_complete[pos.x][pos.y]?</label>
 			<nail x="858" y="-25"/>
 		</transition>
 		<transition id="id45">
@@ -1132,7 +1132,7 @@ t = 0</label>
 			<source ref="id53"/>
 			<target ref="id52"/>
 			<label kind="synchronisation" x="-909" y="-153">init_done?</label>
-			<label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
+			<label kind="assignment" x="-901" y="-127">pos = first_responders_starting_pos[id],
 set_map(pos, CELL_FIRST_RESP),
 available_fr += 1</label>
 		</transition>
