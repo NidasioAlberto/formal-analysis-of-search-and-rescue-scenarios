@@ -175,15 +175,14 @@ bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
 
 === Surivor
 
-At the beginning of the simulation, _survivors_ position themselves in the map; if they are near a fire they become _in_need_ otherwise they are considered _survivors_.
+At the beginning of the simulation, _survivors_ position themselves in the map on pre-determined coordinates. If they are near a fire they become _in_need_ otherwise they are considered _survivors_.
 
-+ _in_need_: The survivor cannot move and needs to be assisted. After $T_v$ time units near a fire, they became a casualty, if assisted in time they are considered safe. In both cases they leave the simulation freeing the map cell they were occupying.
-+ _survivors_: The survivor moves towards an exit following a _moving policy_. If they are within a 1-cell range from an exit they are considered safe and leave the simulation freeing the map cell they were occupying.
-  In this state they can receive instructions from the drone to either assist a _in_need_ survivor or to contact a _first-responder_ to get help.
-  - Assisting a _in_need_ survivor: The survivor "moves" towards the _in_need_ survivor by staying in the same cell for the time needed to reach the _in_need_ (the distance between the two). The survivor "assist" the _in_need_ by waiting $T_"zr"$. After that the survivor is considered safe and leaves the simulation.
-  - Calling a First responder: The survivor "moves" towards the _first-responder_ by staying in the same cell for the time needed to reach the _first-responder_ (the distance between the two). The survivor "calls" the _first-responder_ that will assist the _in_need_ survivor. When the _first-responder_ ends the assist the survivor is considered safe and leaves the simulation.
+Survivors _in-need_ cannot move and if not assisted within $T_v$ time units they became a casualty, otherwise they are became safe. This behavior is modeled with bounds on the _survivor_'s clock: when $T_v$ time is exceeded, the model must go to the `Dead` state. In both cases they leave the simulation freeing the map cell they were occupying.
 
-At the end of the simulation all survivors are either safe or casualties.
+Other _survivors_ that are not near a fire, defaults to moving towards an exit following their _moving policy_. This movement can stop in 3 cases:
+- If they move within a 1-cell range from an exit, they become safe and leave the simulation freeing the map cell they were occupying;
+- If they receive an instruction from a _drone_, either to directly assist someone _in-need_ or calling a _first-respoinder_, they stop targeting one of the exists and start following the instruction. In both cases, the survivor reaching the new target is modeled with a wait equal to the distance to the target, rather than an actual movement in the map. Although this does not properly models the simulated scenario, in particular the interaction between moving agents in the map, it is necessary in order to keep the model simple and verification times acceptable.7
+- When they have no moves available. This could due to either the map topology being such that the survivor is blocked, or the _moving policy_ not allowing any moves. For example, the `DIRECT` moving policies presented before, can possibly lead to a survivor being stuck in a loop where moving around an obstacle frees the previous cells that is the reselected. We assumed these cases acceptable because we deemed reasonable that the map topology could be challenging and that civilians could struggle finding the proper path.
 
 === First-responder
 
