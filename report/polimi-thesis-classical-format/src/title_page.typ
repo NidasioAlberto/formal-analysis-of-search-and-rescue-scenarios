@@ -15,7 +15,7 @@
   body,
 ) = {
   // Set page margins
-  set page(margin: (top: 2.5cm, outside: 2.0cm, x: 2.5cm))
+  set page(margin: (top: 2.5cm, x: 2.5cm))
 
   // Set text default size
   set text(12pt)

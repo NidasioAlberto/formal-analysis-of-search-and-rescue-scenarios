@@ -41,7 +41,7 @@ The key characteristics of the agents are these:
 - *First-responders*:
   - *Assisting*: When a survivor _in-need_ is within a 1-cell range, the _first-responder_ will assist them for $T_"fr"$ time units. After that, the assisted survivor is considered safe
   - *Moving*: When free from other tasks, the _first-responder_ can move following some _moving policy_
-- *Drones*: They survey their surroundings, limited by the field of view $N_v$ of the sensors, and following a pre-determined path moving 1 cell at each time step. When two survivors, one _in_need_ and one free, are detected the drone can instruct the free survivor to assist the _in_need_ directly or to contact a _first-responder_
+- *Drones*: They survey their surroundings, limited by the field of view $N_v$ of the sensors, and following a pre-determined path moving 1 cell at each time step. When two survivors, one _in-need_ and one free, are detected the drone can instruct the free survivor to assist the _in-need_ directly or to contact a _first-responder_
 
 == Model Assumptions
 
@@ -94,6 +94,9 @@ The map is represented as a 2D grid of cells, with each cell indicating which ty
 
 When one agent changes position, it updates the map accordingly. For example, when a _survivor_ moves, it empties the cell it was occupying and fills the new cell with its type.
 
+]
+
+#align(center, rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
 ```cpp
   void move(int i, int j) {
     set_map(pos, CELL_EMPTY);
@@ -102,7 +105,7 @@ When one agent changes position, it updates the map accordingly. For example, wh
     set_map(pos, CELL_SURVIVOR);
 }
 ```
-]
+]))
 
 == Syncronization and Message Passing
 
@@ -148,13 +151,14 @@ To experiment with different moving policies, we have impleted 2 simple policies
 
 Below are the implementations of the two moving policies. The _direct_ policy computes the distance of the best feasible move to the target, and then enables all those moves with that same distance. The policy is implemented this way in order to avoid preferring one direction over another if more than one move has the same distance to the target.
 
+#rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
 ```cpp
 // Random policy allows all movements that are feasible
 bool random_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
     return is_move_feasible(pos, move, type);
 }
 
-// Direct policy follows the best direct path (i.e. without considering obstacles)
+// Direct policy follows the best direct path
 bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
     int min_distance;
 
@@ -164,29 +168,54 @@ bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
     // Find the distance to the target of the best possible move
     min_distance = compute_best_move_distance(pos, target, type);
 
-    // A move to be valid must have minimum distance among the possible moves
+    // A move to be valid must have minimum distance
     return distance(move, target) == min_distance;
 }
 ```
+])
 
 == Templates
 
 === Initializer
 
+#wrap-content(rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
+```cpp
+void init_map() {
+  // Fires
+  map[4][3] = CELL_FIRE;
+  map[4][4] = CELL_FIRE;
+  ...
+
+  // Exits
+  map[0][4] = CELL_EXIT;
+  map[0][5] = CELL_EXIT;
+  ...
+}
+```
+]), align: right)[
+The _Initializer_ template is a simple automaton with three states and two edges used to set up the map and then start all other agents.
+
+Its initial state is a committed state, meaning that the model must follow one of its edges right away. Its only edge runs the function `init_map()`, which configures the position of fires and exits in the map 2D array representation (agents will later set their position on their own). One could initialize the array in place in the _declarations_, but with increasing map sizes, it would become unmanageable. The use of a function allows for a clear definition of where entities are placed.
+
+Then the _Initializer_ has a second committed state with one edge that triggers the `init_done` broadcast channel. All other agents have their initial state with a single arc that synchronizes them on the `init_done` channel. When the channel fires, all the agents perform a simple initialization step (e.g., they set their position in the map) and then they become ready for the simulation to properly start.
+]
+
 === Surivor
 
-At the beginning of the simulation, _survivors_ position themselves in the map on pre-determined coordinates. If they are near a fire they become _in_need_ otherwise they are considered _survivors_.
+At the beginning of the simulation, _survivors_ position themselves on predetermined coordinates in the map. If they are near a fire, they become survivors _in-need_ of assistance; otherwise, they are considered normal _survivors_.
 
-Survivors _in-need_ cannot move and if not assisted within $T_v$ time units they became a casualty, otherwise they are became safe. This behavior is modeled with bounds on the _survivor_'s clock: when $T_v$ time is exceeded, the model must go to the `Dead` state. In both cases they leave the simulation freeing the map cell they were occupying.
+Survivors _in-need_ cannot move, and if they are not assisted within a certain time period $T_v$, they become casualties. However, if they receive assistance within the time period, they are considered safe. This behavior is modeled by setting bounds on the _survivor_'s clock. When the time period $T_v$ is exceeded, the model transitions to the `Dead` state. In both cases, the survivors leave the simulation, freeing the map cell they were occupying.
 
-Other _survivors_ that are not near a fire, defaults to moving towards an exit following their _moving policy_. This movement can stop in 3 cases:
-- If they move within a 1-cell range from an exit, they become safe and leave the simulation freeing the map cell they were occupying;
-- If they receive an instruction from a _drone_, either to directly assist someone _in-need_ or calling a _first-respoinder_, they stop targeting one of the exists and start following the instruction. In both cases, the survivor reaching the new target is modeled with a wait equal to the distance to the target, rather than an actual movement in the map. Although this does not properly models the simulated scenario, in particular the interaction between moving agents in the map, it is necessary in order to keep the model simple and verification times acceptable.7
-- When they have no moves available. This could due to either the map topology being such that the survivor is blocked, or the _moving policy_ not allowing any moves. For example, the `DIRECT` moving policies presented before, can possibly lead to a survivor being stuck in a loop where moving around an obstacle frees the previous cells that is the reselected. We assumed these cases acceptable because we deemed reasonable that the map topology could be challenging and that civilians could struggle finding the proper path.
+Other _survivors_ who are not near a fire default to moving towards an exit, following their designated _moving policy_. This movement can stop in three cases:
+- If they move within a one-cell range of an exit, they become safe and leave the simulation, freeing the map cell they were occupying.
+- If they receive an instruction from a _drone_ to directly assist someone _in-need_ or call a _first-responder_, they stop targeting an exit and start following the instruction. In both cases, the survivor reaching the new target is modeled by waiting for a duration equal to the distance to the target, rather than actually moving in the map. Although this does not accurately model the simulated scenario, particularly the interaction between moving agents in the map, it is necessary to keep the model simple and maintain acceptable verification times.
+- When they have no available moves. This could be due to the map topology blocking the survivor's path or the moving policy not allowing any moves. For example, the `DIRECT` moving policies presented earlier can potentially lead to a survivor being stuck in a loop where moving around an obstacle frees the previous cell, which is then reselected. We deemed these cases acceptable because we considered it reasonable for the map topology to present challenges and for civilians to struggle in finding the proper path.
 
 === First-responder
 
-#lorem(50)
+_First-responders_ defaults to moving towards the nearest survivor _in-need_, but can stop moving in 2 cases:
+- When they reach the targeted survivor _in-need_ they start assisting. After $T_"fr"$ the assistance is completed and the _in-need_ survivor is considered safe;
+- When they are contacted by a _survivor_ to assist someone _in-need_, they stop moving to wait for the _survivor_ to reach them. This is modeled with a wait equal to the distance between the _survivor_ and the _first-responder_.
 
 === Drone
 
