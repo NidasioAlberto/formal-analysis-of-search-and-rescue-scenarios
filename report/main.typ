@@ -204,9 +204,9 @@ Then the _Initializer_ has a second committed state with one edge that triggers 
 
 At the beginning of the simulation, _survivors_ position themselves on predetermined coordinates in the map. If they are near a fire, they become survivors _in-need_ of assistance; otherwise, they are considered normal _survivors_.
 
-Survivors _in-need_ cannot move, and if they are not assisted within a certain time period $T_v$, they become casualties. However, if they receive assistance within the time period, they are considered safe. This behavior is modeled by setting bounds on the _survivor_'s clock. When the time period $T_v$ is exceeded, the model transitions to the `Dead` state. In both cases, the survivors leave the simulation, freeing the map cell they were occupying.
+Survivors _in-need_ cannot move, and if they are not assisted within a certain time period $T_v$, they become casualties. However, if they receive assistance within the time period, they become safe. This behavior is modeled by setting bounds on the _survivor_'s clock. When the time period $T_v$ is exceeded, the model transitions to the `Dead` state. In both cases, the survivors leave the simulation, freeing the map cell they were occupying.
 
-Other _survivors_ who are not near a fire default to moving towards an exit, following their designated _moving policy_. This movement can stop in three cases:
+Other _survivors_ who are not near a fire, default to moving towards an exit, following their designated _moving policy_. This movement can stop in three cases:
 - If they move within a one-cell range of an exit, they become safe and leave the simulation, freeing the map cell they were occupying.
 - If they receive an instruction from a _drone_ to directly assist someone _in-need_ or call a _first-responder_, they stop targeting an exit and start following the instruction. In both cases, the survivor reaching the new target is modeled by waiting for a duration equal to the distance to the target, rather than actually moving in the map. Although this does not accurately model the simulated scenario, particularly the interaction between moving agents in the map, it is necessary to keep the model simple and maintain acceptable verification times.
 - When they have no available moves. This could be due to the map topology blocking the survivor's path or the moving policy not allowing any moves. For example, the `DIRECT` moving policies presented earlier can potentially lead to a survivor being stuck in a loop where moving around an obstacle frees the previous cell, which is then reselected. We deemed these cases acceptable because we considered it reasonable for the map topology to present challenges and for civilians to struggle in finding the proper path.
@@ -219,11 +219,17 @@ _First-responders_ defaults to moving towards the nearest survivor _in-need_, bu
 
 === Drone
 
-#lorem(50)
+Drones are equipped with vision sensors capable of detecting _survivors_ within a predetermined range $N_v$. When they detect both a "free" _survivor_ (a.k.a. _zero-responder_) and someone _in-need_, they can instruct the _survivor_ to assist.
 
-=== Initializer
+When at least one possible _zero-responder_ and someone _in-need_ are in range of the sensors, the drone start a sequence to select the agents to involve in a particular command. It first selects the possible _zero-responder_ (which are those survivors that are not near a fire and that are not already busy following another instruction), it selects the survivor _in-need_ and then, depending on whether there is at least one _first-responder_ available or not, decides whether to make the _zero-responder_ assist directly or making him call a _first-risponder_ which is then selected.
 
-#lorem(50)
+#wrap-content(
+  figure(
+    image("images/Drone moving pattern.png", width: 4cm),
+    caption: [\ Drone moving pattern]
+  ), align: right)[
+Drones also have a fixed moving pattern that follows a predetermined path. This path is decided prior to the simulation and is not influenced by the state of the map or the agents. This is a simplification to keep the model complexity low and to avoid the need for the drone to plan its path dynamically. The current path is a square with a parametric side length, each drone can be setup with a different dimension and with a specific starting position.
+]
 
 = Properties
 #lorem(50)
