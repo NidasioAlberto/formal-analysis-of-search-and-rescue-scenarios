@@ -33,8 +33,9 @@ const int MAP_SCENARIO_FIRST = 1;
 
 const int MAP_SCENARIO_1 =  1;
 const int MAP_SCENARIO_2 =  2;
-
-const int MAP_SCENARIO_LAST = 2;
+const int MAP_SCENARIO_3 =  3;
+const int MAP_SCENARIO_4 =  4;
+const int MAP_SCENARIO_LAST = 4;
 
 typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
 
@@ -43,10 +44,10 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  ******************************************************************************/
 
 // Scenario 1: basic scenario from the assignment document
-
+/*
 // Map size
-const int N_COLS = 30; // x
-const int N_ROWS = 30; // y
+const int N_COLS = 10; // x
+const int N_ROWS = 10; // y
 
 // Number of total cells, used when flatten out the map for the visualizer
 const int N_CELLS = N_COLS * N_ROWS;
@@ -84,7 +85,7 @@ const pos_t exit_pos[exit_t] = {{0,4}, {0,5}, {9,4}, {9,5}};
 // Initial map state
 const map_id_t map_id = MAP_SCENARIO_1;
 
-
+*/
 // Scenario 2: 12 survivors (25% in-need), 2 first-responders on a 16x16 grid, one central fire cluster
 /*
 const int N_COLS = 16; // x
@@ -121,6 +122,86 @@ const pos_t exit_pos[exit_t] = {{0,7}, {0,8}, {15,7}, {15,8}};
 const map_id_t map_id = MAP_SCENARIO_2;
 */
 
+/*
+//Scenario 3 Lone survivor
+
+// Map size
+const int N_COLS = 10; // x
+const int N_ROWS = 10; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
+// Number of drones and their starting positions
+const int N_DRONES = 2;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{1, 6}, {7, 6}};
+const int N_v[drone_t] = {3, 3}; // Drones vision range
+const int N_r[drone_t] = {2, 2}; // Drones movement
+
+// Number of survivors and their starting positions
+const int N_SURVIVORS = 6;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{2, 5}, {2, 6}, {3, 3}, {3, 4}, {3, 5}, {3, 6}};
+const int T_zr = 8; // Zero reponders assistance duration
+const int T_v = 60; // Time after which a survivor in need dies
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE,
+ POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of first responders and their starting positions
+const int N_FIRST_RESPONDERS = 1;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{9, 2}};
+const int T_fr = 5; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
+
+// Number of exit blocks
+const int N_EXIT_BLOCK = 2;
+typedef int[0, N_EXIT_BLOCK-1] exit_t;
+const pos_t exit_pos[exit_t] = {{9,4}, {9,5}};
+
+const map_id_t map_id = MAP_SCENARIO_3;
+*/
+
+// Scenario 4 Divided branch
+// Map size
+const int N_COLS = 10; // x
+const int N_ROWS = 10; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
+// Number of drones and their starting positions
+const int N_DRONES = 4;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{1, 3}, {1, 8}, {5, 3}, {5, 8}};
+const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
+const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
+
+// Number of survivors and their starting positions
+const int N_SURVIVORS = 10;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{0, 7}, {0, 8}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {5, 7}, {5, 9}, {6, 8}, {6, 9}};
+const int T_zr = 60;
+const int T_v = 15;
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of first responders and their starting positions
+const int N_FIRST_RESPONDERS = 3;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{5, 1}, {8, 4}, {8, 5}};
+const int T_fr = 5; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of exit blocks
+const int N_EXIT_BLOCK = 4;
+typedef int[0, N_EXIT_BLOCK-1] exit_t;
+const pos_t exit_pos[exit_t] = {{4,0}, {4,0}, {9,4}, {9,5}};
+
+const map_id_t map_id = MAP_SCENARIO_4;
+
+
+
 /******************************************************************************
  *                                 Constants                                  *
  ******************************************************************************/
@@ -147,7 +228,8 @@ typedef int[CELL_FIRST, CELL_LAST] cell_t;
  ******************************************************************************/
  
 const int max_distance = N_COLS &gt; N_ROWS ? N_COLS * 2 : N_ROWS * 2;
-typedef int[0, max_distance] time_t;
+const int max_wait = T_zr &gt; T_fr ? T_zr * 2 :T_fr * 2;
+typedef int[0, max_distance + max_wait] time_t;
 
 // Maps
 cell_t map[N_COLS][N_ROWS];
@@ -497,7 +579,46 @@ void init_map() {
         map[11][5] = CELL_FIRE;
         map[11][6] = CELL_FIRE;
         map[11][7] = CELL_FIRE;
-    }
+    } else if (map_id == MAP_SCENARIO_3)
+    {
+   		map[3][7] = 1; // FIRE
+   		map[4][2] = 1; // FIRE
+   		map[4][3] = 1; // FIRE
+   		map[4][4] = 1; // FIRE
+   		map[4][5] = 1; // FIRE
+   		map[4][6] = 1; // FIRE
+   		map[4][7] = 1; // FIRE
+   		map[5][2] = 1; // FIRE
+   		map[5][3] = 1; // FIRE
+   		map[5][4] = 1; // FIRE
+   		map[5][5] = 1; // FIRE
+   		map[5][6] = 1; // FIRE
+   		map[5][7] = 1; // FIRE
+
+    }else if (map_id == MAP_SCENARIO_4)
+    {
+    	map[2][3] = 1; // FIRE
+		map[2][4] = 1; // FIRE
+		map[2][5] = 1; // FIRE
+		map[2][6] = 1; // FIRE
+		map[2][7] = 1; // FIRE
+		map[2][8] = 1; // FIRE
+		map[2][9] = 1; // FIRE
+		map[3][3] = 1; // FIRE
+		map[3][4] = 1; // FIRE
+		map[3][5] = 1; // FIRE
+		map[3][6] = 1; // FIRE
+		map[3][7] = 1; // FIRE
+		map[3][8] = 1; // FIRE
+		map[3][9] = 1; // FIRE
+		map[4][3] = 1; // FIRE
+		map[4][4] = 1; // FIRE
+		map[4][5] = 1; // FIRE
+		map[4][6] = 1; // FIRE
+		map[4][7] = 1; // FIRE
+		map[4][8] = 1; // FIRE
+		map[4][9] = 1; // FIRE
+	}
     
     for(i : exit_t){
         set_map(exit_pos[i],CELL_EXIT);
@@ -602,11 +723,6 @@ bool in_need_near() {
 
 bool is_assist_possible(){
     return is_possible_zero_responder() &amp;&amp; in_need_near();
-}
-
-bool is_first_near_enough(){
-    pos_t temp = find_nearest_actor(pos, CELL_FIRST_RESP);
-    return (distance(zr, temp) + distance(temp, in) + T_fr) &lt;= (distance(in, zr)+T_zr);
 }
 
 // Sets the given coordinates as the selected zero_responder
@@ -722,7 +838,7 @@ target_in_need = in</label>
 		<transition id="id20">
 			<source ref="id7"/>
 			<target ref="id6"/>
-			<label kind="guard" x="-807" y="-654">available_fr &gt; 0 &amp;&amp; is_first_near_enough()</label>
+			<label kind="guard" x="-807" y="-654">available_fr &gt; 0</label>
 			<label kind="assignment" x="-807" y="-637">save_first_resp()</label>
 			<nail x="-816" y="-705"/>
 		</transition>
@@ -829,19 +945,19 @@ void reset() {
 		</location>
 		<location id="id31" x="1181" y="-170">
 			<name x="1206" y="-179">Being_assisted</name>
-			<committed/>
+			<label kind="invariant" x="1171" y="-153">t &lt;= wait</label>
 		</location>
 		<init ref="id27"/>
 		<transition id="id32">
 			<source ref="id31"/>
 			<target ref="id29"/>
-			<label kind="guard" x="960" y="-25">t &lt; T_v - wait</label>
+			<label kind="guard" x="960" y="-25">t &gt;= wait &amp;&amp; t &lt; T_v</label>
 			<nail x="1181" y="0"/>
 		</transition>
 		<transition id="id33">
 			<source ref="id31"/>
 			<target ref="id28"/>
-			<label kind="guard" x="969" y="-246">t &gt;= T_v - wait</label>
+			<label kind="guard" x="969" y="-246">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
 			<nail x="1181" y="-255"/>
 		</transition>
 		<transition id="id34">
@@ -1021,7 +1137,8 @@ first_resp_pos[id] = pos</label>
 		<transition id="id50">
 			<source ref="id47"/>
 			<target ref="id44"/>
-			<label kind="synchronisation" x="-238" y="-153">set_timeout[target.x][target.y]!</label>
+			<label kind="synchronisation" x="-246" y="-144">set_timeout[target.x][target.y]!</label>
+			<label kind="assignment" x="-228" y="-161">timeout = wait</label>
 		</transition>
 		<transition id="id51">
 			<source ref="id45"/>
@@ -1111,21 +1228,15 @@ void send_state() {
 before_update { send_state() }
 // after_update { send_state() }
 */
-system  Survivor, Initializer;
+system  Survivor, Drone, FirstResponder, Initializer;
 
 progress { safe_survivors + dead_survivors; }
 </system>
 	<queries>
-		<option key="--state-representation" value="0"/>
-		<option key="--diagnostic" value="1"/>
 		<query>
 			<formula>A[] not deadlock</formula>
-			<comment>The system is deadlock free</comment>
-			<option key="--state-representation" value="0"/>
-			<option key="--diagnostic" value="1"/>
-			<result outcome="success" type="quality" timestamp="2024-07-06 17:35:53 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-10 17:02:00 +0200">
 			</result>
 		</query>
 		<query>
@@ -1134,7 +1245,7 @@ forall (i : drone_t)
 	forall (j : drone_t)
 		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
 		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
-			<comment>Drones cannot occupy the same cell at the same time</comment>
+			<comment/>
 		</query>
 		<query>
 			<formula>A[]
@@ -1144,7 +1255,7 @@ forall (i : survivor_t)
 			   not Survivor(i).Dead &amp;&amp; not Survivor(j).Dead &amp;&amp;
 			   not Survivor(i).Safe &amp;&amp; not Survivor(j).Safe)  imply
 		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
-			<comment>Survivors cannot occupy the same cell at the same time</comment>
+			<comment/>
 		</query>
 		<query>
 			<formula>A[]
@@ -1152,11 +1263,7 @@ forall (i : first_resp_t)
 	forall (j : first_resp_t)
 		(i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply
 		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment>First Responders cannot occupy the same cell at the same time</comment>
-			<result outcome="success" type="quality" timestamp="2024-07-06 17:09:41 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
+			<comment/>
 		</query>
 		<query>
 			<formula>A[]
@@ -1164,82 +1271,59 @@ forall (i : survivor_t)
 	forall (j : first_resp_t)
 		(not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply
 		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment>Survivors and First Responders cannot occupy the same cell at the same time</comment>
-			<result outcome="success" type="quality" timestamp="2024-07-06 17:10:03 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
+			<comment/>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : survivor_t) Survivor(i).Safe || Survivor(i).Dead</formula>
-			<comment>No deadlocks for Survivors: eventually all survivors either reach safety or die, but they can't get stuck in the middle</comment>
-			<result outcome="success" type="quality" timestamp="2024-07-07 20:59:19 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
+			<comment/>
 		</query>
 		<query>
 			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS</formula>
-			<comment>The sum of safe and dead survivors is always less than or equal to the total number of survivors</comment>
+			<comment/>
 		</query>
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
-			<comment>At the end of the simulation the sum of safe and dead survivors is equal to the total number of survivors</comment>
+			<comment/>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment>The maximum number of survivors that can be saved in this scenario</comment>
-			<result outcome="success" type="quantity" value="7" timestamp="2024-07-08 20:43:46 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-				<details>7</details>
+			<comment/>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-10 17:57:02 +0200">
+				<details>6</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment>The minimum number of survivors that can be saved in this scenario</comment>
-			<result outcome="success" type="quantity" value="7" timestamp="2024-07-08 20:43:42 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-				<details>7</details>
+			<comment/>
+			<result outcome="success" type="quantity" value="4" timestamp="2024-07-10 18:11:50 +0200">
+				<details>4</details>
 			</result>
 		</query>
 		<query>
 			<formula>E&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS &amp;&amp;  dead_survivors == 1</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-08 11:49:24 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment>The maximum number of survivors that can may die in this scenario</comment>
+			<comment/>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-10 18:36:31 +0200">
+				<details>6</details>
+			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment>The minimum number of survivors that may die in this scenario</comment>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-07-06 17:26:13 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
+			<comment/>
+			<result outcome="success" type="quantity" value="0" timestamp="2024-07-10 17:10:41 +0200">
 				<details>0</details>
 			</result>
 		</query>
 		<query>
 			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
-			<comment>It is possible for a percentage N_PERCENT of all civilians to reach a safe state within time T_scs</comment>
-			<result outcome="success" type="quality" timestamp="2024-07-08 19:52:06 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
+			<comment/>
 		</query>
 		<query>
 			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>
-			<comment>A percentage N_PERCENT of all civilians is always guaranteed to reach a safe state within time T_scs</comment>
-			<result outcome="success" type="quality" timestamp="2024-07-06 16:36:59 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="1"/>
-			</result>
+			<comment/>
 		</query>
 	</queries>
 </nta>
