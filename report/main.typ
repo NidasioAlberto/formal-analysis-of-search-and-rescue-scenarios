@@ -261,6 +261,27 @@ When performing simulations in Uppaal, understanding how the scenario evolves ca
 
 Since the live visualizer proved to be very useful, we decided to further extend its capabilities by supporting the live visualization of the simulation. To achieve this functionality, we needed a way to make an external application talk to Uppaal, which can be accomplished thanks to Uppaal's external functions. This feature allows Uppaal to call a function coded in another language during the simulation, and is implemented by dynamically linking a user-provided library. Our tool provides a simple function (`send_state_via_post_request(...)`) that sends the map status via a `POST` request to a local endpoint. This function is called at each model's update thanks to the `before_update` and `after_update` statements. The endpoint is a simple web server that runs alongside the graphical tool, that listens for the requests and updates the visualization accordingly. The tool's live visualization feature allows seeing both the symbolic or concrete simulation in real-time!
 
+= Scenarios
+To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have run through the model. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
+
+This scenarios are the ones used in the verification process, and are used to fine tune the parameters to reach the survival rate required.
+== Basic scenario
+This is the first scenario we used to test the model, it is the one used in the assignment. It was used as a benchmark to our model and to verify the correctness of the implementation and of the queries.
+
+While verifying different query we realized that our model was too complex and slow. We then decided to simplify the model as explained in section @faster_model. This allowed us to reduce the number of states and transitions, and thus the verification time.
+
+== Lone survivor
+This scenario is designed to test the effectiveness of the model to bring a FirstResponder (moving randomly) to a group of in need of assistance. A single survivor is placed in a corner of the map near a group of in need, with the FirstResponder on the opposite corner. The survivor is tasked by the drone to go get the FirstResponder amd must navigate through the map to reach the FirstResponder to assist an in need. After that the FirstResponder start helping all the in need near him, until either all are dead or safe.
+
+== Divided branches
+This scenario is designed to test the effectiveness of the model to bring a FirstResponder (moving directly to the closest in need) to a group of in need further then the already assisted. The policy of the FirstResponder is to go to the closest in need, and then to the next closest, and so on. Without the drone assistance all the FirstResponders would go to the same in need, leaving the others to die. With our system only the needed first responder are instructed to go to the in need, while the others are left to assist other in need.
+
+= Faster Model <faster_model>
+
+To speed up the verification process, we have made some changes to the model. Instead of modeling the interaction between the actors, we just model the part of the interaction needed. Instead of having the actors move on the map, we have decided to model the movement as a wait state. This means that when an agent is instructed to move to a certain position, it will wait for a certain amount of time before reaching the target position. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
+Instead of the various actors interacting with each other, we have decided to model the interaction as a message passing system. When a drone detects a survivor in need and a zero-responder (and a first responder if needed), it will send a message to the zero-responder with the correct time to wait (depending on the distance and the assistance time) same with the first responder (if needed) and the in need, so that it waits either until is dead or the passed wait has expired (becoming safe).
+
+Other model specific optimization has been made to reduce computations, by saving position of actors in global variables, removing the need to search the position of the actors in the map.
 = Properties
 #lorem(50)
 
