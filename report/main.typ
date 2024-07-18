@@ -236,12 +236,6 @@ Drones also have a fixed moving pattern that follows a predetermined path. This 
 
 To facilitate the development of the model we've created a graphical tool capable of visually represent and interact with the simulation model. The tool supports 3 working modes: editor, trace visualizer and live visualizer.
 
-#wrap-content(
-  figure(
-    image("images/Editor drag operation.png", width: 4.5cm),
-    caption: [Editor drag operation],
-    numbering: none
-  ), align: right)[
 Creating a simulation scenario requires deciding on various parameters, such as the map dimensions, agent placements, locations of fires and exits, and specific agent parameters like a drone's vision range. To facilitate the placement of entities on the map, the graphical tool can be launched in editor mode. This mode enables selective placement of entities through a combination of mouse and keyboard inputs:
 - Clicking the mouse places an entity in a cell.
 - Clicking again cycles through different available entities, with the cycling direction determined by the use of either the left or right mouse button.
@@ -249,16 +243,21 @@ Creating a simulation scenario requires deciding on various parameters, such as 
 - Drones can be placed by holding the shift key while clicking.
 - To draw over a larger area, move the mouse while keeping the button pressed.
 - Once the map design is complete, pressing `CTRL+S` generates the code required for integration into the Uppaal model.
-]
 
-#wrap-content(
+#align(center, grid(columns: 3, gutter: 1cm, align: horizon,
+  figure(
+    image("images/Editor drag operation.png", width: 7.2cm),
+    caption: [Editor drag operation],
+    numbering: none
+  ),
   figure(
     image("images/Trace visualizer.png", width: 7cm),
     caption: [Trace visualizer],
     numbering: none
-  ), align: left)[
+  ),
+))
+
 When performing simulations in Uppaal, understanding how the scenario evolves can be really challenging. This is because through the Uppaal's interface you have access to global and template's local variables, which can be hard to decipher at a glance. To ease the understanding of the simulation, the graphical tool is able to visualize a trace file saved through the _Symbolic Simulator_. The interface visualizes for each simulation step the complete status of the map, indicating the agents' index with a number and their status (e.g. when _first-responders_ are busy assisting, an "A" appears). The user can move through the simulation with the "Previous" and "Next" buttons or with the arrow keys.
-]
 
 Since the live visualizer proved to be very useful, we decided to further extend its capabilities by supporting the live visualization of the simulation. To achieve this functionality, we needed a way to make an external application talk to Uppaal, which can be accomplished thanks to Uppaal's external functions. This feature allows Uppaal to call a function coded in another language during the simulation, and is implemented by dynamically linking a user-provided library. Our tool provides a simple function (`send_state_via_post_request(...)`) that sends the map status via a `POST` request to a local endpoint. This function is called at each model's update thanks to the `before_update` and `after_update` statements. The endpoint is a simple web server that runs alongside the graphical tool, that listens for the requests and updates the visualization accordingly. The tool's live visualization feature allows seeing both the symbolic or concrete simulation in real-time!
 
