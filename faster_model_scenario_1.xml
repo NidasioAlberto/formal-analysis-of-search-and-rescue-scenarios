@@ -43,7 +43,8 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  *                          Configuration Parameters                          *
  ******************************************************************************/
 
-// Scenario 3 Divided branch
+// Scenario 1: basic scenario from the assignment document
+
 // Map size
 const int N_COLS = 10; // x
 const int N_ROWS = 10; // y
@@ -54,31 +55,35 @@ const int N_CELLS = N_COLS * N_ROWS;
 // Number of drones and their starting positions
 const int N_DRONES = 4;
 typedef int[0, N_DRONES-1] drone_t;
-const pos_t drones_starting_pos[drone_t] = {{1, 3}, {1, 8}, {5, 3}, {5, 8}};
-const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
+const pos_t drones_starting_pos[drone_t] = {{1, 3}, {6, 3}, {1, 8}, {6, 8}};
+const int N_v[drone_t] = {3, 3, 3, 3}; // Drones vision range
 const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
 
-// Number of survivors and their starting positions
-const int N_SURVIVORS = 10;
+const int N_SURVIVORS = 9;
 typedef int[0, N_SURVIVORS-1] survivor_t;
-const pos_t survivors_starting_pos[survivor_t] = {{0, 7}, {0, 8}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {5, 7}, {5, 9}, {6, 8}, {6, 9}};
-const int T_zr = 60;
-const int T_v = 15;
-const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+const pos_t survivors_starting_pos[survivor_t] = {{1, 0}, {2, 5}, {2, 9}, {3, 3}, {4, 7}, {5, 6}, {6, 4}, {6, 8}, {8, 6}};
+const int T_zr = 8; // Zero reponders assistance duration
+const int T_v = 30; // Time after which a survivor in need dies
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, 
+                                                 POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, 
+                                                 POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
 
 // Number of first responders and their starting positions
-const int N_FIRST_RESPONDERS = 3;
+const int N_FIRST_RESPONDERS = 1;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
-const pos_t first_responders_starting_pos[first_resp_t] = {{5, 1}, {8, 4}, {8, 5}};
+const pos_t first_responders_starting_pos[first_resp_t] = {{6, 5}};
 const int T_fr = 5; // First reponders assistance duration
-const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
+
 
 // Number of exit blocks
 const int N_EXIT_BLOCK = 4;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
-const pos_t exit_pos[exit_t] = {{4,0}, {4,0}, {9,4}, {9,5}};
+const pos_t exit_pos[exit_t] = {{0,4}, {0,5}, {9,4}, {9,5}};
 
-const map_id_t map_id = MAP_SCENARIO_4;
+
+// Initial map state
+const map_id_t map_id = MAP_SCENARIO_1;
 
 
 
@@ -1168,15 +1173,15 @@ forall (i : survivor_t)
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-10 17:57:02 +0200">
-				<details>6</details>
+			<result outcome="success" type="quantity" value="9" timestamp="2024-07-20 18:36:09 +0200">
+				<details>9</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="4" timestamp="2024-07-10 18:11:50 +0200">
-				<details>4</details>
+			<result outcome="success" type="quantity" value="9" timestamp="2024-07-20 18:39:49 +0200">
+				<details>9</details>
 			</result>
 		</query>
 		<query>
@@ -1200,6 +1205,8 @@ forall (i : survivor_t)
 		<query>
 			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-20 17:40:08 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>

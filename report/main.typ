@@ -283,7 +283,24 @@ Instead of the various actors interacting with each other, we have decided to mo
 
 Other model specific optimization has been made to reduce computations, by saving position of actors in global variables, removing the need to search the position of the actors in the map.
 = Properties
-#lorem(50)
+For all models we have set the following parameters as they do not depend by the scenario and cannot be controlled:
+- $T_v = 30$: the time before an in need becomes a casualty;
+- $T_"zr" = 10$: the time a zero responder needs to assist an in need;
+The other parameters are changed to illustrate the functionality and affability of the system.
+
+For each scenario we calculated:
+- $N%_max$: The maximum number of safe in percentage over the total number of survivor (checked by: "sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors")
+- $N%$: The number of safe guaranteed (checked by "inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors")
+
+== Basic scenario
+At first we run the basic scenario without drone assistance, to see how the system behaves without any help. Since our survivors have a self-preservation instinct, they will try to reach the nearest exit without ending a turn near the fire, one of the in need is saved by the first responder while the other is a causality since the FirstResponder cannot get to it in time; $N%_max$ = $N%$ = 88.89%.
+
+Activating the system (enabling the drones) with $N_v$ = 1 and $N_r$ = 2 improves $N%_max$ to 100% while not changing $N%$.
+Improving the drones vision to $N_v$ = 3 allow the drones better understand the situation bumping $N%$ to 100% (this is the configuration presented in faster_model_scenario_1).
+
+== Lone survivor
+
+== Divided branches
 
 = Conclusion
 #lorem(50)
