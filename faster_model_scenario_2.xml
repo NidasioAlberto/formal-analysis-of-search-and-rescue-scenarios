@@ -34,8 +34,7 @@ const int MAP_SCENARIO_FIRST = 1;
 const int MAP_SCENARIO_1 =  1;
 const int MAP_SCENARIO_2 =  2;
 const int MAP_SCENARIO_3 =  3;
-const int MAP_SCENARIO_4 =  4;
-const int MAP_SCENARIO_LAST = 4;
+const int MAP_SCENARIO_LAST = 3;
 
 typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
 
@@ -64,7 +63,7 @@ const int N_SURVIVORS = 6;
 typedef int[0, N_SURVIVORS-1] survivor_t;
 const pos_t survivors_starting_pos[survivor_t] = {{2, 5}, {2, 6}, {3, 3}, {3, 4}, {3, 5}, {3, 6}};
 const int T_zr = 8; // Zero reponders assistance duration
-const int T_v = 60; // Time after which a survivor in need dies
+const int T_v = 30; // Time after which a survivor in need dies
 const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE,
  POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
 
@@ -72,7 +71,7 @@ const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DI
 const int N_FIRST_RESPONDERS = 1;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
 const pos_t first_responders_starting_pos[first_resp_t] = {{9, 2}};
-const int T_fr = 5; // First reponders assistance duration
+const int T_fr = 1; // First reponders assistance duration
 const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
 
 // Number of exit blocks
@@ -80,7 +79,7 @@ const int N_EXIT_BLOCK = 2;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
 const pos_t exit_pos[exit_t] = {{9,4}, {9,5}};
 
-const map_id_t map_id = MAP_SCENARIO_3;
+const map_id_t map_id = MAP_SCENARIO_2;
 
 
 /******************************************************************************
@@ -110,7 +109,7 @@ typedef int[CELL_FIRST, CELL_LAST] cell_t;
  
 const int max_distance = N_COLS &gt; N_ROWS ? N_COLS * 2 : N_ROWS * 2;
 const int max_wait = T_zr &gt; T_fr ? T_zr * 2 :T_fr * 2;
-typedef int[0, max_distance + max_wait] time_t;
+typedef int[0, (max_distance + max_wait) &gt; T_v ? (max_distance + max_wait) : T_v ] time_t;
 
 // Maps
 cell_t map[N_COLS][N_ROWS];
@@ -824,49 +823,66 @@ void reset() {
 			<name x="790" y="-161">Suffering</name>
 			<label kind="invariant" x="799" y="-144">t &lt;= T_v</label>
 		</location>
-		<location id="id31" x="1181" y="-170">
-			<name x="1206" y="-179">Being_assisted</name>
-			<label kind="invariant" x="1171" y="-153">t &lt;= wait</label>
+		<location id="id31" x="1283" y="-170">
+			<name x="1308" y="-179">Being_assisted</name>
+			<label kind="invariant" x="1273" y="-153">t &lt;= wait</label>
+		</location>
+		<location id="id32" x="1122" y="-170">
+			<committed/>
 		</location>
 		<init ref="id27"/>
-		<transition id="id32">
+		<transition id="id33">
+			<source ref="id32"/>
+			<target ref="id31"/>
+			<label kind="guard" x="1139" y="-119">t + wait &lt; T_v</label>
+			<label kind="assignment" x="1173" y="-102">t = 0</label>
+			<nail x="1198" y="-119"/>
+		</transition>
+		<transition id="id34">
+			<source ref="id32"/>
+			<target ref="id31"/>
+			<label kind="guard" x="1130" y="-246">t + wait &gt;= T_v</label>
+			<label kind="assignment" x="1147" y="-229">wait = T_v</label>
+			<nail x="1198" y="-212"/>
+		</transition>
+		<transition id="id35">
 			<source ref="id31"/>
 			<target ref="id29"/>
 			<label kind="guard" x="960" y="-25">t &gt;= wait &amp;&amp; t &lt; T_v</label>
-			<nail x="1181" y="0"/>
+			<nail x="1283" y="0"/>
 		</transition>
-		<transition id="id33">
+		<transition id="id36">
 			<source ref="id31"/>
 			<target ref="id28"/>
-			<label kind="guard" x="969" y="-246">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
-			<nail x="1181" y="-255"/>
+			<label kind="guard" x="935" y="-280">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
+			<nail x="1283" y="-255"/>
 		</transition>
-		<transition id="id34">
+		<transition id="id37">
 			<source ref="id30"/>
-			<target ref="id31"/>
-			<label kind="synchronisation" x="901" y="-170">set_timeout[pos.x][pos.y]?</label>
-			<label kind="assignment" x="943" y="-153">wait = timeout</label>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="892" y="-187">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="926" y="-170">wait = timeout</label>
 		</transition>
-		<transition id="id35">
+		<transition id="id38">
 			<source ref="id28"/>
 			<target ref="id23"/>
 			<label kind="assignment" x="833" y="-357">set_map(pos, CELL_EMPTY),
 dead_survivors += 1,
 reset()</label>
 		</transition>
-		<transition id="id36">
+		<transition id="id39">
 			<source ref="id29"/>
 			<target ref="id24"/>
 			<label kind="assignment" x="705" y="51">set_map(pos, CELL_EMPTY),
 safe_survivors += 1,
 reset()</label>
 		</transition>
-		<transition id="id37">
+		<transition id="id40">
 			<source ref="id30"/>
 			<target ref="id28"/>
 			<label kind="guard" x="833" y="-212">t &gt;= T_v</label>
 		</transition>
-		<transition id="id38">
+		<transition id="id41">
 			<source ref="id27"/>
 			<target ref="id25"/>
 			<label kind="guard" x="212" y="-280">!starting_near_a_fire()</label>
@@ -876,7 +892,7 @@ set_map(pos, CELL_SURVIVOR),
 t = 0,
 survivor_pos[id] = pos</label>
 		</transition>
-		<transition id="id39">
+		<transition id="id42">
 			<source ref="id25"/>
 			<target ref="id26"/>
 			<label kind="synchronisation" x="-153" y="-85">set_timeout[pos.x][pos.y]?</label>
@@ -885,7 +901,7 @@ wait = timeout</label>
 			<nail x="76" y="-119"/>
 			<nail x="76" y="0"/>
 		</transition>
-		<transition id="id40">
+		<transition id="id43">
 			<source ref="id25"/>
 			<target ref="id29"/>
 			<label kind="guard" x="408" y="-110">t &gt;= 1 &amp;&amp;
@@ -893,12 +909,12 @@ is_exit_near()</label>
 			<nail x="153" y="-110"/>
 			<nail x="697" y="-110"/>
 		</transition>
-		<transition id="id41">
+		<transition id="id44">
 			<source ref="id26"/>
 			<target ref="id29"/>
 			<label kind="guard" x="314" y="-25">t &gt;= wait</label>
 		</transition>
-		<transition id="id42">
+		<transition id="id45">
 			<source ref="id25"/>
 			<target ref="id25"/>
 			<label kind="select" x="60" y="-357">i : int[-1, 1],
@@ -913,7 +929,7 @@ This way the survivor must make one move per time unit</label>
 			<nail x="153" y="-229"/>
 			<nail x="110" y="-204"/>
 		</transition>
-		<transition id="id43">
+		<transition id="id46">
 			<source ref="id27"/>
 			<target ref="id30"/>
 			<label kind="guard" x="527" y="-280">starting_near_a_fire()</label>
@@ -990,40 +1006,40 @@ void reset() {
     t = 0;
 }
 </declaration>
-		<location id="id44" x="42" y="-161">
+		<location id="id47" x="42" y="-161">
 			<name x="59" y="-212">Assisting</name>
 			<label kind="invariant" x="59" y="-195">t &lt;= wait</label>
 		</location>
-		<location id="id45" x="-552" y="-161">
+		<location id="id48" x="-552" y="-161">
 			<name x="-535" y="-187">Available</name>
 			<label kind="invariant" x="-535" y="-153">t &lt;= 1</label>
 		</location>
-		<location id="id46" x="-926" y="-161">
+		<location id="id49" x="-926" y="-161">
 			<name x="-909" y="-195">Init</name>
 		</location>
-		<location id="id47" x="-246" y="-161">
+		<location id="id50" x="-246" y="-161">
 			<committed/>
 		</location>
-		<location id="id48" x="-705" y="110">
+		<location id="id51" x="-705" y="110">
 		</location>
-		<init ref="id46"/>
-		<transition id="id49">
-			<source ref="id45"/>
-			<target ref="id48"/>
+		<init ref="id49"/>
+		<transition id="id52">
+			<source ref="id48"/>
+			<target ref="id51"/>
 			<label kind="guard" x="-765" y="34">safe_survivors + dead_survivors  == N_SURVIVORS</label>
 			<label kind="assignment" x="-687" y="-25">pos.x = 0,
 pos.y = 0,
 first_resp_pos[id] = pos</label>
 		</transition>
-		<transition id="id50">
-			<source ref="id47"/>
-			<target ref="id44"/>
+		<transition id="id53">
+			<source ref="id50"/>
+			<target ref="id47"/>
 			<label kind="synchronisation" x="-246" y="-144">set_timeout[target.x][target.y]!</label>
 			<label kind="assignment" x="-228" y="-161">timeout = wait</label>
 		</transition>
-		<transition id="id51">
-			<source ref="id45"/>
-			<target ref="id44"/>
+		<transition id="id54">
+			<source ref="id48"/>
+			<target ref="id47"/>
 			<label kind="synchronisation" x="-433" y="-365">set_timeout[pos.x][pos.y]?</label>
 			<label kind="assignment" x="-433" y="-348">wait = timeout,
 available_fr -= 1,
@@ -1032,18 +1048,18 @@ t = 0</label>
 			<nail x="-467" y="-263"/>
 			<nail x="42" y="-263"/>
 		</transition>
-		<transition id="id52">
-			<source ref="id45"/>
-			<target ref="id47"/>
+		<transition id="id55">
+			<source ref="id48"/>
+			<target ref="id50"/>
 			<label kind="guard" x="-467" y="-153">is_possible_in_need()</label>
 			<label kind="assignment" x="-467" y="-136">set_wait(),
 available_fr -= 1,
 set_map(pos, CELL_ASSISTING),
 t = 0</label>
 		</transition>
-		<transition id="id53">
-			<source ref="id45"/>
-			<target ref="id45"/>
+		<transition id="id56">
+			<source ref="id48"/>
+			<target ref="id48"/>
 			<label kind="select" x="-680" y="-357">i : int[-1, 1],
 j : int[-1, 1]</label>
 			<label kind="guard" x="-680" y="-314">t &gt;= 1 &amp;&amp;
@@ -1058,9 +1074,9 @@ moving policy</label>
 			<nail x="-595" y="-195"/>
 			<nail x="-552" y="-221"/>
 		</transition>
-		<transition id="id54">
-			<source ref="id44"/>
-			<target ref="id45"/>
+		<transition id="id57">
+			<source ref="id47"/>
+			<target ref="id48"/>
 			<label kind="guard" x="-433" y="25">t &gt;= wait</label>
 			<label kind="assignment" x="-433" y="51">teleport_to_in_need(),
 available_fr += 1,
@@ -1068,9 +1084,9 @@ reset()</label>
 			<nail x="42" y="17"/>
 			<nail x="-552" y="17"/>
 		</transition>
-		<transition id="id55">
-			<source ref="id46"/>
-			<target ref="id45"/>
+		<transition id="id58">
+			<source ref="id49"/>
+			<target ref="id48"/>
 			<label kind="synchronisation" x="-909" y="-153">init_done?</label>
 			<label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
 set_map(pos, CELL_FIRST_RESP),
@@ -1165,25 +1181,21 @@ forall (i : survivor_t)
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-20 19:17:40 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-07-20 16:47:42 +0200">
-				<details>0</details>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 20:25:59 +0200">
+				<details>6</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 16:47:45 +0200">
-				<details>6</details>
-			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS &amp;&amp;  dead_survivors == 1</formula>
-			<comment/>
-			<result outcome="failure" type="quality" timestamp="2024-07-20 16:47:55 +0200">
+			<result outcome="success" type="quantity" value="5" timestamp="2024-07-20 20:25:59 +0200">
+				<details>5</details>
 			</result>
 		</query>
 		<query>

@@ -296,11 +296,19 @@ For each scenario we calculated:
 At first we run the basic scenario without drone assistance, to see how the system behaves without any help. Since our survivors have a self-preservation instinct, they will try to reach the nearest exit without ending a turn near the fire, one of the in need is saved by the first responder while the other is a causality since the FirstResponder cannot get to it in time; $N%_max$ = $N%$ = 88.89%.
 
 Activating the system (enabling the drones) with $N_v$ = 1 and $N_r$ = 2 improves $N%_max$ to 100% while not changing $N%$.
-Improving the drones vision to $N_v$ = 3 allow the drones better understand the situation bumping $N%$ to 100% (this is the configuration presented in faster_model_scenario_1).
+Improving the drones vision to $N_v$ = 3 allow the drones better understand the situation bumping $N%$ to 100%. This is the configuration presented in faster_model_scenario_1.
 
 == Lone survivor
+We start by assessing the performance of the scenario without drone assistance. The First responder moving randomly is unable to reach the in need in time, giving $N%_max$ =  83.33% and $N%$ = 16.67%.
 
+By activating the system with $N_v$ = 1 and $N_r$ = 2, the FirstResponder is directed to the in need, it needs to wait to be called by the zero responder and then reach the in need, lowering $N%_max$ to 66.67% but improving $N%$ to 50%.
+
+In this scenario the first responder is too slow to reach the in need to save more people, since we cannot change the speed of the first responder we can only improve the assist time to T_fr = 1, (in a real world scenario this could be achieved by a better training or better equipment) obtaining $N%_max$ =  100% and $N%$ = 83.33%. This is the configuration presented in faster_model_scenario_2.
 == Divided branches
 
+As before we first check the survivor rate of the model without drones obtaining: $N%_max$ = $N%$ = 70%.
+
+By turning on the system with $N_v$ = 1 and $N_r$ = 2, we obtain $N%_max$ = 70% and $N%$ = 40%, this highlight a weakness of the system, the drones always prefers first responder when available, even if they are far keeping them occupied more time than without the system.
+
 = Conclusion
-#lorem(50)
+In conclusion our model gives us the possibility to formally check the safety of a room (within the given assumption) and could be used to find: the maximum people allowed inside, the number of drone and the vision range needed and the number of first responder and their training level T_fr to keep the survival rate to a chosen target.
