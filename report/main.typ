@@ -234,8 +234,6 @@ _Drones_ also have a fixed moving pattern that follows a predetermined path. Thi
 
 To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have run through the model. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
 
-This scenarios are the ones used in the verification process, and are used to fine tune the parameters to reach the survival rate required.
-
 #align(center, grid(columns: 3, gutter: 1cm, align: bottom,
   figure(
     image("images/scenario_1.png", width: 5cm),
@@ -258,7 +256,7 @@ This scenarios are the ones used in the verification process, and are used to fi
 
 This is the first scenario we used to test the model, it is the one used in the assignment. It was used as a benchmark for our model and to verify the correctness of the implementation and of the queries.
 
-While verifying different query we realized that our model was too complex and slow. We then decided to simplify the model as explained in @faster_model. This allowed us to reduce the number of states and transitions, and thus the verification time.
+While verifying different queries, we realized that our model was too complex and slow. We then decided to simplify the model as explained in @faster_model. This allowed us to reduce the number of states and transitions, and thus the verification time.
 
 == Lone survivor
 
