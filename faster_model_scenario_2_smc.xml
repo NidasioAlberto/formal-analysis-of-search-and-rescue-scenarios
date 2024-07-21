@@ -34,8 +34,7 @@ const int MAP_SCENARIO_FIRST = 1;
 const int MAP_SCENARIO_1 =  1;
 const int MAP_SCENARIO_2 =  2;
 const int MAP_SCENARIO_3 =  3;
-const int MAP_SCENARIO_4 =  4;
-const int MAP_SCENARIO_LAST = 4;
+const int MAP_SCENARIO_LAST = 3;
 
 typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
 
@@ -43,87 +42,7 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  *                          Configuration Parameters                          *
  ******************************************************************************/
 
-// Scenario 1: basic scenario from the assignment document
-/*
-// Map size
-const int N_COLS = 10; // x
-const int N_ROWS = 10; // y
-
-// Number of total cells, used when flatten out the map for the visualizer
-const int N_CELLS = N_COLS * N_ROWS;
-
-// Number of drones and their starting positions
-const int N_DRONES = 4;
-typedef int[0, N_DRONES-1] drone_t;
-const pos_t drones_starting_pos[drone_t] = {{1, 3}, {6, 3}, {1, 8}, {6, 8}};
-const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
-const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
-
-const int N_SURVIVORS = 9;
-typedef int[0, N_SURVIVORS-1] survivor_t;
-const pos_t survivors_starting_pos[survivor_t] = {{1, 0}, {2, 5}, {2, 9}, {3, 3}, {4, 7}, {5, 6}, {6, 4}, {6, 8}, {8, 6}};
-const int T_zr = 8; // Zero reponders assistance duration
-const int T_v = 15; // Time after which a survivor in need dies
-const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, 
-                                                 POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, 
-                                                 POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
-
-// Number of first responders and their starting positions
-const int N_FIRST_RESPONDERS = 1;
-typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
-const pos_t first_responders_starting_pos[first_resp_t] = {{6, 5}};
-const int T_fr = 5; // First reponders assistance duration
-const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
-
-
-// Number of exit blocks
-const int N_EXIT_BLOCK = 4;
-typedef int[0, N_EXIT_BLOCK-1] exit_t;
-const pos_t exit_pos[exit_t] = {{0,4}, {0,5}, {9,4}, {9,5}};
-
-
-// Initial map state
-const map_id_t map_id = MAP_SCENARIO_1;
-
-*/
-// Scenario 2: 12 survivors (25% in-need), 2 first-responders on a 16x16 grid, one central fire cluster
-/*
-const int N_COLS = 16; // x
-const int N_ROWS = 16; // y
-const int N_CELLS = N_COLS * N_ROWS;
-
-const int N_DRONES = 4;
-typedef int[0, N_DRONES-1] drone_t;
-const pos_t drones_starting_pos[drone_t] = {{2, 5}, {2, 13}, {10, 5}, {10, 13}};
-const int N_v[drone_t] = {2, 2, 2, 2}; // Drones vision range
-const int N_r[drone_t] = {3, 3, 3, 3}; // Drones movement
-
-const int N_SURVIVORS = 12;
-typedef int[0, N_SURVIVORS-1] survivor_t;
-const pos_t survivors_starting_pos[survivor_t] = {{3, 2}, {3, 11}, {6, 0}, {6, 4}, {6, 10}, {7, 14}, {8, 1}, {8, 3}, {10, 9},
-                                                 {11, 11}, {12, 2}, {12, 10}};
-const int T_zr = 8;
-const int T_v = 15;
-const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE,
-                                                POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE,
-                                                POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
-
-const int N_FIRST_RESPONDERS = 2;
-typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
-const pos_t first_responders_starting_pos[first_resp_t] = {{2, 8}, {13, 6}};
-const int T_fr = 5;
-const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
-
-// Number of exit blocks
-const int N_EXIT_BLOCK = 4;
-typedef int[0, N_EXIT_BLOCK-1] exit_t;
-const pos_t exit_pos[exit_t] = {{0,7}, {0,8}, {15,7}, {15,8}};
-
-const map_id_t map_id = MAP_SCENARIO_2;
-*/
-
-/*
-//Scenario 3 Lone survivor
+//Scenario 2 Lone survivor
 
 // Map size
 const int N_COLS = 10; // x
@@ -144,7 +63,7 @@ const int N_SURVIVORS = 6;
 typedef int[0, N_SURVIVORS-1] survivor_t;
 const pos_t survivors_starting_pos[survivor_t] = {{2, 5}, {2, 6}, {3, 3}, {3, 4}, {3, 5}, {3, 6}};
 const int T_zr = 8; // Zero reponders assistance duration
-const int T_v = 60; // Time after which a survivor in need dies
+const int T_v = 30; // Time after which a survivor in need dies
 const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE,
  POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
 
@@ -152,7 +71,7 @@ const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DI
 const int N_FIRST_RESPONDERS = 1;
 typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
 const pos_t first_responders_starting_pos[first_resp_t] = {{9, 2}};
-const int T_fr = 5; // First reponders assistance duration
+const int T_fr = 1; // First reponders assistance duration
 const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
 
 // Number of exit blocks
@@ -160,46 +79,7 @@ const int N_EXIT_BLOCK = 2;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
 const pos_t exit_pos[exit_t] = {{9,4}, {9,5}};
 
-const map_id_t map_id = MAP_SCENARIO_3;
-*/
-
-// Scenario 4 Divided branch
-// Map size
-const int N_COLS = 10; // x
-const int N_ROWS = 10; // y
-
-// Number of total cells, used when flatten out the map for the visualizer
-const int N_CELLS = N_COLS * N_ROWS;
-
-// Number of drones and their starting positions
-const int N_DRONES = 4;
-typedef int[0, N_DRONES-1] drone_t;
-const pos_t drones_starting_pos[drone_t] = {{1, 3}, {1, 8}, {5, 3}, {5, 8}};
-const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
-const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
-
-// Number of survivors and their starting positions
-const int N_SURVIVORS = 10;
-typedef int[0, N_SURVIVORS-1] survivor_t;
-const pos_t survivors_starting_pos[survivor_t] = {{0, 7}, {0, 8}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {5, 7}, {5, 9}, {6, 8}, {6, 9}};
-const int T_zr = 60;
-const int T_v = 15;
-const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
-
-// Number of first responders and their starting positions
-const int N_FIRST_RESPONDERS = 3;
-typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
-const pos_t first_responders_starting_pos[first_resp_t] = {{5, 1}, {8, 4}, {8, 5}};
-const int T_fr = 5; // First reponders assistance duration
-const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
-
-// Number of exit blocks
-const int N_EXIT_BLOCK = 4;
-typedef int[0, N_EXIT_BLOCK-1] exit_t;
-const pos_t exit_pos[exit_t] = {{4,0}, {4,0}, {9,4}, {9,5}};
-
-const map_id_t map_id = MAP_SCENARIO_4;
-
+const map_id_t map_id = MAP_SCENARIO_2;
 
 
 /******************************************************************************
@@ -229,7 +109,7 @@ typedef int[CELL_FIRST, CELL_LAST] cell_t;
  
 const int max_distance = N_COLS &gt; N_ROWS ? N_COLS * 2 : N_ROWS * 2;
 const int max_wait = T_zr &gt; T_fr ? T_zr * 2 :T_fr * 2;
-typedef int[0, max_distance + max_wait] time_t;
+typedef int[0, (max_distance + max_wait) &gt; T_v ? (max_distance + max_wait) : T_v ] time_t;
 
 // Maps
 cell_t map[N_COLS][N_ROWS];
@@ -264,7 +144,7 @@ const int T_scs = 60;
 
 // The number of civilians that need to be safe after T_scs, always rounded down because of integer ops
 // Ranged between 1 and N_SURVIVORS to avoid verifying for 0 safe survivors
-int[1, N_SURVIVORS] N_SAFE = N_SURVIVORS * N_PERCENT / 100;
+const int[1, N_SURVIVORS] N_SAFE = N_SURVIVORS * N_PERCENT / 100;
 
 /******************************************************************************
  *                           Stochastic parameters                            *
@@ -767,17 +647,17 @@ void reset() {
     timeout = 0;
 }
 </declaration>
-		<location id="id5" x="-943" y="-578">
-			<name x="-1104" y="-586">AssistingDirectly</name>
+		<location id="id5" x="-859" y="-578">
+			<name x="-1020" y="-586">AssistingDirectly</name>
 			<committed/>
 		</location>
-		<location id="id6" x="-662" y="-578">
-			<name x="-637" y="-586">SearchingFirstResponder</name>
+		<location id="id6" x="-578" y="-578">
+			<name x="-553" y="-586">SearchingFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id7" x="-790" y="-799">
-			<name x="-790" y="-841">SurvivorAndInNeedSelected</name>
-			<label kind="comments" x="-679" y="-799">If there is a first responder
+		<location id="id7" x="-706" y="-799">
+			<name x="-774" y="-850">SurvivorAndInNeedSelected</name>
+			<label kind="comments" x="-493" y="-790">If there is a first responder
 available, instruct the selected
 zero reponder to call him,
 otherwise assit directly</label>
@@ -787,40 +667,40 @@ otherwise assit directly</label>
 			<name x="-1683" y="-833">Init</name>
 		</location>
 		<location id="id9" x="-1402" y="-799">
-			<name x="-1513" y="-850">Moving</name>
-			<label kind="invariant" x="-1513" y="-833">t &lt;= 1</label>
+			<name x="-1385" y="-850">Moving</name>
+			<label kind="invariant" x="-1385" y="-833">t &lt;= 1</label>
 		</location>
-		<location id="id10" x="-799" y="-450">
+		<location id="id10" x="-715" y="-450">
 			<committed/>
 		</location>
-		<location id="id11" x="-1088" y="-450">
+		<location id="id11" x="-935" y="-450">
 			<committed/>
 		</location>
 		<location id="id12" x="-1402" y="-450">
 			<committed/>
 		</location>
-		<location id="id13" x="-977" y="-799">
+		<location id="id13" x="-935" y="-799">
 			<committed/>
 		</location>
-		<branchpoint id="id14" x="-1198" y="-799"/>
+		<branchpoint id="id14" x="-1147" y="-799"/>
 		<init ref="id8"/>
 		<transition id="id15">
 			<source ref="id14"/>
 			<target ref="id9"/>
-			<label kind="probability" x="-1377" y="-739">P_fail * (10 - S_listen)</label>
-			<nail x="-1258" y="-748"/>
-			<nail x="-1351" y="-748"/>
+			<label kind="probability" x="-1368" y="-731">(10 - P_fail) * S_listen</label>
+			<nail x="-1207" y="-739"/>
+			<nail x="-1343" y="-739"/>
 		</transition>
 		<transition id="id16">
 			<source ref="id14"/>
 			<target ref="id13"/>
-			<label kind="probability" x="-1190" y="-824">(10 - P_fail) * S_listen</label>
+			<label kind="probability" x="-1139" y="-790">(10 - P_fail) * S_listen</label>
 		</transition>
 		<transition id="id17">
-			<source ref="id9"/>
-			<target ref="id14"/>
-			<label kind="guard" x="-1385" y="-841">t &gt;= 1 &amp;&amp;
-is_assist_possible()</label>
+			<source ref="id13"/>
+			<target ref="id7"/>
+			<label kind="assignment" x="-917" y="-799">save_zero_resp(),
+save_in_need()</label>
 		</transition>
 		<transition id="id18">
 			<source ref="id12"/>
@@ -830,55 +710,55 @@ is_assist_possible()</label>
 		<transition id="id19">
 			<source ref="id11"/>
 			<target ref="id12"/>
-			<label kind="synchronisation" x="-1377" y="-450">set_timeout[in.x][in.y]!</label>
+			<label kind="synchronisation" x="-1385" y="-450">set_timeout[in.x][in.y]!</label>
 		</transition>
 		<transition id="id20">
 			<source ref="id10"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-1002" y="-450">set_timeout[zr.x][zr.y]!</label>
+			<label kind="synchronisation" x="-918" y="-450">set_timeout[zr.x][zr.y]!</label>
 		</transition>
 		<transition id="id21">
 			<source ref="id9"/>
 			<target ref="id9"/>
-			<label kind="guard" x="-1496" y="-952">t &gt;= 1 &amp;&amp;
+			<label kind="guard" x="-1470" y="-926">t &gt;= 1 &amp;&amp;
 !is_assist_possible()</label>
-			<label kind="assignment" x="-1496" y="-918">move(),
+			<label kind="assignment" x="-1470" y="-892">move(),
 t = 0</label>
-			<label kind="comments" x="-1581" y="-994">This edge is the only one that resets the clock.
+			<label kind="comments" x="-1657" y="-977">This edge is the only one that resets the clock.
 This way the drone must make one move per time unit</label>
-			<nail x="-1462" y="-850"/>
-			<nail x="-1402" y="-892"/>
+			<nail x="-1445" y="-833"/>
+			<nail x="-1402" y="-858"/>
 		</transition>
 		<transition id="id22">
 			<source ref="id5"/>
 			<target ref="id10"/>
-			<label kind="assignment" x="-1113" y="-510">timeout = distance(in, zr)+T_zr</label>
+			<label kind="assignment" x="-1029" y="-510">timeout = distance(in, zr)+T_zr</label>
 		</transition>
 		<transition id="id23">
 			<source ref="id6"/>
 			<target ref="id10"/>
-			<label kind="synchronisation" x="-713" y="-527">set_timeout[fr.x][fr.y]!</label>
-			<label kind="assignment" x="-713" y="-510">timeout = distance(zr , fr) + distance(fr, in) + T_fr,
+			<label kind="synchronisation" x="-629" y="-527">set_timeout[fr.x][fr.y]!</label>
+			<label kind="assignment" x="-629" y="-510">timeout = distance(zr , fr) + distance(fr, in) + T_fr,
 target_in_need = in</label>
 		</transition>
 		<transition id="id24">
 			<source ref="id7"/>
 			<target ref="id5"/>
-			<label kind="guard" x="-1087" y="-654">available_fr == 0</label>
-			<nail x="-943" y="-705"/>
+			<label kind="guard" x="-1003" y="-654">available_fr == 0</label>
+			<nail x="-859" y="-705"/>
 		</transition>
 		<transition id="id25">
 			<source ref="id7"/>
 			<target ref="id6"/>
-			<label kind="guard" x="-654" y="-654">available_fr &gt; 0</label>
-			<label kind="assignment" x="-654" y="-637">save_first_resp()</label>
-			<nail x="-663" y="-705"/>
+			<label kind="guard" x="-570" y="-654">available_fr &gt; 0</label>
+			<label kind="assignment" x="-570" y="-637">save_first_resp()</label>
+			<nail x="-579" y="-705"/>
 		</transition>
 		<transition id="id26">
-			<source ref="id13"/>
-			<target ref="id7"/>
-			<label kind="assignment" x="-960" y="-841">save_zero_resp(),
-save_in_need()</label>
+			<source ref="id9"/>
+			<target ref="id14"/>
+			<label kind="guard" x="-1326" y="-841">t &gt;= 1 &amp;&amp;
+is_assist_possible()</label>
 		</transition>
 		<transition id="id27">
 			<source ref="id8"/>
@@ -973,49 +853,66 @@ void reset() {
 			<name x="790" y="-161">Suffering</name>
 			<label kind="invariant" x="799" y="-144">t &lt;= T_v</label>
 		</location>
-		<location id="id36" x="1181" y="-170">
-			<name x="1206" y="-179">Being_assisted</name>
-			<label kind="exponentialrate" x="1198" y="-153">1 : T_v</label>
+		<location id="id36" x="1283" y="-170">
+			<name x="1308" y="-179">Being_assisted</name>
+			<label kind="invariant" x="1273" y="-153">t &lt;= wait</label>
+		</location>
+		<location id="id37" x="1122" y="-170">
+			<committed/>
 		</location>
 		<init ref="id32"/>
-		<transition id="id37">
+		<transition id="id38">
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="guard" x="1139" y="-119">t + wait &lt; T_v</label>
+			<label kind="assignment" x="1173" y="-102">t = 0</label>
+			<nail x="1198" y="-119"/>
+		</transition>
+		<transition id="id39">
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="guard" x="1130" y="-246">t + wait &gt;= T_v</label>
+			<label kind="assignment" x="1147" y="-229">wait = T_v</label>
+			<nail x="1198" y="-212"/>
+		</transition>
+		<transition id="id40">
 			<source ref="id36"/>
 			<target ref="id34"/>
 			<label kind="guard" x="960" y="-25">t &gt;= wait &amp;&amp; t &lt; T_v</label>
-			<nail x="1181" y="0"/>
+			<nail x="1283" y="0"/>
 		</transition>
-		<transition id="id38">
+		<transition id="id41">
 			<source ref="id36"/>
 			<target ref="id33"/>
-			<label kind="guard" x="969" y="-246">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
-			<nail x="1181" y="-255"/>
+			<label kind="guard" x="935" y="-280">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
+			<nail x="1283" y="-255"/>
 		</transition>
-		<transition id="id39">
+		<transition id="id42">
 			<source ref="id35"/>
-			<target ref="id36"/>
-			<label kind="synchronisation" x="901" y="-170">set_timeout[pos.x][pos.y]?</label>
-			<label kind="assignment" x="943" y="-153">wait = timeout</label>
+			<target ref="id37"/>
+			<label kind="synchronisation" x="892" y="-187">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="926" y="-170">wait = timeout</label>
 		</transition>
-		<transition id="id40">
+		<transition id="id43">
 			<source ref="id33"/>
 			<target ref="id28"/>
 			<label kind="assignment" x="833" y="-357">set_map(pos, CELL_EMPTY),
 dead_survivors += 1,
 reset()</label>
 		</transition>
-		<transition id="id41">
+		<transition id="id44">
 			<source ref="id34"/>
 			<target ref="id29"/>
 			<label kind="assignment" x="705" y="51">set_map(pos, CELL_EMPTY),
 safe_survivors += 1,
 reset()</label>
 		</transition>
-		<transition id="id42">
+		<transition id="id45">
 			<source ref="id35"/>
 			<target ref="id33"/>
 			<label kind="guard" x="833" y="-212">t &gt;= T_v</label>
 		</transition>
-		<transition id="id43">
+		<transition id="id46">
 			<source ref="id32"/>
 			<target ref="id30"/>
 			<label kind="guard" x="212" y="-280">!starting_near_a_fire()</label>
@@ -1025,7 +922,7 @@ set_map(pos, CELL_SURVIVOR),
 t = 0,
 survivor_pos[id] = pos</label>
 		</transition>
-		<transition id="id44">
+		<transition id="id47">
 			<source ref="id30"/>
 			<target ref="id31"/>
 			<label kind="synchronisation" x="-153" y="-85">set_timeout[pos.x][pos.y]?</label>
@@ -1034,7 +931,7 @@ wait = timeout</label>
 			<nail x="76" y="-119"/>
 			<nail x="76" y="0"/>
 		</transition>
-		<transition id="id45">
+		<transition id="id48">
 			<source ref="id30"/>
 			<target ref="id34"/>
 			<label kind="guard" x="408" y="-110">t &gt;= 1 &amp;&amp;
@@ -1042,12 +939,12 @@ is_exit_near()</label>
 			<nail x="153" y="-110"/>
 			<nail x="697" y="-110"/>
 		</transition>
-		<transition id="id46">
+		<transition id="id49">
 			<source ref="id31"/>
 			<target ref="id34"/>
 			<label kind="guard" x="314" y="-25">t &gt;= wait</label>
 		</transition>
-		<transition id="id47">
+		<transition id="id50">
 			<source ref="id30"/>
 			<target ref="id30"/>
 			<label kind="select" x="60" y="-357">i : int[-1, 1],
@@ -1062,7 +959,7 @@ This way the survivor must make one move per time unit</label>
 			<nail x="153" y="-229"/>
 			<nail x="110" y="-204"/>
 		</transition>
-		<transition id="id48">
+		<transition id="id51">
 			<source ref="id32"/>
 			<target ref="id35"/>
 			<label kind="guard" x="527" y="-280">starting_near_a_fire()</label>
@@ -1139,40 +1036,40 @@ void reset() {
     t = 0;
 }
 </declaration>
-		<location id="id49" x="42" y="-161">
+		<location id="id52" x="42" y="-161">
 			<name x="59" y="-212">Assisting</name>
 			<label kind="invariant" x="59" y="-195">t &lt;= wait</label>
 		</location>
-		<location id="id50" x="-552" y="-161">
+		<location id="id53" x="-552" y="-161">
 			<name x="-535" y="-187">Available</name>
 			<label kind="invariant" x="-535" y="-153">t &lt;= 1</label>
 		</location>
-		<location id="id51" x="-926" y="-161">
+		<location id="id54" x="-926" y="-161">
 			<name x="-909" y="-195">Init</name>
 		</location>
-		<location id="id52" x="-246" y="-161">
+		<location id="id55" x="-246" y="-161">
 			<committed/>
 		</location>
-		<location id="id53" x="-705" y="110">
+		<location id="id56" x="-705" y="110">
 		</location>
-		<init ref="id51"/>
-		<transition id="id54">
-			<source ref="id50"/>
-			<target ref="id53"/>
+		<init ref="id54"/>
+		<transition id="id57">
+			<source ref="id53"/>
+			<target ref="id56"/>
 			<label kind="guard" x="-765" y="34">safe_survivors + dead_survivors  == N_SURVIVORS</label>
 			<label kind="assignment" x="-687" y="-25">pos.x = 0,
 pos.y = 0,
 first_resp_pos[id] = pos</label>
 		</transition>
-		<transition id="id55">
-			<source ref="id52"/>
-			<target ref="id49"/>
+		<transition id="id58">
+			<source ref="id55"/>
+			<target ref="id52"/>
 			<label kind="synchronisation" x="-246" y="-144">set_timeout[target.x][target.y]!</label>
 			<label kind="assignment" x="-228" y="-161">timeout = wait</label>
 		</transition>
-		<transition id="id56">
-			<source ref="id50"/>
-			<target ref="id49"/>
+		<transition id="id59">
+			<source ref="id53"/>
+			<target ref="id52"/>
 			<label kind="synchronisation" x="-433" y="-365">set_timeout[pos.x][pos.y]?</label>
 			<label kind="assignment" x="-433" y="-348">wait = timeout,
 available_fr -= 1,
@@ -1181,18 +1078,18 @@ t = 0</label>
 			<nail x="-467" y="-263"/>
 			<nail x="42" y="-263"/>
 		</transition>
-		<transition id="id57">
-			<source ref="id50"/>
-			<target ref="id52"/>
+		<transition id="id60">
+			<source ref="id53"/>
+			<target ref="id55"/>
 			<label kind="guard" x="-467" y="-153">is_possible_in_need()</label>
 			<label kind="assignment" x="-467" y="-136">set_wait(),
 available_fr -= 1,
 set_map(pos, CELL_ASSISTING),
 t = 0</label>
 		</transition>
-		<transition id="id58">
-			<source ref="id50"/>
-			<target ref="id50"/>
+		<transition id="id61">
+			<source ref="id53"/>
+			<target ref="id53"/>
 			<label kind="select" x="-680" y="-357">i : int[-1, 1],
 j : int[-1, 1]</label>
 			<label kind="guard" x="-680" y="-314">t &gt;= 1 &amp;&amp;
@@ -1207,9 +1104,9 @@ moving policy</label>
 			<nail x="-595" y="-195"/>
 			<nail x="-552" y="-221"/>
 		</transition>
-		<transition id="id59">
-			<source ref="id49"/>
-			<target ref="id50"/>
+		<transition id="id62">
+			<source ref="id52"/>
+			<target ref="id53"/>
 			<label kind="guard" x="-433" y="25">t &gt;= wait</label>
 			<label kind="assignment" x="-433" y="51">teleport_to_in_need(),
 available_fr += 1,
@@ -1217,9 +1114,9 @@ reset()</label>
 			<nail x="42" y="17"/>
 			<nail x="-552" y="17"/>
 		</transition>
-		<transition id="id60">
-			<source ref="id51"/>
-			<target ref="id50"/>
+		<transition id="id63">
+			<source ref="id54"/>
+			<target ref="id53"/>
 			<label kind="synchronisation" x="-909" y="-153">init_done?</label>
 			<label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
 set_map(pos, CELL_FIRST_RESP),
@@ -1263,7 +1160,6 @@ system  Survivor, Drone, FirstResponder, Initializer;
 progress { safe_survivors + dead_survivors; }
 </system>
 	<queries>
-		<option key="--diagnostic" value="1"/>
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
@@ -1315,37 +1211,35 @@ forall (i : survivor_t)
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-20 19:17:40 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-10 17:57:02 +0200">
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 20:25:59 +0200">
 				<details>6</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="4" timestamp="2024-07-10 18:11:50 +0200">
-				<details>4</details>
+			<result outcome="success" type="quantity" value="5" timestamp="2024-07-20 20:25:59 +0200">
+				<details>5</details>
 			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS &amp;&amp;  dead_survivors == 1</formula>
-			<comment/>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-10 18:36:31 +0200">
-				<details>6</details>
+			<result outcome="success" type="quantity" value="0" timestamp="2024-07-20 16:47:50 +0200">
+				<details>0</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-07-10 17:10:41 +0200">
-				<details>0</details>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 16:47:51 +0200">
+				<details>6</details>
 			</result>
 		</query>
 		<query>
@@ -1359,158 +1253,10 @@ forall (i : survivor_t)
 		<query>
 			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SAFE)</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="0.111616 ± 0.0441342 (95% CI)" timestamp="2024-07-20 11:40:47 +0200">
-				<option key="--diagnostic" value="1"/>
-				<details>0.111616 ± 0.0441342 (95% CI)</details>
-				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
-					<series title="density" type="b(1.477727)" color="0x0000ff" encoding="csv">13.611364264594329,0.006506874177940974
-15.089091411675463,0.0
-16.566818558756598,0.00976031126691146
-18.04454570583773,0.05205499342352779
-19.522272852918867,0.0
-21.0,0.003253437088970487
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,0.05205499342352779
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
-					<series title="upper limit" type="b(1.477727)" color="0xa0a0ff" encoding="csv">13.611364264594329,0.03430056272039564
-15.089091411675463,0.017578657900630727
-16.566818558756598,0.041569512880248814
-18.04454570583773,0.12191364801589798
-19.522272852918867,0.017578657900630727
-21.0,0.02649421935282287
-					</series>
-					<series title="lower limit" type="b(1.477727)" color="0x0000ff" encoding="csv">13.611364264594329,0.0011665962908166483
-15.089091411675463,0.0
-16.566818558756598,0.0029843191039548803
-18.04454570583773,0.04460597841451754
-19.522272852918867,0.0
-21.0,1.2171282308697618E-4
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,0.08250078389417606
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
-					<series title="probability" type="b(1.477727)" color="0x0000ff" encoding="csv">13.611364264594329,0.009615384615384616
-15.089091411675463,0.0
-16.566818558756598,0.014423076923076924
-18.04454570583773,0.07692307692307693
-19.522272852918867,0.0
-21.0,0.004807692307692308
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,0.07692307692307693
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
-					<series title="upper limit" type="b(1.477727)" color="0xa0a0ff" encoding="csv">13.611364264594329,0.03430056272039564
-15.089091411675463,0.017578657900630727
-16.566818558756598,0.041569512880248814
-18.04454570583773,0.12191364801589798
-19.522272852918867,0.017578657900630727
-21.0,0.02649421935282287
-					</series>
-					<series title="lower limit" type="b(1.477727)" color="0x0000ff" encoding="csv">13.611364264594329,0.0011665962908166483
-15.089091411675463,0.0
-16.566818558756598,0.0029843191039548803
-18.04454570583773,0.04460597841451754
-19.522272852918867,0.0
-21.0,1.2171282308697618E-4
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,0.12191364801589798
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">13.611364264594329,0.0
-15.089091411675463,0.009615384615384616
-16.566818558756598,0.009615384615384616
-18.04454570583773,0.02403846153846154
-19.522272852918867,0.10096153846153846
-21.0,0.10096153846153846
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,0.10576923076923073
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
-					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">13.611364264594329,0.017578657900630727
-15.089091411675463,0.03430056272039564
-16.566818558756598,0.03430056272039564
-18.04454570583773,0.05520323180692576
-19.522272852918867,0.15018505680943098
-21.0,0.15018505680943098
-					</series>
-					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">13.611364264594329,0.0
-15.089091411675463,0.0011665962908166483
-16.566818558756598,0.0011665962908166483
-18.04454570583773,0.007850262347021436
-19.522272852918867,0.06359021998710963
-21.0,0.06359021998710963
-					</series>
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">13.611364264594329,0.0
-15.089091411675463,0.009615384615384616
-16.566818558756598,0.009615384615384616
-18.04454570583773,0.02403846153846154
-19.522272852918867,0.10096153846153846
-21.0,0.10096153846153846
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,0.10576923076923073
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
-					<series title="count" type="b(1.477727)" color="0x0000ff" encoding="csv">13.611364264594329,2.0
-15.089091411675463,0.0
-16.566818558756598,3.0
-18.04454570583773,16.0
-19.522272852918867,0.0
-21.0,1.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">18.450669761284818,0.0
-18.450669761284818,16.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.4777, bucket count=6
-Runs: 208 in total, 22 (10.577%) displayed, 186 (89.423%) remaining
-Span of displayed sample: [13.61, 21]
-Mean estimate of displayed sample: 18.45 ± 0.714 (95% CI)</comment>
-				</plot>
-			</result>
 		</query>
 		<query>
 			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SURVIVORS)</formula>
 			<comment/>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2024-07-20 11:45:29 +0200">
-				<option key="--diagnostic" value="1"/>
-				<details>≤ 0.0499441 (95% CI)</details>
-			</result>
 		</query>
 	</queries>
 </nta>

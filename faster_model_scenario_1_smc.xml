@@ -1,0 +1,1543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>/******************************************************************************
+ *                                  Types                                     *
+ ******************************************************************************/
+
+typedef struct {
+    int x;
+    int y;
+} pos_t;
+
+
+/******************************************************************************
+ *                            Moving policies enum                            *
+ ******************************************************************************/
+
+const int POLICY_FIRST =  0;
+
+const int POLICY_RANDOM = 0;
+const int POLICY_DIRECT_MULTI = 1;
+const int POLICY_DIRECT_SINGLE = 2;
+
+const int POLICY_LAST =   2;
+
+typedef int[POLICY_FIRST, POLICY_LAST] policy_t;
+
+/******************************************************************************
+ *                            Map scenarios enum                            *
+ ******************************************************************************/
+
+const int MAP_SCENARIO_FIRST = 1;
+
+const int MAP_SCENARIO_1 =  1;
+const int MAP_SCENARIO_2 =  2;
+const int MAP_SCENARIO_3 =  3;
+const int MAP_SCENARIO_4 =  4;
+const int MAP_SCENARIO_LAST = 4;
+
+typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
+
+/******************************************************************************
+ *                          Configuration Parameters                          *
+ ******************************************************************************/
+
+
+// Scenario 1: basic scenario from the assignment document
+
+// Map size
+const int N_COLS = 10; // x
+const int N_ROWS = 10; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
+// Number of drones and their starting positions
+const int N_DRONES = 4;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{1, 3}, {6, 3}, {1, 8}, {6, 8}};
+const int N_v[drone_t] = {3, 3, 3, 3}; // Drones vision range
+const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
+
+const int N_SURVIVORS = 9;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{1, 0}, {2, 5}, {2, 9}, {3, 3}, {4, 7}, {5, 6}, {6, 4}, {6, 8}, {8, 6}};
+const int T_zr = 8; // Zero reponders assistance duration
+const int T_v = 30; // Time after which a survivor in need dies
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, 
+                                                 POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, 
+                                                 POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of first responders and their starting positions
+const int N_FIRST_RESPONDERS = 1;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{6, 5}};
+const int T_fr = 5; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
+
+
+// Number of exit blocks
+const int N_EXIT_BLOCK = 4;
+typedef int[0, N_EXIT_BLOCK-1] exit_t;
+const pos_t exit_pos[exit_t] = {{0,4}, {0,5}, {9,4}, {9,5}};
+
+
+// Initial map state
+const map_id_t map_id = MAP_SCENARIO_1;
+
+
+
+/******************************************************************************
+ *                                 Constants                                  *
+ ******************************************************************************/
+
+// Map cell status enumeration
+const int CELL_FIRST =      0;
+
+const int CELL_EMPTY =      CELL_FIRST + 0;
+const int CELL_FIRE =       CELL_FIRST + 1;
+const int CELL_EXIT =       CELL_FIRST + 2;
+const int CELL_FIRST_RESP = CELL_FIRST + 3;
+const int CELL_SURVIVOR =   CELL_FIRST + 4; // Survivor not near a fire and idle
+const int CELL_ZERO_RESP =  CELL_FIRST + 5; // Survivor acting as a zero responder
+const int CELL_IN_NEED =    CELL_FIRST + 6; // Survivor near a fire that is not being assisted
+const int CELL_ASSISTED =   CELL_FIRST + 7; // Survivor that is being assisted (by either zero or first responders)
+const int CELL_ASSISTING =  CELL_FIRST + 8; // First responder busy assisting a survivor
+
+const int CELL_LAST =           CELL_ASSISTING;
+
+typedef int[CELL_FIRST, CELL_LAST] cell_t;
+
+/******************************************************************************
+ *                              Global variables                              *
+ ******************************************************************************/
+ 
+const int max_distance = N_COLS &gt; N_ROWS ? N_COLS * 2 : N_ROWS * 2;
+const int max_wait = T_zr &gt; T_fr ? T_zr * 2 :T_fr * 2;
+typedef int[0, (max_distance + max_wait) &gt; T_v ? (max_distance + max_wait) : T_v ] time_t;
+
+// Maps
+cell_t map[N_COLS][N_ROWS];
+meta bool drone_map[N_COLS][N_ROWS];
+
+ pos_t survivor_pos[survivor_t];
+ pos_t first_resp_pos[first_resp_t];
+
+// Channels
+broadcast chan init_done;                       // Global initializing channel
+
+broadcast chan set_timeout[N_COLS][N_ROWS];  // Used by drones to instruct survivors to wait
+
+
+// Variables used to share target positions and timeout
+meta pos_t target_in_need;
+
+time_t timeout;
+
+// Number of available first responders at any given moment
+// Every first responder in the system increments this value during init
+int[0, N_FIRST_RESPONDERS] available_fr;
+int[0, N_SURVIVORS] safe_survivors;
+int[0, N_SURVIVORS] dead_survivors;
+
+/******************************************************************************
+ *                           Properties parameters                            *
+ ******************************************************************************/
+
+const int N_PERCENT = 55; // Percentage of civilians that need to be safe after T_scs time
+const int T_scs = 60;
+
+// The number of civilians that need to be safe after T_scs, always rounded down because of integer ops
+// Ranged between 1 and N_SURVIVORS to avoid verifying for 0 safe survivors
+const int[1, N_SURVIVORS] N_SAFE = N_SURVIVORS * N_PERCENT / 100;
+
+/******************************************************************************
+ *                           Stochastic parameters                            *
+ ******************************************************************************/
+
+// Probability of drone detection failure (higher = more failures)
+const int[0, 10] P_fail = 1;
+
+// Probability of survivors listening to instructions (higher = more instructions followed)
+const int[0, 10] S_listen = 7;
+
+/******************************************************************************
+ *                             Utility functions                              *
+ ******************************************************************************/
+
+void set_target_in_need(int x, int y) {
+    target_in_need.x = x;
+    target_in_need.y = y;
+}
+
+void set_map(pos_t pos, int val) {
+    map[pos.x][pos.y] = val;
+}
+
+int get_map(pos_t pos) {
+    return map[pos.x][pos.y];
+}
+
+void set_drone_map(pos_t pos, bool val) {
+    drone_map[pos.x][pos.y] = val;
+}
+
+
+// Returns the distance between two points
+int distance(pos_t pos1, pos_t pos2) {
+    int x_distance = abs(pos1.x - pos2.x);
+    int y_distance = abs(pos1.y - pos2.y);
+    return x_distance &gt;? y_distance; // max(x_distance, y_distance)
+}
+
+// Checks if a position is inside of the map
+bool is_pos_in_map(pos_t pos) {
+    return pos.x &gt;= 0 &amp;&amp; pos.x &lt; N_COLS &amp;&amp; pos.y &gt;= 0 &amp;&amp; pos.y &lt; N_ROWS;
+}
+
+
+// Check if a location on the map has the given value
+bool map_check_val(pos_t pos, int value) {
+    // Coordinates must be inside the map
+    if (!is_pos_in_map(pos))
+        return false;
+
+    return map[pos.x][pos.y] == value;
+}
+
+
+// Checks if the given map value is somewhere in the radius of 1(included)
+bool is_val_in_unitary_radius(pos_t pos, int value) {
+    int i, j;
+    const int radius = 1;
+    for (i = -radius; i &lt;= radius; i += 1) {
+        for (j = -radius; j &lt;= radius; j += 1) {
+            pos_t pos_to_check = pos;
+            pos_to_check.x += i;
+            pos_to_check.y += j;
+
+            if (map_check_val(pos_to_check, value))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
+pos_t find_val_in_unitary_radius(pos_t pos, int value) {
+    int i, j;
+    const int radius = 1;
+    pos_t pos_to_check = pos;
+    for (i = -radius; i &lt;= radius; i += 1) {
+        for (j = -radius; j &lt;= radius; j += 1) {
+            pos_t pos_to_check = pos;
+            pos_to_check.x += i;
+            pos_to_check.y += j;
+
+            if (map_check_val(pos_to_check, value))
+                return pos_to_check;
+        }
+    }
+
+    return pos_to_check;
+}
+
+pos_t find_nearest_exit(pos_t pos) {
+    int i, min_distance = N_COLS + N_ROWS; // Just a big number
+    pos_t best_target;
+   
+    for(i : exit_t){
+        int dis = distance(pos, exit_pos[i]);
+        if(dis &lt; min_distance){
+            min_distance = dis;
+            best_target = exit_pos[i];
+        }
+    }
+    
+    return best_target;
+}
+
+pos_t find_nearest_actor(pos_t pos, int type){
+    int i, min_distance = N_COLS + N_ROWS; // Just a big number
+    pos_t best_target;
+    if(type == CELL_FIRST_RESP){
+        for(i : first_resp_t){
+            if(get_map(first_resp_pos[i]) == type){
+                int dis = distance(pos, first_resp_pos[i]);
+                if(dis &lt; min_distance){
+                    min_distance = dis;
+                    best_target = first_resp_pos[i];
+                }
+            }
+        }
+    } else if(type == CELL_SURVIVOR || type == CELL_IN_NEED ){
+        for(i : survivor_t){
+            if(get_map(survivor_pos[i]) == type){
+                int dis = distance(pos, survivor_pos[i]);
+                if(dis &lt; min_distance){
+                    min_distance = dis;
+                    best_target = survivor_pos[i];
+                }
+            }
+        }
+    }
+    
+    return best_target;
+}
+
+bool is_actor_in_range(pos_t pos, int type, int range){
+    int i;
+    
+    for(i : survivor_t){
+       if(get_map(survivor_pos[i]) == type){
+           int dis = distance(pos, survivor_pos[i]);
+           if(distance(pos, survivor_pos[i]) &lt;= range){
+              return true;
+           }
+        }
+    }
+    
+    return false;
+}
+
+bool is_move_feasible(pos_t pos, pos_t move, cell_t type) {
+    // We can only move inside the map and we canot stay in the same position
+    if (is_pos_in_map(move) &amp;&amp; move != pos) {
+        bool valid = true;
+
+        // Survivors cannot move near a fire
+        if (type == CELL_SURVIVOR)
+            valid &amp;= !is_val_in_unitary_radius(move, CELL_FIRE);
+
+        // We can move only towards empty cells
+        valid &amp;= map_check_val(move, CELL_EMPTY);
+
+        return valid;
+    }
+
+    return false;
+}
+
+
+// todo check to optimize this
+pos_t compute_best_move(pos_t pos, pos_t target, cell_t type) {
+    int min_distance = N_COLS + N_ROWS; // Just a big number
+    pos_t best_move;
+
+    for (i : int[-1, 1]) {
+        for (j : int[-1, 1]) {
+            pos_t move = {pos.x + i, pos.y + j};
+            if (is_move_feasible(pos, move, type)) {
+                int distance = distance(move, target);
+                if (distance &lt; min_distance) {
+                    min_distance = distance;
+                    best_move = move;
+                }
+            }
+        }
+    }
+
+    return best_move;
+}
+
+int compute_best_move_distance(pos_t pos, pos_t target, cell_t type) {
+    int min_distance = N_COLS + N_ROWS; // Just a big number
+
+    for (i : int[-1, 1]) {
+        for (j : int[-1, 1]) {
+            pos_t move = {pos.x + i, pos.y + j};
+            if (is_move_feasible(pos, move, type)) {
+                int distance = distance(move, target);
+                if (distance &lt; min_distance)
+                    min_distance = distance;
+            }
+        }
+    }
+
+    return min_distance;
+}
+
+/******************************************************************************
+ *                              Moving policies                               *
+ ******************************************************************************/
+
+// Random policy allows all movements that are feasible
+bool random_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    return is_move_feasible(pos, move, type);
+}
+
+// Direct multi policy follows the best direct path (i.e. without considering obstacles)
+bool direct_multi_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    int min_distance;
+
+    if (!is_move_feasible(pos, move, type))
+        return false;
+
+    // Find the distance to the target of the best possible move
+    min_distance = compute_best_move_distance(pos, target, type);
+
+    // A move to be valid must have minimum distance among the possible moves
+    return distance(move, target) == min_distance;
+}
+
+// Direct single policy follows the best direct path (i.e. without considering obstacles)
+bool direct_single_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
+    pos_t best_move;
+
+    if (!is_move_feasible(pos, move, type))
+        return false;
+
+    // Find the best possible move
+    best_move = compute_best_move(pos, target, type);
+
+    // Only the best move is valid
+    return best_move == move;
+}
+
+// Checks that a move is valid for the given moving policy
+bool is_move_valid_g(pos_t pos, pos_t move, pos_t target, cell_t type, policy_t policy) {
+    if (policy == POLICY_RANDOM) {
+        return random_is_move_valid(pos, move, target, type);
+     } else if (policy == POLICY_DIRECT_MULTI) {
+        return direct_multi_is_move_valid(pos, move, target, type);
+    } else if (policy == POLICY_DIRECT_SINGLE) {
+        return direct_single_is_move_valid(pos, move, target, type);
+    }
+
+    return false;
+}
+</declaration>
+	<template>
+		<name>Initializer</name>
+		<declaration>clock t = 0;
+
+void init_map() {
+    // Init the map will all empty cells
+    for(x : int[0, N_ROWS-1]) {
+        for(y : int[0, N_COLS-1]) {
+            map[x][y] = CELL_EMPTY;
+            drone_map[x][y] = false;
+        }
+    }
+
+    if (map_id == MAP_SCENARIO_1) {
+        // Fires
+        map[4][3] = CELL_FIRE;
+        map[4][4] = CELL_FIRE;
+        map[5][1] = CELL_FIRE;
+        map[5][2] = CELL_FIRE;
+        map[5][3] = CELL_FIRE;
+        map[5][4] = CELL_FIRE;
+        map[6][1] = CELL_FIRE;
+        map[6][2] = CELL_FIRE;
+        map[6][3] = CELL_FIRE;
+       
+    } else if (map_id == MAP_SCENARIO_2) {
+       
+        map[5][5] = CELL_FIRE;
+        map[5][6] = CELL_FIRE;
+        map[5][7] = CELL_FIRE;
+        map[5][8] = CELL_FIRE;
+        map[5][9] = CELL_FIRE;
+        map[6][5] = CELL_FIRE;
+        map[6][6] = CELL_FIRE;
+        map[6][7] = CELL_FIRE;
+        map[6][8] = CELL_FIRE;
+        map[6][9] = CELL_FIRE;
+        map[7][4] = CELL_FIRE;
+        map[7][5] = CELL_FIRE;
+        map[7][6] = CELL_FIRE;
+        map[7][7] = CELL_FIRE;
+        map[7][8] = CELL_FIRE;
+        map[7][9] = CELL_FIRE;
+        map[7][10] = CELL_FIRE;
+        map[8][4] = CELL_FIRE;
+        map[8][5] = CELL_FIRE;
+        map[8][6] = CELL_FIRE;
+        map[8][7] = CELL_FIRE;
+        map[8][8] = CELL_FIRE;
+        map[8][9] = CELL_FIRE;
+        map[8][10] = CELL_FIRE;
+        map[9][4] = CELL_FIRE;
+        map[9][5] = CELL_FIRE;
+        map[9][6] = CELL_FIRE;
+        map[9][7] = CELL_FIRE;
+        map[9][8] = CELL_FIRE;
+        map[9][9] = CELL_FIRE;
+        map[9][10] = CELL_FIRE;
+        map[10][4] = CELL_FIRE;
+        map[10][5] = CELL_FIRE;
+        map[10][6] = CELL_FIRE;
+        map[10][7] = CELL_FIRE;
+        map[10][8] = CELL_FIRE;
+        map[11][5] = CELL_FIRE;
+        map[11][6] = CELL_FIRE;
+        map[11][7] = CELL_FIRE;
+    } else if (map_id == MAP_SCENARIO_3)
+    {
+   		map[3][7] = 1; // FIRE
+   		map[4][2] = 1; // FIRE
+   		map[4][3] = 1; // FIRE
+   		map[4][4] = 1; // FIRE
+   		map[4][5] = 1; // FIRE
+   		map[4][6] = 1; // FIRE
+   		map[4][7] = 1; // FIRE
+   		map[5][2] = 1; // FIRE
+   		map[5][3] = 1; // FIRE
+   		map[5][4] = 1; // FIRE
+   		map[5][5] = 1; // FIRE
+   		map[5][6] = 1; // FIRE
+   		map[5][7] = 1; // FIRE
+
+    }else if (map_id == MAP_SCENARIO_4)
+    {
+    	map[2][3] = 1; // FIRE
+		map[2][4] = 1; // FIRE
+		map[2][5] = 1; // FIRE
+		map[2][6] = 1; // FIRE
+		map[2][7] = 1; // FIRE
+		map[2][8] = 1; // FIRE
+		map[2][9] = 1; // FIRE
+		map[3][3] = 1; // FIRE
+		map[3][4] = 1; // FIRE
+		map[3][5] = 1; // FIRE
+		map[3][6] = 1; // FIRE
+		map[3][7] = 1; // FIRE
+		map[3][8] = 1; // FIRE
+		map[3][9] = 1; // FIRE
+		map[4][3] = 1; // FIRE
+		map[4][4] = 1; // FIRE
+		map[4][5] = 1; // FIRE
+		map[4][6] = 1; // FIRE
+		map[4][7] = 1; // FIRE
+		map[4][8] = 1; // FIRE
+		map[4][9] = 1; // FIRE
+	}
+    
+    for(i : exit_t){
+        set_map(exit_pos[i],CELL_EXIT);
+    }
+}
+</declaration>
+		<location id="id0" x="129" y="0">
+		</location>
+		<location id="id1" x="-42" y="0">
+			<committed/>
+		</location>
+		<location id="id2" x="-221" y="0">
+			<committed/>
+		</location>
+		<init ref="id2"/>
+		<transition id="id3">
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-25" y="0">init_done!</label>
+		</transition>
+		<transition id="id4">
+			<source ref="id2"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-204" y="0">init_map()</label>
+		</transition>
+	</template>
+	<template>
+		<name>Drone</name>
+		<parameter>const drone_t id</parameter>
+		<declaration>/******************************************************************************
+ *                                  Variables                                 *
+ ******************************************************************************/
+
+clock t = 0;
+pos_t pos;
+
+pos_t zr; // Selected zero_responder
+pos_t in; // Selected in_need
+pos_t fr; // Selected first_responder
+
+/******************************************************************************
+ *                                Moving policy                               *
+ ******************************************************************************/
+
+// Moving policy, this includes the N_r parameter
+
+const int MOVE_POLICY_LEN = N_r[id] * 4;
+int[0, MOVE_POLICY_LEN] move_policy_next_move_idx = 0;
+
+pos_t next_step() {
+    pos_t pos_temp = pos;
+    if (move_policy_next_move_idx &lt; MOVE_POLICY_LEN / 4) { // We have to move right
+        pos_temp.x += 1;
+        pos_temp.y += 0;
+    }
+    else if (move_policy_next_move_idx &lt; 2 * MOVE_POLICY_LEN / 4) { // We have to move up
+        pos_temp.x += 0;
+        pos_temp.y += -1;
+    }
+    else if (move_policy_next_move_idx &lt; 3 * MOVE_POLICY_LEN / 4) { // We have to move left
+        pos_temp.x += -1;
+        pos_temp.y += 0;
+    }
+    else if (move_policy_next_move_idx &lt; 4 * MOVE_POLICY_LEN / 4) { // We have to move down
+        pos_temp.x += 0;
+        pos_temp.y += 1;
+    }
+
+    // Increment/wrap up index
+    move_policy_next_move_idx += 1;
+    if (move_policy_next_move_idx &gt;= MOVE_POLICY_LEN)
+        move_policy_next_move_idx = 0;
+
+    return pos_temp;
+}
+
+void move() {
+    // Apply movement
+    pos_t temp;
+    temp = next_step();
+    if( is_pos_in_map(temp)){
+        set_drone_map(pos, false);
+        pos = next_step();
+        set_drone_map(pos, true);
+    }
+  
+}
+
+/******************************************************************************
+ *                               Other functions                              *
+ ******************************************************************************/
+
+// Tells whether the given coordinates points to a survivor that can be a zero responder (in the fov)
+bool is_possible_zero_responder() {
+    return is_actor_in_range(pos, CELL_SURVIVOR, N_v[id]);
+}
+
+// Tells whether the drone has a survivor in its fov
+bool in_need_near() {  
+    return is_actor_in_range(pos, CELL_IN_NEED, N_v[id]);
+}
+
+bool is_assist_possible(){
+    return is_possible_zero_responder() &amp;&amp; in_need_near();
+}
+
+// Sets the given coordinates as the selected zero_responder
+void save_zero_resp() {
+    zr = find_nearest_actor(pos, CELL_SURVIVOR);
+    
+    set_map(zr, CELL_ZERO_RESP);
+}
+
+// Sets the given coordinates as the selected in_need
+void save_in_need() {
+    in = find_nearest_actor(pos, CELL_IN_NEED);
+    
+    set_map(in, CELL_ASSISTED);
+}
+
+// Sets the given coordinates as the selected first_responder
+void save_first_resp() {
+    fr = find_nearest_actor(pos, CELL_FIRST_RESP);
+    
+    set_map(fr, CELL_ASSISTING);
+}
+
+// Resets internal variable to reduce differences between states
+void reset() {
+    zr.x = 0;
+    zr.y = 0;
+    in.x = 0;
+    in.y = 0;
+    fr.x = 0;
+    fr.y = 0;
+    timeout = 0;
+}
+</declaration>
+		<location id="id5" x="-892" y="-578">
+			<name x="-1053" y="-586">AssistingDirectly</name>
+			<committed/>
+		</location>
+		<location id="id6" x="-611" y="-578">
+			<name x="-586" y="-586">SearchingFirstResponder</name>
+			<committed/>
+		</location>
+		<location id="id7" x="-739" y="-799">
+			<name x="-807" y="-850">SurvivorAndInNeedSelected</name>
+			<label kind="comments" x="-526" y="-790">If there is a first responder
+available, instruct the selected
+zero reponder to call him,
+otherwise assit directly</label>
+			<committed/>
+		</location>
+		<location id="id8" x="-1700" y="-799">
+			<name x="-1683" y="-833">Init</name>
+		</location>
+		<location id="id9" x="-1402" y="-799">
+			<name x="-1385" y="-850">Moving</name>
+			<label kind="invariant" x="-1385" y="-833">t &lt;= 1</label>
+		</location>
+		<location id="id10" x="-748" y="-450">
+			<committed/>
+		</location>
+		<location id="id11" x="-968" y="-450">
+			<committed/>
+		</location>
+		<location id="id12" x="-1402" y="-450">
+			<committed/>
+		</location>
+		<location id="id13" x="-960" y="-799">
+			<committed/>
+		</location>
+		<branchpoint id="id14" x="-1156" y="-799"/>
+		<init ref="id8"/>
+		<transition id="id15">
+			<source ref="id14"/>
+			<target ref="id9"/>
+			<label kind="probability" x="-1360" y="-731">P_fail * (10 - S_listen)</label>
+			<nail x="-1215" y="-739"/>
+			<nail x="-1343" y="-739"/>
+		</transition>
+		<transition id="id16">
+			<source ref="id14"/>
+			<target ref="id13"/>
+			<label kind="probability" x="-1156" y="-790">(10 - P_fail) * S_listen</label>
+		</transition>
+		<transition id="id17">
+			<source ref="id13"/>
+			<target ref="id7"/>
+			<label kind="assignment" x="-942" y="-799">save_zero_resp(),
+save_in_need()</label>
+		</transition>
+		<transition id="id18">
+			<source ref="id12"/>
+			<target ref="id9"/>
+			<label kind="assignment" x="-1462" y="-612">reset()</label>
+		</transition>
+		<transition id="id19">
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-1385" y="-450">set_timeout[in.x][in.y]!</label>
+		</transition>
+		<transition id="id20">
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-951" y="-450">set_timeout[zr.x][zr.y]!</label>
+		</transition>
+		<transition id="id21">
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-1470" y="-926">t &gt;= 1 &amp;&amp;
+!is_assist_possible()</label>
+			<label kind="assignment" x="-1470" y="-892">move(),
+t = 0</label>
+			<label kind="comments" x="-1657" y="-977">This edge is the only one that resets the clock.
+This way the drone must make one move per time unit</label>
+			<nail x="-1445" y="-833"/>
+			<nail x="-1402" y="-858"/>
+		</transition>
+		<transition id="id22">
+			<source ref="id5"/>
+			<target ref="id10"/>
+			<label kind="assignment" x="-1062" y="-510">timeout = distance(in, zr)+T_zr</label>
+		</transition>
+		<transition id="id23">
+			<source ref="id6"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-662" y="-527">set_timeout[fr.x][fr.y]!</label>
+			<label kind="assignment" x="-662" y="-510">timeout = distance(zr , fr) + distance(fr, in) + T_fr,
+target_in_need = in</label>
+		</transition>
+		<transition id="id24">
+			<source ref="id7"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-1036" y="-654">available_fr == 0</label>
+			<nail x="-892" y="-705"/>
+		</transition>
+		<transition id="id25">
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-603" y="-654">available_fr &gt; 0</label>
+			<label kind="assignment" x="-603" y="-637">save_first_resp()</label>
+			<nail x="-612" y="-705"/>
+		</transition>
+		<transition id="id26">
+			<source ref="id9"/>
+			<target ref="id14"/>
+			<label kind="guard" x="-1326" y="-841">t &gt;= 1 &amp;&amp;
+is_assist_possible()</label>
+		</transition>
+		<transition id="id27">
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-1683" y="-790">init_done?</label>
+			<label kind="assignment" x="-1683" y="-773">pos = drones_starting_pos[id],
+set_drone_map(pos, true)</label>
+		</transition>
+	</template>
+	<template>
+		<name>Survivor</name>
+		<parameter>const survivor_t id</parameter>
+		<declaration>/******************************************************************************
+ *                                  Variables                                 *
+ ******************************************************************************/
+
+clock t = 0;
+pos_t pos;
+
+time_t wait = 0;
+
+/******************************************************************************
+ *                                Moving policy                               *
+ ******************************************************************************/
+
+bool is_move_valid(int i, int j) {
+    pos_t move = {pos.x + i, pos.y + j};
+    pos_t target = find_nearest_exit(pos);
+
+    return is_move_valid_g(pos, move, target, CELL_SURVIVOR, survivors_policies[id]);
+}
+
+void move(int i, int j) {
+    set_map(pos, CELL_EMPTY);
+    pos.x += i;
+    pos.y += j;
+    set_map(pos, CELL_SURVIVOR);
+    survivor_pos[id] = pos;
+}
+
+/******************************************************************************
+ *                               Other functions                              *
+ ******************************************************************************/
+
+bool starting_near_a_fire() {
+    return is_val_in_unitary_radius(survivors_starting_pos[id], CELL_FIRE);
+}
+
+bool is_fire_near() {
+    return is_val_in_unitary_radius(pos, CELL_FIRE);
+}
+
+bool is_exit_near() {
+    return is_val_in_unitary_radius(pos, CELL_EXIT);
+}
+
+// Resets internal variable to reduce differences between states
+// Should be called when this survivor is not active anymore
+void reset() {
+    pos.x = 0;
+    pos.y = 0;
+    survivor_pos[id] = pos;
+    wait = 0;
+    t = 0;
+    survivor_pos[id] = pos;
+}
+</declaration>
+		<location id="id28" x="824" y="-399">
+			<name x="814" y="-433">Dead</name>
+		</location>
+		<location id="id29" x="697" y="144">
+			<name x="680" y="161">Safe</name>
+		</location>
+		<location id="id30" x="153" y="-170">
+			<name x="170" y="-162">Moving</name>
+			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
+		</location>
+		<location id="id31" x="178" y="0">
+			<name x="161" y="25">AssistingDirectly</name>
+			<label kind="invariant" x="162" y="42">t &lt;= wait</label>
+		</location>
+		<location id="id32" x="493" y="-170">
+			<name x="484" y="-153">Init</name>
+		</location>
+		<location id="id33" x="824" y="-255">
+			<committed/>
+		</location>
+		<location id="id34" x="697" y="0">
+			<committed/>
+		</location>
+		<location id="id35" x="824" y="-170">
+			<name x="790" y="-161">Suffering</name>
+			<label kind="invariant" x="799" y="-144">t &lt;= T_v</label>
+		</location>
+		<location id="id36" x="1283" y="-170">
+			<name x="1308" y="-179">Being_assisted</name>
+			<label kind="invariant" x="1273" y="-153">t &lt;= wait</label>
+		</location>
+		<location id="id37" x="1122" y="-170">
+			<committed/>
+		</location>
+		<init ref="id32"/>
+		<transition id="id38">
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="guard" x="1139" y="-119">t + wait &lt; T_v</label>
+			<label kind="assignment" x="1173" y="-102">t = 0</label>
+			<nail x="1198" y="-119"/>
+		</transition>
+		<transition id="id39">
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="guard" x="1130" y="-246">t + wait &gt;= T_v</label>
+			<label kind="assignment" x="1147" y="-229">wait = T_v</label>
+			<nail x="1198" y="-212"/>
+		</transition>
+		<transition id="id40">
+			<source ref="id36"/>
+			<target ref="id34"/>
+			<label kind="guard" x="960" y="-25">t &gt;= wait &amp;&amp; t &lt; T_v</label>
+			<nail x="1283" y="0"/>
+		</transition>
+		<transition id="id41">
+			<source ref="id36"/>
+			<target ref="id33"/>
+			<label kind="guard" x="935" y="-280">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
+			<nail x="1283" y="-255"/>
+		</transition>
+		<transition id="id42">
+			<source ref="id35"/>
+			<target ref="id37"/>
+			<label kind="synchronisation" x="892" y="-187">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="926" y="-170">wait = timeout</label>
+		</transition>
+		<transition id="id43">
+			<source ref="id33"/>
+			<target ref="id28"/>
+			<label kind="assignment" x="833" y="-357">set_map(pos, CELL_EMPTY),
+dead_survivors += 1,
+reset()</label>
+		</transition>
+		<transition id="id44">
+			<source ref="id34"/>
+			<target ref="id29"/>
+			<label kind="assignment" x="705" y="51">set_map(pos, CELL_EMPTY),
+safe_survivors += 1,
+reset()</label>
+		</transition>
+		<transition id="id45">
+			<source ref="id35"/>
+			<target ref="id33"/>
+			<label kind="guard" x="833" y="-212">t &gt;= T_v</label>
+		</transition>
+		<transition id="id46">
+			<source ref="id32"/>
+			<target ref="id30"/>
+			<label kind="guard" x="212" y="-280">!starting_near_a_fire()</label>
+			<label kind="synchronisation" x="212" y="-263">init_done?</label>
+			<label kind="assignment" x="212" y="-246">pos = survivors_starting_pos[id],
+set_map(pos, CELL_SURVIVOR),
+t = 0,
+survivor_pos[id] = pos</label>
+		</transition>
+		<transition id="id47">
+			<source ref="id30"/>
+			<target ref="id31"/>
+			<label kind="synchronisation" x="-153" y="-85">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="-153" y="-68">t = 0,
+wait = timeout</label>
+			<nail x="76" y="-119"/>
+			<nail x="76" y="0"/>
+		</transition>
+		<transition id="id48">
+			<source ref="id30"/>
+			<target ref="id34"/>
+			<label kind="guard" x="408" y="-110">t &gt;= 1 &amp;&amp;
+is_exit_near()</label>
+			<nail x="153" y="-110"/>
+			<nail x="697" y="-110"/>
+		</transition>
+		<transition id="id49">
+			<source ref="id31"/>
+			<target ref="id34"/>
+			<label kind="guard" x="314" y="-25">t &gt;= wait</label>
+		</transition>
+		<transition id="id50">
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="select" x="60" y="-357">i : int[-1, 1],
+j : int[-1, 1]</label>
+			<label kind="guard" x="59" y="-315">t &gt;= 1 &amp;&amp;
+is_move_valid(i, j) &amp;&amp;
+!is_exit_near()</label>
+			<label kind="assignment" x="60" y="-255">move(i, j),
+t = 0</label>
+			<label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
+This way the survivor must make one move per time unit</label>
+			<nail x="153" y="-229"/>
+			<nail x="110" y="-204"/>
+		</transition>
+		<transition id="id51">
+			<source ref="id32"/>
+			<target ref="id35"/>
+			<label kind="guard" x="527" y="-280">starting_near_a_fire()</label>
+			<label kind="synchronisation" x="527" y="-263">init_done?</label>
+			<label kind="assignment" x="527" y="-246">pos = survivors_starting_pos[id],
+set_map(pos, CELL_IN_NEED),
+t = 0,
+survivor_pos[id] = pos</label>
+		</transition>
+	</template>
+	<template>
+		<name>FirstResponder</name>
+		<parameter>const first_resp_t id</parameter>
+		<declaration>/******************************************************************************
+ *                                  Variables                                 *
+ ******************************************************************************/
+
+clock t = 0;
+pos_t pos;
+
+time_t wait = 0;
+
+pos_t target; // Target position to move to
+
+/******************************************************************************
+ *                                Moving policy                               *
+ ******************************************************************************/
+
+bool is_move_valid(int i, int j) {
+    pos_t move = {pos.x + i, pos.y + j};
+    pos_t target = find_nearest_actor(pos, CELL_IN_NEED);
+
+    return is_move_valid_g(pos, move, target, CELL_FIRST_RESP, first_resp_policies[id]);
+}
+
+void move(int i, int j) {
+    set_map(pos, CELL_EMPTY);
+    pos.x += i;
+    pos.y += j;
+    set_map(pos, CELL_FIRST_RESP);
+    first_resp_pos[id] = pos;
+}
+
+/******************************************************************************
+ *                               Other functions                              *
+ ******************************************************************************/
+
+bool is_possible_in_need() {
+    pos_t pos_to_check;
+    return is_val_in_unitary_radius(pos, CELL_IN_NEED);
+}
+
+
+void set_wait() {
+    wait = T_fr;
+    
+    target = find_val_in_unitary_radius(pos, CELL_IN_NEED);
+    
+    set_map(target, CELL_ASSISTED);
+}
+
+void teleport_to_in_need() {
+    set_map(pos, CELL_EMPTY);
+    pos = target;
+    set_map(pos, CELL_FIRST_RESP); // From CELL_ASSISTING back to CELL_FIRST_RESP
+    first_resp_pos[id] = pos;
+}
+
+// Resets internal variable to reduce differences between states
+void reset() {
+    target.x = 0;
+    target.y = 0;
+    wait = 0;
+    t = 0;
+}
+</declaration>
+		<location id="id52" x="42" y="-161">
+			<name x="59" y="-212">Assisting</name>
+			<label kind="invariant" x="59" y="-195">t &lt;= wait</label>
+		</location>
+		<location id="id53" x="-552" y="-161">
+			<name x="-535" y="-187">Available</name>
+			<label kind="invariant" x="-535" y="-153">t &lt;= 1</label>
+		</location>
+		<location id="id54" x="-926" y="-161">
+			<name x="-909" y="-195">Init</name>
+		</location>
+		<location id="id55" x="-246" y="-161">
+			<committed/>
+		</location>
+		<location id="id56" x="-705" y="110">
+		</location>
+		<init ref="id54"/>
+		<transition id="id57">
+			<source ref="id53"/>
+			<target ref="id56"/>
+			<label kind="guard" x="-765" y="34">safe_survivors + dead_survivors  == N_SURVIVORS</label>
+			<label kind="assignment" x="-687" y="-25">pos.x = 0,
+pos.y = 0,
+first_resp_pos[id] = pos</label>
+		</transition>
+		<transition id="id58">
+			<source ref="id55"/>
+			<target ref="id52"/>
+			<label kind="synchronisation" x="-246" y="-144">set_timeout[target.x][target.y]!</label>
+			<label kind="assignment" x="-228" y="-161">timeout = wait</label>
+		</transition>
+		<transition id="id59">
+			<source ref="id53"/>
+			<target ref="id52"/>
+			<label kind="synchronisation" x="-433" y="-365">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="-433" y="-348">wait = timeout,
+available_fr -= 1,
+target = target_in_need,
+t = 0</label>
+			<nail x="-467" y="-263"/>
+			<nail x="42" y="-263"/>
+		</transition>
+		<transition id="id60">
+			<source ref="id53"/>
+			<target ref="id55"/>
+			<label kind="guard" x="-467" y="-153">is_possible_in_need()</label>
+			<label kind="assignment" x="-467" y="-136">set_wait(),
+available_fr -= 1,
+set_map(pos, CELL_ASSISTING),
+t = 0</label>
+		</transition>
+		<transition id="id61">
+			<source ref="id53"/>
+			<target ref="id53"/>
+			<label kind="select" x="-680" y="-357">i : int[-1, 1],
+j : int[-1, 1]</label>
+			<label kind="guard" x="-680" y="-314">t &gt;= 1 &amp;&amp;
+is_move_valid(i, j) &amp;&amp;
+!is_possible_in_need()</label>
+			<label kind="assignment" x="-680" y="-254">move(i, j),
+t = 0</label>
+			<label kind="comments" x="-918" y="-331">While not busy assisting
+survivors, first reponders
+can move with a custom
+moving policy</label>
+			<nail x="-595" y="-195"/>
+			<nail x="-552" y="-221"/>
+		</transition>
+		<transition id="id62">
+			<source ref="id52"/>
+			<target ref="id53"/>
+			<label kind="guard" x="-433" y="25">t &gt;= wait</label>
+			<label kind="assignment" x="-433" y="51">teleport_to_in_need(),
+available_fr += 1,
+reset()</label>
+			<nail x="42" y="17"/>
+			<nail x="-552" y="17"/>
+		</transition>
+		<transition id="id63">
+			<source ref="id54"/>
+			<target ref="id53"/>
+			<label kind="synchronisation" x="-909" y="-153">init_done?</label>
+			<label kind="assignment" x="-909" y="-136">pos = first_responders_starting_pos[id],
+set_map(pos, CELL_FIRST_RESP),
+available_fr += 1,
+first_resp_pos[id] = pos</label>
+		</transition>
+	</template>
+	<system>/******************************************************************************
+ *                            Map Visualizer                                   *
+ ******************************************************************************/
+
+// Uncomment to enable the live map visualizer
+/*
+import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/simulation_gui/uppaal_external_functions/build/libvisualizer.so" {
+    void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
+};
+
+meta int flat_map[N_CELLS];
+meta bool flat_drone_map[N_CELLS];
+
+void prepare_flat_map() {
+    for (x : int[0, N_COLS-1]) {
+        for (y : int[0, N_ROWS-1]) {
+            // Flatten the maps
+            flat_map[x*N_COLS + y] = map[x][y];
+            flat_drone_map[x*N_COLS + y] = drone_map[x][y];
+        }
+    }
+}
+
+void send_state() {
+    prepare_flat_map();
+    send_state_via_post_request(N_COLS, N_ROWS, flat_map, flat_drone_map);
+}
+
+before_update { send_state() }
+// after_update { send_state() }
+*/
+system  Survivor, Drone, FirstResponder, Initializer;
+
+progress { safe_survivors + dead_survivors; }
+</system>
+	<queries>
+		<query>
+			<formula>A[] not deadlock</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-10 17:02:00 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>A[]
+forall (i : drone_t)
+	forall (j : drone_t)
+		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
+		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[]
+forall (i : survivor_t)
+	forall (j : survivor_t)
+		(i != j &amp;&amp; not Survivor(i).Init &amp;&amp; not Survivor(j).Init &amp;&amp; 
+			   not Survivor(i).Dead &amp;&amp; not Survivor(j).Dead &amp;&amp;
+			   not Survivor(i).Safe &amp;&amp; not Survivor(j).Safe)  imply
+		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[]
+forall (i : first_resp_t)
+	forall (j : first_resp_t)
+		(i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply
+		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[]
+forall (i : survivor_t)
+	forall (j : first_resp_t)
+		(not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply
+		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : survivor_t) Survivor(i).Safe || Survivor(i).Dead</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-20 19:17:40 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 20:25:59 +0200">
+				<details>6</details>
+			</result>
+		</query>
+		<query>
+			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="5" timestamp="2024-07-20 20:25:59 +0200">
+				<details>5</details>
+			</result>
+		</query>
+		<query>
+			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="0" timestamp="2024-07-20 16:47:50 +0200">
+				<details>0</details>
+			</result>
+		</query>
+		<query>
+			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 16:47:51 +0200">
+				<details>6</details>
+			</result>
+		</query>
+		<query>
+			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SAFE)</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2024-07-21 23:59:40 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">4.0,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">4.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">4.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">4.0,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">4.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">4.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">4.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">4.0,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">4.0,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">4.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">4.0,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">4.0,0.0
+4.0,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [4, 4]
+Mean estimate of displayed sample: ≈ 4</comment>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SURVIVORS)</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2024-07-21 23:59:55 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.111111)" color="0x0000ff" encoding="csv">11.0,2.875
+11.11111111111111,0.0
+11.222222222222221,0.0
+11.333333333333334,0.0
+11.444444444444445,0.0
+11.555555555555555,0.0
+11.666666666666666,0.0
+11.777777777777779,0.0
+11.88888888888889,0.0
+12.0,6.125
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,6.125000000000001
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.111111)" color="0xa0a0ff" encoding="csv">11.0,0.439858436528534
+11.11111111111111,0.04994408370585468
+11.222222222222221,0.04994408370585468
+11.333333333333334,0.04994408370585468
+11.444444444444445,0.04994408370585468
+11.555555555555555,0.04994408370585468
+11.666666666666666,0.04994408370585468
+11.777777777777779,0.04994408370585468
+11.88888888888889,0.04994408370585468
+12.0,0.7855820639126873
+					</series>
+					<series title="lower limit" type="b(0.111111)" color="0x0000ff" encoding="csv">11.0,0.21441793608731277
+11.11111111111111,0.0
+11.222222222222221,0.0
+11.333333333333334,0.0
+11.444444444444445,0.0
+11.555555555555555,0.0
+11.666666666666666,0.0
+11.777777777777779,0.0
+11.88888888888889,0.0
+12.0,0.560141563471466
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,7.070238575214185
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.111111)" color="0x0000ff" encoding="csv">11.0,0.3194444444444444
+11.11111111111111,0.0
+11.222222222222221,0.0
+11.333333333333334,0.0
+11.444444444444445,0.0
+11.555555555555555,0.0
+11.666666666666666,0.0
+11.777777777777779,0.0
+11.88888888888889,0.0
+12.0,0.6805555555555556
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,0.6805555555555556
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.111111)" color="0xa0a0ff" encoding="csv">11.0,0.439858436528534
+11.11111111111111,0.04994408370585468
+11.222222222222221,0.04994408370585468
+11.333333333333334,0.04994408370585468
+11.444444444444445,0.04994408370585468
+11.555555555555555,0.04994408370585468
+11.666666666666666,0.04994408370585468
+11.777777777777779,0.04994408370585468
+11.88888888888889,0.04994408370585468
+12.0,0.7855820639126873
+					</series>
+					<series title="lower limit" type="b(0.111111)" color="0x0000ff" encoding="csv">11.0,0.21441793608731277
+11.11111111111111,0.0
+11.222222222222221,0.0
+11.333333333333334,0.0
+11.444444444444445,0.0
+11.555555555555555,0.0
+11.666666666666666,0.0
+11.777777777777779,0.0
+11.88888888888889,0.0
+12.0,0.560141563471466
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,0.7855820639126873
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">11.0,0.0
+11.11111111111111,0.3194444444444444
+11.222222222222221,0.3194444444444444
+11.333333333333334,0.3194444444444444
+11.444444444444445,0.3194444444444444
+11.555555555555555,0.3194444444444444
+11.666666666666666,0.3194444444444444
+11.777777777777779,0.3194444444444444
+11.88888888888889,0.3194444444444444
+12.0,0.3194444444444444
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">11.0,0.04994408370585468
+11.11111111111111,0.439858436528534
+11.222222222222221,0.439858436528534
+11.333333333333334,0.439858436528534
+11.444444444444445,0.439858436528534
+11.555555555555555,0.439858436528534
+11.666666666666666,0.439858436528534
+11.777777777777779,0.439858436528534
+11.88888888888889,0.439858436528534
+12.0,0.439858436528534
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">11.0,0.0
+11.11111111111111,0.21441793608731277
+11.222222222222221,0.21441793608731277
+11.333333333333334,0.21441793608731277
+11.444444444444445,0.21441793608731277
+11.555555555555555,0.21441793608731277
+11.666666666666666,0.21441793608731277
+11.777777777777779,0.21441793608731277
+11.88888888888889,0.21441793608731277
+12.0,0.21441793608731277
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">11.0,0.0
+11.11111111111111,0.3194444444444444
+11.222222222222221,0.3194444444444444
+11.333333333333334,0.3194444444444444
+11.444444444444445,0.3194444444444444
+11.555555555555555,0.3194444444444444
+11.666666666666666,0.3194444444444444
+11.777777777777779,0.3194444444444444
+11.88888888888889,0.3194444444444444
+12.0,0.3194444444444444
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.111111)" color="0x0000ff" encoding="csv">11.0,23.0
+11.11111111111111,0.0
+11.222222222222221,0.0
+11.333333333333334,0.0
+11.444444444444445,0.0
+11.555555555555555,0.0
+11.666666666666666,0.0
+11.777777777777779,0.0
+11.88888888888889,0.0
+12.0,49.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.680555555555555,0.0
+11.680555555555555,49.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.11111, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [11, 12]
+Mean estimate of displayed sample: 11.681 ± 0.11033 (95% CI)</comment>
+				</plot>
+			</result>
+		</query>
+	</queries>
+</nta>
