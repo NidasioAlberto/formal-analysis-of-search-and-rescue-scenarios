@@ -105,7 +105,7 @@ When one agent changes position, it updates the map accordingly. For example, wh
 ```
 ]))
 
-== Syncronization and Message Passing
+== Synchronization and Message Passing
 
 Between the different agents, there are some interactions that require a way to pass a payload. For example, when a _survivor_ is instructed by a _drone_ to contact a _first-responder_, the _survivor_ must receive from the _drone_ both the positions of the _first-responder_ and that of the one _in-need_ to assist.
 
@@ -197,7 +197,7 @@ Its initial state is a committed state, meaning that the model must follow one o
 Then the _Initializer_ has a second committed state with one edge that triggers the `init_done` broadcast channel. All other agents have their initial state with a single arc that synchronizes them on the `init_done` channel. When the channel fires, all the agents perform a simple initialization step (e.g., they set their position in the map) and then they become ready for the simulation to properly start.
 ]
 
-=== Surivor
+=== Survivor
 
 At the beginning of the simulation, _survivors_ position themselves on predetermined coordinates in the map. If they are near a fire, they become survivors _in-need_ of assistance; otherwise, they are considered normal _survivors_.
 
@@ -206,7 +206,7 @@ Survivors _in-need_ cannot move, and if they are not assisted within a certain t
 Other _survivors_ who are not near a fire default to moving towards an exit, following their designated _moving policy_. This movement can stop in four cases:
 - If they move within a one-cell range of an exit, they become safe and leave the simulation, freeing the map cell they were occupying.
 - If they receive an instruction from a _drone_ to directly assist someone _in-need_ or call a _first-responder_, they stop targeting an exit and start following the instruction. In both cases, the _survivor_ reaching the new target is modeled by waiting for a duration equal to the distance to the target, rather than actually moving on the map. Although this does not accurately model the simulated scenario, particularly the interaction between moving agents on the map, it is necessary to keep the model simple and maintain acceptable verification times.
-- When they have no available moves. This could be due to the map topology blocking the _survivor_'s path or the moving policy not allowing any moves. For example, the `DIRECT` moving policies presented earlier can potentially lead to a _survivor_ being stuck in a loop where moving around an obstacle frees the previous cell, which is then reselected. We deemed these cases acceptable because we considered it reasonable for the map topology to present challenges and for civilians to struggle in finding the proper path.
+- When they have no available moves. This could be due to the map topology blocking the _survivor_'s path or the moving policy not allowing any moves. For example, the `DIRECT` moving policies presented earlier can potentially lead to a _survivor_ being stuck in a loop where moving around an obstacle frees the previous cell, which is then re-selected. We deemed these cases acceptable because we considered it reasonable for the map topology to present challenges and for civilians to struggle in finding the proper path.
 
 Note that we built the model such that _survivors_ will never move near a fire, thus they cannot become _in-need_ during the simulation.
 
@@ -220,7 +220,7 @@ _First-responders_ defaults to moving towards the nearest survivor _in-need_, bu
 
 _Drones_ are equipped with vision sensors capable of detecting _survivors_ within a predetermined range $N_v$. When they detect both a "free" _survivor_ (a.k.a. _zero-responder_) and someone _in-need_, they can instruct the _survivor_ to assist.
 
-When a possible _zero-responder_ and someone _in-need_ are in range of the sensors, the _drone_ start a sequence to select the agents to involve in a particular command. It first selects the possible _zero-responder_, it selects the survivor _in-need_ and then, depending on whether there is at least one _first-responder_ available or not, decides whether to make the _zero-responder_ assist directly or making him call a _first-risponder_ which is then selected.
+When a possible _zero-responder_ and someone _in-need_ are in range of the sensors, the _drone_ start a sequence to select the agents to involve in a particular command. It first selects the possible _zero-responder_, it selects the survivor _in-need_ and then, depending on whether there is at least one _first-responder_ available or not, decides whether to make the _zero-responder_ assist directly or making him call a _first-responder_ which is then selected.
 
 #wrap-content(
   figure(
@@ -268,7 +268,7 @@ This scenarios are the ones used in the verification process, and are used to fi
 
 == Basic scenario
 
-This is the first scenario we used to test the model, it is the one used in the assignment. It was used as a benchmark to our model and to verify the correctness of the implementation and of the queries.
+This is the first scenario we used to test the model, it is the one used in the assignment. It was used as a benchmark for our model and to verify the correctness of the implementation and of the queries.
 
 While verifying different query we realized that our model was too complex and slow. We then decided to simplify the model as explained in @faster_model. This allowed us to reduce the number of states and transitions, and thus the verification time.
 
