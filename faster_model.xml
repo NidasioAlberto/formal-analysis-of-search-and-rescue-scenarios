@@ -10,18 +10,17 @@ typedef struct {
     int y;
 } pos_t;
 
-
 /******************************************************************************
  *                            Moving policies enum                            *
  ******************************************************************************/
 
-const int POLICY_FIRST =  0;
+const int POLICY_FIRST         =  0;
 
-const int POLICY_RANDOM = 0;
-const int POLICY_DIRECT_MULTI = 1;
+const int POLICY_RANDOM        = 0;
+const int POLICY_DIRECT_MULTI  = 1;
 const int POLICY_DIRECT_SINGLE = 2;
 
-const int POLICY_LAST =   2;
+const int POLICY_LAST          = 2;
 
 typedef int[POLICY_FIRST, POLICY_LAST] policy_t;
 
@@ -31,10 +30,12 @@ typedef int[POLICY_FIRST, POLICY_LAST] policy_t;
 
 const int MAP_SCENARIO_FIRST = 1;
 
-const int MAP_SCENARIO_1 =  1;
-const int MAP_SCENARIO_2 =  2;
-const int MAP_SCENARIO_3 =  3;
-const int MAP_SCENARIO_LAST = 3;
+const int MAP_SCENARIO_1     = 1; // Plane crash
+const int MAP_SCENARIO_2     = 2; // Professor's example scenario
+const int MAP_SCENARIO_3     = 3; // Professor's example scenario
+const int MAP_SCENARIO_4     = 4; // Professor's example scenario
+
+const int MAP_SCENARIO_LAST  = 4;
 
 typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
 
@@ -42,7 +43,61 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  *                          Configuration Parameters                          *
  ******************************************************************************/
 
-//Scenario 2 Lone survivor
+/**
+ * Scenario 1: Plane crash
+ *
+ * Map: 12x12
+ * Drones: 4
+ * Survivors: 8
+ * First responders: 2
+ */
+
+const map_id_t map_id = MAP_SCENARIO_1;
+
+// Map size
+const int N_COLS = 12; // x
+const int N_ROWS = 12; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
+// Number of drones and their starting positions
+const int N_DRONES = 4;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{2, 2}, {2, 7}, {7, 2}, {7, 7}};
+const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
+const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
+
+// Number of survivors and their starting positions
+const int N_SURVIVORS = 8;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{2, 5}, {2, 9}, {4, 6}, {4, 9}, {4, 11}, {5, 5}, {7, 9}, {8, 6}};
+const int T_zr = 8;
+const int T_v = 30;
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of first responders and their starting positions
+const int N_FIRST_RESPONDERS = 2;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{5, 1}, {6, 1}};
+const int T_fr = 5; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of exit blocks
+const int N_EXIT_BLOCK = 2;
+typedef int[0, N_EXIT_BLOCK-1] exit_t;
+const pos_t exit_pos[exit_t] = {{5, 0}, {6, 0}};
+
+/**
+ * Scenario 2: Lone survivor
+ *
+ * Map: 10x10
+ * Survivors: 9
+ * First responders: 1
+ * Drones: 4
+ */
+/*
+const map_id_t map_id = MAP_SCENARIO_2;
 
 // Map size
 const int N_COLS = 10; // x
@@ -77,11 +132,98 @@ const policy_t first_resp_policies[first_resp_t] = {POLICY_RANDOM};
 // Number of exit blocks
 const int N_EXIT_BLOCK = 2;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
-const pos_t exit_pos[exit_t] = {{9,4}, {9,5}};
+const pos_t exit_pos[exit_t] = {{9, 4}, {9, 5}};
+*/
+/**
+ * Scenario 3: Divided branches
+ *
+ * Map: 10x10
+ * Survivors: 10
+ * First responders: 3
+ * Drones: 4
+ */
+/*
+const map_id_t map_id = MAP_SCENARIO_3;
 
-const map_id_t map_id = MAP_SCENARIO_2;
+// Map size
+const int N_COLS = 15; // x
+const int N_ROWS = 15; // y
 
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
 
+// Number of drones and their starting positions
+const int N_DRONES = 4;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{1, 3}, {1, 8}, {5, 3}, {5, 8}};
+const int N_v[drone_t] = {3, 3, 3, 3}; // Drones vision range
+const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
+
+// Number of survivors and their starting positions
+const int N_SURVIVORS = 10;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{0, 12}, {0, 13}, {0, 14}, {1, 11}, {1, 12}, {1, 13}, {7, 6}, {7, 7} , {7, 10}, {7, 14}};
+const int T_zr = 8;
+const int T_v = 30;
+const policy_t survivors_policies[survivor_t] = { POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of first responders and their starting positions
+const int N_FIRST_RESPONDERS = 2;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{8, 1}, {13, 9}};
+const int T_fr = 5; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of exit blocks
+const int N_EXIT_BLOCK = 4;
+typedef int[0, N_EXIT_BLOCK-1] exit_t;
+const pos_t exit_pos[exit_t] = {{7, 0}, {8, 0}, {14, 7}, {14, 8}};
+*/
+/**
+ * Scenario 4: Professor's example scenario
+ *
+ * Map: 10x10
+ * Survivors: 9
+ * First responders: 1
+ * Drones: 4
+ */
+/*
+const map_id_t map_id = MAP_SCENARIO_4;
+
+// Map size
+const int N_COLS = 10; // x
+const int N_ROWS = 10; // y
+
+// Number of total cells, used when flatten out the map for the visualizer
+const int N_CELLS = N_COLS * N_ROWS;
+
+// Number of drones and their starting positions
+const int N_DRONES = 4;
+typedef int[0, N_DRONES-1] drone_t;
+const pos_t drones_starting_pos[drone_t] = {{1, 3}, {6, 3}, {1, 8}, {6, 8}};
+const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
+const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
+
+// Number of survivors and their starting positions
+const int N_SURVIVORS = 9;
+typedef int[0, N_SURVIVORS-1] survivor_t;
+const pos_t survivors_starting_pos[survivor_t] = {{1, 0}, {2, 5}, {2, 9}, {3, 3}, {4, 7}, {5, 6}, {6, 4}, {6, 8}, {8, 6}};
+const int T_zr = 8; // Zero reponders assistance duration
+const int T_v = 15; // Time after which a survivor in need dies
+const policy_t survivors_policies[survivor_t] = {POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE, POLICY_DIRECT_SINGLE};
+
+// Number of first responders and their starting positions
+const int N_FIRST_RESPONDERS = 1;
+typedef int[0, N_FIRST_RESPONDERS-1] first_resp_t;
+const pos_t first_responders_starting_pos[first_resp_t] = {{6, 5}};
+const int T_fr = 5; // First reponders assistance duration
+const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE};
+
+// Number of exit blocks
+const int N_EXIT_BLOCK = 4;
+typedef int[0, N_EXIT_BLOCK-1] exit_t;
+const pos_t exit_pos[exit_t] = {{4, 0}, {5, 0}, {9, 4}, {9, 5}};
+*/
 /******************************************************************************
  *                                 Constants                                  *
  ******************************************************************************/
@@ -408,6 +550,91 @@ void init_map() {
 
     if (map_id == MAP_SCENARIO_1) {
         // Fires
+		map[2][7] = CELL_FIRE;
+		map[2][8] = CELL_FIRE;
+		map[3][7] = CELL_FIRE;
+		map[3][8] = CELL_FIRE;
+		map[4][7] = CELL_FIRE;
+		map[4][8] = CELL_FIRE;
+		map[5][6] = CELL_FIRE;
+		map[5][7] = CELL_FIRE;
+		map[5][8] = CELL_FIRE;
+		map[5][9] = CELL_FIRE;
+		map[6][5] = CELL_FIRE;
+		map[6][6] = CELL_FIRE;
+		map[6][7] = CELL_FIRE;
+		map[6][8] = CELL_FIRE;
+		map[6][9] = CELL_FIRE;
+		map[6][10] = CELL_FIRE;
+		map[7][7] = CELL_FIRE;
+		map[7][8] = CELL_FIRE;
+		map[8][7] = CELL_FIRE;
+		map[8][8] = CELL_FIRE;
+    } else if (map_id == MAP_SCENARIO_2) {
+		// Fires
+   		map[3][7] = CELL_FIRE;
+   		map[4][2] = CELL_FIRE;
+   		map[4][3] = CELL_FIRE;
+   		map[4][4] = CELL_FIRE;
+   		map[4][5] = CELL_FIRE;
+   		map[4][6] = CELL_FIRE;
+   		map[4][7] = CELL_FIRE;
+   		map[5][2] = CELL_FIRE;
+   		map[5][3] = CELL_FIRE;
+   		map[5][4] = CELL_FIRE;
+   		map[5][5] = CELL_FIRE;
+   		map[5][6] = CELL_FIRE;
+   		map[5][7] = CELL_FIRE;
+    } else if (map_id == MAP_SCENARIO_3) {
+		// Fires
+        map[1][14] = CELL_FIRE;
+        map[2][6] = CELL_FIRE;
+		map[2][7] = CELL_FIRE;
+    	map[2][8] = CELL_FIRE;
+		map[2][9] = CELL_FIRE;
+		map[2][10] = CELL_FIRE;
+		map[2][11] = CELL_FIRE;
+		map[2][12] = CELL_FIRE;
+		map[2][13] = CELL_FIRE;
+		map[2][14] = CELL_FIRE;
+		map[3][6] = CELL_FIRE;
+		map[3][7] = CELL_FIRE;
+		map[3][8] = CELL_FIRE;
+		map[3][9] = CELL_FIRE;
+		map[3][10] = CELL_FIRE;
+		map[3][11] = CELL_FIRE;
+		map[3][12] = CELL_FIRE;
+		map[3][13] = CELL_FIRE;
+		map[3][14] = CELL_FIRE;
+		map[4][6] = CELL_FIRE;
+		map[4][7] = CELL_FIRE;
+		map[4][8] = CELL_FIRE;
+		map[4][9] = CELL_FIRE;
+		map[4][10] = CELL_FIRE;
+		map[4][11] = CELL_FIRE;
+		map[4][12] = CELL_FIRE;
+		map[4][13] = CELL_FIRE;
+		map[4][14] = CELL_FIRE;
+		map[5][6] = CELL_FIRE;
+		map[5][7] = CELL_FIRE;
+	    map[5][8] = CELL_FIRE;
+		map[5][9] = CELL_FIRE;
+		map[5][10] = CELL_FIRE;
+		map[5][11] = CELL_FIRE;
+		map[5][12] = CELL_FIRE;
+		map[5][13] = CELL_FIRE;
+		map[5][14] = CELL_FIRE;
+		map[6][6] = CELL_FIRE;
+		map[6][7] = CELL_FIRE;
+		map[6][8] = CELL_FIRE;
+		map[6][9] = CELL_FIRE;
+		map[6][10] = CELL_FIRE;
+		map[6][11] = CELL_FIRE;
+		map[6][12] = CELL_FIRE;
+		map[6][13] = CELL_FIRE;
+		map[6][14] = CELL_FIRE;
+    } else if (map_id == MAP_SCENARIO_4) {
+        // Fires
         map[4][3] = CELL_FIRE;
         map[4][4] = CELL_FIRE;
         map[5][1] = CELL_FIRE;
@@ -417,47 +644,7 @@ void init_map() {
         map[6][1] = CELL_FIRE;
         map[6][2] = CELL_FIRE;
         map[6][3] = CELL_FIRE;
-        
-    } else if (map_id == MAP_SCENARIO_2)
-    {
-   		map[3][7] = 1; // FIRE
-   		map[4][2] = 1; // FIRE
-   		map[4][3] = 1; // FIRE
-   		map[4][4] = 1; // FIRE
-   		map[4][5] = 1; // FIRE
-   		map[4][6] = 1; // FIRE
-   		map[4][7] = 1; // FIRE
-   		map[5][2] = 1; // FIRE
-   		map[5][3] = 1; // FIRE
-   		map[5][4] = 1; // FIRE
-   		map[5][5] = 1; // FIRE
-   		map[5][6] = 1; // FIRE
-   		map[5][7] = 1; // FIRE
-
-    }else if (map_id == MAP_SCENARIO_3)
-    {
-    	map[2][3] = 1; // FIRE
-		map[2][4] = 1; // FIRE
-		map[2][5] = 1; // FIRE
-		map[2][6] = 1; // FIRE
-		map[2][7] = 1; // FIRE
-		map[2][8] = 1; // FIRE
-		map[2][9] = 1; // FIRE
-		map[3][3] = 1; // FIRE
-		map[3][4] = 1; // FIRE
-		map[3][5] = 1; // FIRE
-		map[3][6] = 1; // FIRE
-		map[3][7] = 1; // FIRE
-		map[3][8] = 1; // FIRE
-		map[3][9] = 1; // FIRE
-		map[4][3] = 1; // FIRE
-		map[4][4] = 1; // FIRE
-		map[4][5] = 1; // FIRE
-		map[4][6] = 1; // FIRE
-		map[4][7] = 1; // FIRE
-		map[4][8] = 1; // FIRE
-		map[4][9] = 1; // FIRE
-	}
+    }
     
     for(i : exit_t){
         set_map(exit_pos[i],CELL_EXIT);
@@ -1058,7 +1245,7 @@ first_resp_pos[id] = pos</label>
  ******************************************************************************/
 
 // Uncomment to enable the live map visualizer
-/*
+
 import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/simulation_gui/uppaal_external_functions/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
 };
@@ -1083,8 +1270,11 @@ void send_state() {
 
 before_update { send_state() }
 // after_update { send_state() }
-*/
-system  Survivor, Drone, FirstResponder, Initializer;
+
+// system Survivor, Initializer;
+// system Drone, Survivor, Initializer;
+// system Survivor, FirstResponder, Initializer;
+system Drone, Survivor, FirstResponder, Initializer;
 
 progress { safe_survivors + dead_survivors; }
 </system>
@@ -1092,8 +1282,6 @@ progress { safe_survivors + dead_survivors; }
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-10 17:02:00 +0200">
-			</result>
 		</query>
 		<query>
 			<formula>A[]
@@ -1140,35 +1328,33 @@ forall (i : survivor_t)
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-22 10:24:20 +0200">
-			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-22 10:23:52 +0200">
-				<details>6</details>
+			<result outcome="success" type="quantity" value="8" timestamp="2024-07-22 13:25:48 +0200">
+				<details>8</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="5" timestamp="2024-07-22 10:23:53 +0200">
-				<details>5</details>
+			<result outcome="success" type="quantity" value="8" timestamp="2024-07-22 13:25:52 +0200">
+				<details>8</details>
 			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-07-20 16:47:50 +0200">
+			<result outcome="success" type="quantity" value="0" timestamp="2024-07-22 13:25:57 +0200">
 				<details>0</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 16:47:51 +0200">
-				<details>6</details>
+			<result outcome="success" type="quantity" value="0" timestamp="2024-07-22 13:26:00 +0200">
+				<details>0</details>
 			</result>
 		</query>
 		<query>
