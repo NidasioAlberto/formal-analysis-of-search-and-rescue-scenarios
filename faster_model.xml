@@ -65,7 +65,7 @@ const int N_CELLS = N_COLS * N_ROWS;
 const int N_DRONES = 4;
 typedef int[0, N_DRONES-1] drone_t;
 const pos_t drones_starting_pos[drone_t] = {{2, 2}, {2, 7}, {7, 2}, {7, 7}};
-const int N_v[drone_t] = {1, 1, 1, 1}; // Drones vision range
+const int N_v[drone_t] = {2, 2, 2, 2}; // Drones vision range
 const int N_r[drone_t] = {2, 2, 2, 2}; // Drones movement
 
 // Number of survivors and their starting positions
@@ -1257,7 +1257,7 @@ first_resp_pos[id] = pos</label>
  ******************************************************************************/
 
 // Uncomment to enable the live map visualizer
-
+/*
 import "/home/alberton/Documents/formal-analysis-of-search-and-rescue-scenarios/simulation_gui/uppaal_external_functions/build/libvisualizer.so" {
     void send_state_via_post_request(int n_cols, int n_rows, int &amp;map[N_CELLS], bool &amp;drone_map[N_CELLS]);
 };
@@ -1282,7 +1282,7 @@ void send_state() {
 
 before_update { send_state() }
 // after_update { send_state() }
-
+*/
 // system Survivor, Initializer;
 // system Drone, Survivor, Initializer;
 // system Survivor, FirstResponder, Initializer;
@@ -1294,6 +1294,8 @@ progress { safe_survivors + dead_survivors; }
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:06:47 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[]
@@ -1302,6 +1304,8 @@ forall (i : drone_t)
 		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
 		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:07:03 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[]
@@ -1312,70 +1316,66 @@ forall (i : survivor_t)
 			   not Survivor(i).Safe &amp;&amp; not Survivor(j).Safe)  imply
 		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
 			<comment/>
-		</query>
-		<query>
-			<formula>A[]
-forall (i : first_resp_t)
-	forall (j : first_resp_t)
-		(i != j &amp;&amp; not FirstResponder(i).Init &amp;&amp; not FirstResponder(j).Init) imply
-		not (FirstResponder(i).pos.x == FirstResponder(j).pos.x &amp;&amp; FirstResponder(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[]
-forall (i : survivor_t)
-	forall (j : first_resp_t)
-		(not Survivor(i).Init &amp;&amp; not Survivor(i).Safe &amp;&amp; not Survivor(i).Dead &amp;&amp; not FirstResponder(j).Init) imply
-		not (Survivor(i).pos.x == FirstResponder(j).pos.x &amp;&amp; Survivor(i).pos.y == FirstResponder(j).pos.y)</formula>
-			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:07:21 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : survivor_t) Survivor(i).Safe || Survivor(i).Dead</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:07:35 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:07:51 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:08:05 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="8" timestamp="2024-07-22 13:25:48 +0200">
-				<details>8</details>
+			<result outcome="success" type="quantity" value="4" timestamp="2024-07-22 19:11:44 +0200">
+				<details>4</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="8" timestamp="2024-07-22 13:25:52 +0200">
-				<details>8</details>
+			<result outcome="success" type="quantity" value="3" timestamp="2024-07-22 19:11:45 +0200">
+				<details>3</details>
 			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-07-22 13:25:57 +0200">
-				<details>0</details>
+			<result outcome="success" type="quantity" value="5" timestamp="2024-07-22 19:08:50 +0200">
+				<details>5</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="0" timestamp="2024-07-22 13:26:00 +0200">
-				<details>0</details>
+			<result outcome="success" type="quantity" value="4" timestamp="2024-07-22 19:09:05 +0200">
+				<details>4</details>
 			</result>
 		</query>
 		<query>
 			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:09:21 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:09:45 +0200">
+			</result>
 		</query>
 	</queries>
 </nta>
