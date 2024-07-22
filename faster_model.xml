@@ -92,9 +92,9 @@ const pos_t exit_pos[exit_t] = {{5, 0}, {6, 0}};
  * Scenario 2: Lone survivor
  *
  * Map: 10x10
- * Survivors: 9
+ * Survivors: 6
  * First responders: 1
- * Drones: 4
+ * Drones: 2
  */
 /*
 const map_id_t map_id = MAP_SCENARIO_2;
@@ -137,9 +137,9 @@ const pos_t exit_pos[exit_t] = {{9, 4}, {9, 5}};
 /**
  * Scenario 3: Divided branches
  *
- * Map: 10x10
+ * Map: 15x15
  * Survivors: 10
- * First responders: 3
+ * First responders: 2
  * Drones: 4
  */
 /*
