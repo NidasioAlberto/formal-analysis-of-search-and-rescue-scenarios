@@ -621,7 +621,6 @@ void init_map() {
 		map[6][13] = CELL_FIRE;
 		map[6][14] = CELL_FIRE;
 		// Exists
-		{7,0}, {8,0}, {14,7}, {14,8}
         map[0][7] = CELL_EXIT;
         map[0][8] = CELL_EXIT;
         map[7][14] = CELL_EXIT;
@@ -1042,10 +1041,11 @@ reset()</label>
 		<transition id="id39">
 			<source ref="id26"/>
 			<target ref="id23"/>
-			<label kind="guard" x="212" y="-246">!starting_near_a_fire()</label>
-			<label kind="synchronisation" x="212" y="-229">init_done?</label>
-			<label kind="assignment" x="212" y="-212">pos = survivors_starting_pos[id],
-set_map(pos, CELL_SURVIVOR)</label>
+			<label kind="guard" x="187" y="-272">!starting_near_a_fire()</label>
+			<label kind="synchronisation" x="187" y="-255">init_done?</label>
+			<label kind="assignment" x="187" y="-238">pos = survivors_starting_pos[id],
+set_map(pos, CELL_SURVIVOR),
+t = 0</label>
 		</transition>
 		<transition id="id40">
 			<source ref="id31"/>
@@ -1103,14 +1103,14 @@ t = 0</label>
 		<transition id="id48">
 			<source ref="id23"/>
 			<target ref="id23"/>
-			<label kind="select" x="60" y="-357">i : int[-1, 1],
+			<label kind="select" x="-34" y="-323">i : int[-1, 1],
 j : int[-1, 1]</label>
-			<label kind="guard" x="59" y="-315">t &gt;= 1 &amp;&amp;
+			<label kind="guard" x="-35" y="-281">t &gt;= 1 &amp;&amp;
 is_move_valid(i, j) &amp;&amp;
 !is_exit_near()</label>
-			<label kind="assignment" x="60" y="-255">move(i, j),
+			<label kind="assignment" x="-34" y="-221">move(i, j),
 t = 0</label>
-			<label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
+			<label kind="comments" x="195" y="-340">This edge is the only one that resets the clock.
 This way the survivor must make one move per time unit</label>
 			<nail x="153" y="-229"/>
 			<nail x="110" y="-204"/>
@@ -1118,10 +1118,11 @@ This way the survivor must make one move per time unit</label>
 		<transition id="id49">
 			<source ref="id26"/>
 			<target ref="id25"/>
-			<label kind="guard" x="510" y="-246">starting_near_a_fire()</label>
-			<label kind="synchronisation" x="510" y="-229">init_done?</label>
-			<label kind="assignment" x="510" y="-212">pos = survivors_starting_pos[id],
-set_map(pos, CELL_IN_NEED)</label>
+			<label kind="guard" x="518" y="-280">starting_near_a_fire()</label>
+			<label kind="synchronisation" x="518" y="-263">init_done?</label>
+			<label kind="assignment" x="518" y="-246">pos = survivors_starting_pos[id],
+set_map(pos, CELL_IN_NEED),
+t = 0</label>
 			<nail x="833" y="-170"/>
 			<nail x="833" y="-314"/>
 		</transition>

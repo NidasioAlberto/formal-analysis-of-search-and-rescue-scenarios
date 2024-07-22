@@ -355,7 +355,6 @@ bool is_val_in_unitary_radius(pos_t pos, int value) {
 pos_t find_val_in_unitary_radius(pos_t pos, int value) {
     int i, j;
     const int radius = 1;
-    pos_t pos_to_check = pos;
     for (i = -radius; i &lt;= radius; i += 1) {
         for (j = -radius; j &lt;= radius; j += 1) {
             pos_t pos_to_check = pos;
@@ -367,7 +366,7 @@ pos_t find_val_in_unitary_radius(pos_t pos, int value) {
         }
     }
 
-    return pos_to_check;
+    return pos;
 }
 
 pos_t find_nearest_exit(pos_t pos) {
@@ -722,15 +721,15 @@ pos_t next_step() {
 }
 
 void move() {
-    // Apply movement
     pos_t temp;
     temp = next_step();
-    if( is_pos_in_map(temp)){
+
+    // Apply movement only if it is withing map boundaries
+    if(is_pos_in_map(temp)) {
         set_drone_map(pos, false);
-        pos = next_step();
+        pos = temp;
         set_drone_map(pos, true);
     }
-  
 }
 
 /******************************************************************************
@@ -738,7 +737,7 @@ void move() {
  ******************************************************************************/
 
 // Tells whether the given coordinates points to a survivor that can be a zero responder (in the fov)
-bool is_possible_zero_responder() {
+bool zero_responder_near() {
     return is_actor_in_range(pos, CELL_SURVIVOR, N_v[id]);
 }
 
@@ -747,28 +746,27 @@ bool in_need_near() {
     return is_actor_in_range(pos, CELL_IN_NEED, N_v[id]);
 }
 
-bool is_assist_possible(){
-    return is_possible_zero_responder() &amp;&amp; in_need_near();
-}
-
-// Sets the given coordinates as the selected zero_responder
-void save_zero_resp() {
+// Selects and saves the nearest zero_responder as target
+void select_nearest_zero_resp() {
     zr = find_nearest_actor(pos, CELL_SURVIVOR);
-    
+
+    // Upgrade the state from SURVIVOR to ZERO_RESP
     set_map(zr, CELL_ZERO_RESP);
 }
 
-// Sets the given coordinates as the selected in_need
-void save_in_need() {
+// Selects and saves the neares in_need
+void select_nearest_in_need() {
     in = find_nearest_actor(pos, CELL_IN_NEED);
     
+    // Upgrade the state from IN_NEED to ASSISTED
     set_map(in, CELL_ASSISTED);
 }
 
-// Sets the given coordinates as the selected first_responder
-void save_first_resp() {
+// Selects and saves the neares first_responder
+void select_nearest_first_resp() {
     fr = find_nearest_actor(pos, CELL_FIRST_RESP);
     
+    // Upgrade the state from FIRST_RESP to ASSISTING
     set_map(fr, CELL_ASSISTING);
 }
 
@@ -783,17 +781,17 @@ void reset() {
     timeout = 0;
 }
 </declaration>
-		<location id="id5" x="-1096" y="-578">
-			<name x="-1257" y="-586">AssistingDirectly</name>
+		<location id="id5" x="-1377" y="-544">
+			<name x="-1368" y="-578">AssistingDirectly</name>
 			<committed/>
 		</location>
-		<location id="id6" x="-815" y="-578">
-			<name x="-790" y="-586">SearchingFirstResponder</name>
+		<location id="id6" x="-1377" y="-484">
+			<name x="-1360" y="-509">SearchingFirstResponder</name>
 			<committed/>
 		</location>
-		<location id="id7" x="-943" y="-799">
-			<name x="-1011" y="-850">SurvivorAndInNeedSelected</name>
-			<label kind="comments" x="-730" y="-790">If there is a first responder
+		<location id="id7" x="-1130" y="-799">
+			<name x="-1113" y="-833">SurvivorAndInNeedSelected</name>
+			<label kind="comments" x="-1113" y="-807">If there is a first responder
 available, instruct the selected
 zero reponder to call him,
 otherwise assit directly</label>
@@ -806,75 +804,83 @@ otherwise assit directly</label>
 			<name x="-1385" y="-850">Moving</name>
 			<label kind="invariant" x="-1385" y="-833">t &lt;= 1</label>
 		</location>
-		<location id="id10" x="-952" y="-450">
+		<location id="id10" x="-1700" y="-544">
 			<committed/>
 		</location>
-		<location id="id11" x="-1172" y="-450">
+		<location id="id11" x="-1700" y="-620">
 			<committed/>
 		</location>
-		<location id="id12" x="-1402" y="-450">
+		<location id="id12" x="-1700" y="-697">
 			<committed/>
 		</location>
 		<init ref="id8"/>
 		<transition id="id13">
 			<source ref="id12"/>
 			<target ref="id9"/>
-			<label kind="assignment" x="-1462" y="-612">reset()</label>
+			<label kind="assignment" x="-1589" y="-688">reset()</label>
+			<nail x="-1402" y="-697"/>
 		</transition>
 		<transition id="id14">
 			<source ref="id11"/>
 			<target ref="id12"/>
-			<label kind="synchronisation" x="-1385" y="-450">set_timeout[in.x][in.y]!</label>
+			<label kind="synchronisation" x="-1691" y="-663">set_timeout[in.x][in.y]!</label>
 		</transition>
 		<transition id="id15">
 			<source ref="id10"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-1155" y="-450">set_timeout[zr.x][zr.y]!</label>
+			<label kind="synchronisation" x="-1691" y="-586">set_timeout[zr.x][zr.y]!</label>
 		</transition>
 		<transition id="id16">
 			<source ref="id9"/>
 			<target ref="id9"/>
-			<label kind="guard" x="-1470" y="-926">t &gt;= 1 &amp;&amp;
-!is_assist_possible()</label>
+			<label kind="guard" x="-1470" y="-935">t &gt;= 1 &amp;&amp;
+!(in_need_near() &amp;&amp; zero_responder_near())</label>
 			<label kind="assignment" x="-1470" y="-892">move(),
 t = 0</label>
-			<label kind="comments" x="-1657" y="-977">This edge is the only one that resets the clock.
-This way the drone must make one move per time unit</label>
+			<label kind="comments" x="-1725" y="-935">This edge is the only on
+that resets the clock.
+This way the drone must
+make one move per time unit.</label>
 			<nail x="-1445" y="-833"/>
 			<nail x="-1402" y="-858"/>
 		</transition>
 		<transition id="id17">
 			<source ref="id5"/>
 			<target ref="id10"/>
-			<label kind="assignment" x="-1266" y="-510">timeout = distance(in, zr)+T_zr</label>
+			<label kind="assignment" x="-1666" y="-535">timeout = distance(in, zr) + T_zr</label>
 		</transition>
 		<transition id="id18">
 			<source ref="id6"/>
 			<target ref="id10"/>
-			<label kind="synchronisation" x="-866" y="-527">set_timeout[fr.x][fr.y]!</label>
-			<label kind="assignment" x="-866" y="-510">timeout = distance(zr , fr) + distance(fr, in) + T_fr,
+			<label kind="synchronisation" x="-1649" y="-476">set_timeout[fr.x][fr.y]!</label>
+			<label kind="assignment" x="-1649" y="-459">timeout = distance(zr, fr) + distance(fr, in) + T_fr,
 target_in_need = in</label>
+			<label kind="comments" x="-1691" y="-408">Compute the total time (movement + assistance) and send this
+amout (called timeout) to the target agents</label>
+			<nail x="-1649" y="-484"/>
 		</transition>
 		<transition id="id19">
 			<source ref="id7"/>
 			<target ref="id5"/>
-			<label kind="guard" x="-1240" y="-654">available_fr == 0</label>
-			<nail x="-1096" y="-705"/>
+			<label kind="guard" x="-1300" y="-646">available_fr == 0</label>
+			<nail x="-1147" y="-782"/>
+			<nail x="-1147" y="-544"/>
 		</transition>
 		<transition id="id20">
 			<source ref="id7"/>
 			<target ref="id6"/>
-			<label kind="guard" x="-807" y="-654">available_fr &gt; 0</label>
-			<label kind="assignment" x="-807" y="-637">save_first_resp()</label>
-			<nail x="-816" y="-705"/>
+			<label kind="guard" x="-1122" y="-646">available_fr &gt; 0</label>
+			<label kind="assignment" x="-1122" y="-629">select_nearest_first_resp()</label>
+			<nail x="-1130" y="-484"/>
 		</transition>
 		<transition id="id21">
 			<source ref="id9"/>
 			<target ref="id7"/>
-			<label kind="guard" x="-1283" y="-867">t &gt;= 1 &amp;&amp;
-is_assist_possible()</label>
-			<label kind="assignment" x="-1283" y="-799">save_zero_resp(),
-save_in_need()</label>
+			<label kind="guard" x="-1385" y="-790">t &gt;= 1 &amp;&amp;
+in_need_near() &amp;&amp;
+zero_responder_near()</label>
+			<label kind="assignment" x="-1385" y="-731">select_nearest_in_need(),
+select_nearest_zero_resp()</label>
 		</transition>
 		<transition id="id22">
 			<source ref="id8"/>
@@ -942,22 +948,22 @@ void reset() {
     survivor_pos[id] = pos;
 }
 </declaration>
-		<location id="id23" x="824" y="-399">
-			<name x="814" y="-433">Dead</name>
+		<location id="id23" x="824" y="-374">
+			<name x="841" y="-408">Dead</name>
 		</location>
-		<location id="id24" x="697" y="144">
-			<name x="680" y="161">Safe</name>
+		<location id="id24" x="697" y="93">
+			<name x="714" y="110">Safe</name>
 		</location>
 		<location id="id25" x="153" y="-170">
-			<name x="170" y="-162">Moving</name>
-			<label kind="invariant" x="170" y="-145">t &lt;= 1</label>
+			<name x="170" y="-153">Moving</name>
+			<label kind="invariant" x="170" y="-136">t &lt;= 1</label>
 		</location>
 		<location id="id26" x="178" y="0">
-			<name x="161" y="25">AssistingDirectly</name>
-			<label kind="invariant" x="162" y="42">t &lt;= wait</label>
+			<name x="187" y="17">AssistingDirectly</name>
+			<label kind="invariant" x="188" y="34">t &lt;= wait</label>
 		</location>
 		<location id="id27" x="493" y="-170">
-			<name x="484" y="-153">Init</name>
+			<name x="510" y="-153">Init</name>
 		</location>
 		<location id="id28" x="824" y="-255">
 			<committed/>
@@ -966,48 +972,52 @@ void reset() {
 			<committed/>
 		</location>
 		<location id="id30" x="824" y="-170">
-			<name x="790" y="-161">Suffering</name>
-			<label kind="invariant" x="799" y="-144">t &lt;= T_v</label>
+			<name x="841" y="-153">Suffering</name>
+			<label kind="invariant" x="841" y="-136">t &lt;= T_v</label>
 		</location>
-		<location id="id31" x="1283" y="-170">
-			<name x="1308" y="-179">Being_assisted</name>
-			<label kind="invariant" x="1273" y="-153">t &lt;= wait</label>
+		<location id="id31" x="1249" y="-170">
+			<name x="1266" y="-195">BeingAssisted</name>
+			<label kind="invariant" x="1267" y="-177">t &lt;= wait</label>
 		</location>
-		<location id="id32" x="1122" y="-170">
+		<location id="id32" x="1088" y="-170">
+			<label kind="comments" x="892" y="-93">Find the max between T_v and t + wait.
+Save the result in wait.</label>
 			<committed/>
 		</location>
 		<init ref="id27"/>
 		<transition id="id33">
 			<source ref="id32"/>
 			<target ref="id31"/>
-			<label kind="guard" x="1139" y="-119">t + wait &lt; T_v</label>
-			<label kind="assignment" x="1173" y="-102">t = 0</label>
-			<nail x="1198" y="-119"/>
+			<label kind="guard" x="1105" y="-136">t + wait &lt; T_v</label>
+			<label kind="assignment" x="1105" y="-119">t = 0</label>
+			<nail x="1113" y="-144"/>
+			<nail x="1224" y="-144"/>
 		</transition>
 		<transition id="id34">
 			<source ref="id32"/>
 			<target ref="id31"/>
-			<label kind="guard" x="1130" y="-246">t + wait &gt;= T_v</label>
-			<label kind="assignment" x="1147" y="-229">wait = T_v</label>
-			<nail x="1198" y="-212"/>
+			<label kind="guard" x="1105" y="-238">t + wait &gt;= T_v</label>
+			<label kind="assignment" x="1105" y="-221">wait = T_v</label>
+			<nail x="1105" y="-195"/>
+			<nail x="1224" y="-195"/>
 		</transition>
 		<transition id="id35">
 			<source ref="id31"/>
 			<target ref="id29"/>
-			<label kind="guard" x="960" y="-25">t &gt;= wait &amp;&amp; t &lt; T_v</label>
-			<nail x="1283" y="0"/>
+			<label kind="guard" x="952" y="-25">t &gt;= wait &amp;&amp; t &lt; T_v</label>
+			<nail x="1249" y="0"/>
 		</transition>
 		<transition id="id36">
 			<source ref="id31"/>
 			<target ref="id28"/>
-			<label kind="guard" x="935" y="-280">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
-			<nail x="1283" y="-255"/>
+			<label kind="guard" x="901" y="-280">t &gt;= wait &amp;&amp; t &gt;= T_v</label>
+			<nail x="1249" y="-255"/>
 		</transition>
 		<transition id="id37">
 			<source ref="id30"/>
 			<target ref="id32"/>
-			<label kind="synchronisation" x="892" y="-187">set_timeout[pos.x][pos.y]?</label>
-			<label kind="assignment" x="926" y="-170">wait = timeout</label>
+			<label kind="synchronisation" x="841" y="-212">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="841" y="-195">wait = timeout</label>
 		</transition>
 		<transition id="id38">
 			<source ref="id28"/>
@@ -1019,38 +1029,38 @@ reset()</label>
 		<transition id="id39">
 			<source ref="id29"/>
 			<target ref="id24"/>
-			<label kind="assignment" x="705" y="51">set_map(pos, CELL_EMPTY),
+			<label kind="assignment" x="705" y="17">set_map(pos, CELL_EMPTY),
 safe_survivors += 1,
 reset()</label>
 		</transition>
 		<transition id="id40">
 			<source ref="id30"/>
 			<target ref="id28"/>
-			<label kind="guard" x="833" y="-212">t &gt;= T_v</label>
+			<label kind="guard" x="833" y="-238">t &gt;= T_v</label>
 		</transition>
 		<transition id="id41">
 			<source ref="id27"/>
 			<target ref="id25"/>
-			<label kind="guard" x="212" y="-280">!starting_near_a_fire()</label>
-			<label kind="synchronisation" x="212" y="-263">init_done?</label>
-			<label kind="assignment" x="212" y="-246">pos = survivors_starting_pos[id],
+			<label kind="guard" x="187" y="-297">!starting_near_a_fire()</label>
+			<label kind="synchronisation" x="187" y="-280">init_done?</label>
+			<label kind="assignment" x="187" y="-263">pos = survivors_starting_pos[id],
 set_map(pos, CELL_SURVIVOR),
-t = 0,
-survivor_pos[id] = pos</label>
+survivor_pos[id] = pos,
+t = 0</label>
 		</transition>
 		<transition id="id42">
 			<source ref="id25"/>
 			<target ref="id26"/>
-			<label kind="synchronisation" x="-153" y="-85">set_timeout[pos.x][pos.y]?</label>
-			<label kind="assignment" x="-153" y="-68">t = 0,
+			<label kind="synchronisation" x="136" y="-93">set_timeout[pos.x][pos.y]?</label>
+			<label kind="assignment" x="136" y="-76">t = 0,
 wait = timeout</label>
-			<nail x="76" y="-119"/>
-			<nail x="76" y="0"/>
+			<nail x="127" y="-153"/>
+			<nail x="127" y="0"/>
 		</transition>
 		<transition id="id43">
 			<source ref="id25"/>
 			<target ref="id29"/>
-			<label kind="guard" x="408" y="-110">t &gt;= 1 &amp;&amp;
+			<label kind="guard" x="408" y="-102">t &gt;= 1 &amp;&amp;
 is_exit_near()</label>
 			<nail x="153" y="-110"/>
 			<nail x="697" y="-110"/>
@@ -1058,17 +1068,17 @@ is_exit_near()</label>
 		<transition id="id44">
 			<source ref="id26"/>
 			<target ref="id29"/>
-			<label kind="guard" x="314" y="-25">t &gt;= wait</label>
+			<label kind="guard" x="195" y="-25">t &gt;= wait</label>
 		</transition>
 		<transition id="id45">
 			<source ref="id25"/>
 			<target ref="id25"/>
-			<label kind="select" x="60" y="-357">i : int[-1, 1],
+			<label kind="select" x="-34" y="-314">i : int[-1, 1],
 j : int[-1, 1]</label>
-			<label kind="guard" x="59" y="-315">t &gt;= 1 &amp;&amp;
+			<label kind="guard" x="-35" y="-272">t &gt;= 1 &amp;&amp;
 is_move_valid(i, j) &amp;&amp;
 !is_exit_near()</label>
-			<label kind="assignment" x="60" y="-255">move(i, j),
+			<label kind="assignment" x="-34" y="-212">move(i, j),
 t = 0</label>
 			<label kind="comments" x="195" y="-357">This edge is the only one that resets the clock.
 This way the survivor must make one move per time unit</label>
@@ -1078,12 +1088,12 @@ This way the survivor must make one move per time unit</label>
 		<transition id="id46">
 			<source ref="id27"/>
 			<target ref="id30"/>
-			<label kind="guard" x="527" y="-280">starting_near_a_fire()</label>
-			<label kind="synchronisation" x="527" y="-263">init_done?</label>
-			<label kind="assignment" x="527" y="-246">pos = survivors_starting_pos[id],
+			<label kind="guard" x="518" y="-297">starting_near_a_fire()</label>
+			<label kind="synchronisation" x="518" y="-280">init_done?</label>
+			<label kind="assignment" x="518" y="-263">pos = survivors_starting_pos[id],
 set_map(pos, CELL_IN_NEED),
-t = 0,
-survivor_pos[id] = pos</label>
+survivor_pos[id] = pos,
+t = 0</label>
 		</transition>
 	</template>
 	<template>
@@ -1123,17 +1133,16 @@ void move(int i, int j) {
  *                               Other functions                              *
  ******************************************************************************/
 
-bool is_possible_in_need() {
-    pos_t pos_to_check;
+// Tells whether the first_responder has a survivor near him
+bool in_need_near() {  
     return is_val_in_unitary_radius(pos, CELL_IN_NEED);
 }
 
-
-void set_wait() {
-    wait = T_fr;
-    
+// Selects and saves the nearest zero_responder as target
+void select_in_need_in_unitary_radius() {
     target = find_val_in_unitary_radius(pos, CELL_IN_NEED);
-    
+
+    // Upgrade the state from IN_NEED to ASSISTED
     set_map(target, CELL_ASSISTED);
 }
 
@@ -1152,13 +1161,13 @@ void reset() {
     t = 0;
 }
 </declaration>
-		<location id="id47" x="42" y="-161">
-			<name x="59" y="-212">Assisting</name>
-			<label kind="invariant" x="59" y="-195">t &lt;= wait</label>
+		<location id="id47" x="51" y="-161">
+			<name x="68" y="-212">Assisting</name>
+			<label kind="invariant" x="68" y="-195">t &lt;= wait</label>
 		</location>
 		<location id="id48" x="-552" y="-161">
-			<name x="-535" y="-187">Available</name>
-			<label kind="invariant" x="-535" y="-153">t &lt;= 1</label>
+			<name x="-518" y="-204">Available</name>
+			<label kind="invariant" x="-518" y="-187">t &lt;= 1</label>
 		</location>
 		<location id="id49" x="-926" y="-161">
 			<name x="-909" y="-195">Init</name>
@@ -1166,22 +1175,26 @@ void reset() {
 		<location id="id50" x="-246" y="-161">
 			<committed/>
 		</location>
-		<location id="id51" x="-705" y="110">
+		<location id="id51" x="-875" y="-8">
 		</location>
 		<init ref="id49"/>
 		<transition id="id52">
 			<source ref="id48"/>
 			<target ref="id51"/>
-			<label kind="guard" x="-765" y="34">safe_survivors + dead_survivors  == N_SURVIVORS</label>
-			<label kind="assignment" x="-687" y="-25">pos.x = 0,
+			<label kind="guard" x="-850" y="0">safe_survivors + dead_survivors  == N_SURVIVORS</label>
+			<label kind="assignment" x="-850" y="17">pos.x = 0,
 pos.y = 0,
 first_resp_pos[id] = pos</label>
+			<nail x="-569" y="-144"/>
+			<nail x="-569" y="-8"/>
 		</transition>
 		<transition id="id53">
 			<source ref="id50"/>
 			<target ref="id47"/>
-			<label kind="synchronisation" x="-246" y="-144">set_timeout[target.x][target.y]!</label>
-			<label kind="assignment" x="-228" y="-161">timeout = wait</label>
+			<label kind="synchronisation" x="-229" y="-153">set_timeout[target.x][target.y]!</label>
+			<label kind="assignment" x="-229" y="-136">timeout = T_fr,
+wait = T_fr,
+t = 0</label>
 		</transition>
 		<transition id="id54">
 			<source ref="id48"/>
@@ -1192,16 +1205,15 @@ available_fr -= 1,
 target = target_in_need,
 t = 0</label>
 			<nail x="-467" y="-263"/>
-			<nail x="42" y="-263"/>
+			<nail x="51" y="-263"/>
 		</transition>
 		<transition id="id55">
 			<source ref="id48"/>
 			<target ref="id50"/>
-			<label kind="guard" x="-467" y="-153">is_possible_in_need()</label>
-			<label kind="assignment" x="-467" y="-136">set_wait(),
+			<label kind="guard" x="-535" y="-153">in_need_near()</label>
+			<label kind="assignment" x="-535" y="-136">select_in_need_in_unitary_radius(),
 available_fr -= 1,
-set_map(pos, CELL_ASSISTING),
-t = 0</label>
+set_map(pos, CELL_ASSISTING)</label>
 		</transition>
 		<transition id="id56">
 			<source ref="id48"/>
@@ -1210,10 +1222,10 @@ t = 0</label>
 j : int[-1, 1]</label>
 			<label kind="guard" x="-680" y="-314">t &gt;= 1 &amp;&amp;
 is_move_valid(i, j) &amp;&amp;
-!is_possible_in_need()</label>
+!in_need_near()</label>
 			<label kind="assignment" x="-680" y="-254">move(i, j),
 t = 0</label>
-			<label kind="comments" x="-918" y="-331">While not busy assisting
+			<label kind="comments" x="-926" y="-348">While not busy assisting
 survivors, first reponders
 can move with a custom
 moving policy</label>
@@ -1223,12 +1235,12 @@ moving policy</label>
 		<transition id="id57">
 			<source ref="id47"/>
 			<target ref="id48"/>
-			<label kind="guard" x="-433" y="25">t &gt;= wait</label>
-			<label kind="assignment" x="-433" y="51">teleport_to_in_need(),
+			<label kind="guard" x="-229" y="-51">t &gt;= wait</label>
+			<label kind="assignment" x="-229" y="-34">teleport_to_in_need(),
 available_fr += 1,
 reset()</label>
-			<nail x="42" y="17"/>
-			<nail x="-552" y="17"/>
+			<nail x="51" y="-59"/>
+			<nail x="-552" y="-59"/>
 		</transition>
 		<transition id="id58">
 			<source ref="id49"/>
