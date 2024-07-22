@@ -252,11 +252,6 @@ _Drones_ also have a fixed moving pattern that follows a predetermined path. Thi
 
 In the *faster model* after selecting the actor needed to perform an action the _drone_ sends a message to all the actors involved with the total waiting time needed to complete the action.
 
-== Statistical Model Checking
-
-All the optional stochastic features have been implemented:
-- The _survivors_ acknowledge the instruction and enact with probability $S#sub[listen]$, and ignore it (or miss it) with probability $1 - S#sub[listen]$. We assume _survivors_ share the same behavior, hence the same probability is used for all of them.
-- The _drones_ vision sensors fail with probability $P#sub[fail]$. We assume _drones_ share the same sensors, hence the same failure probability is used for all of them.
 
 = Scenarios & Properties
 
@@ -267,9 +262,14 @@ For all models, we have established the following parameters, which are scenario
 - $T_"zr" = 10$: The time a zero-responder needs to assist an _in-need_;
 The other parameters are changed to illustrate the functionality and efficiency of the system.
 
+We always kept T_scs at 60 second to allow the system to reach a stable state before the simulation ends.
 For each scenario, we calculated:
-- $N%_max$: The maximum percentage of safe individuals over the total number of survivors (checked by: "sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors")
-- $N%$: The guaranteed number of safe individuals (checked by "inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors")
+- $N%_max$: The maximum percentage of safe individuals over the total number of survivors in T_scs;
+- $N%$: The guaranteed number of safe individuals within T_scs.
+
+All the optional stochastic features have been implemented:
+- The _survivors_ acknowledge the instruction and enact with probability $S#sub[listen]$, and ignore it (or miss it) with probability $1 - S#sub[listen]$. We assume _survivors_ share the same behavior, hence the same probability is used for all of them.
+- The _drones_ vision sensors fail with probability $P#sub[fail]$. We assume _drones_ share the same sensors, hence the same failure probability is used for all of them.
 
 #align(center, grid(columns: 3, gutter: 1cm, align: bottom,
   figure(
@@ -302,14 +302,22 @@ A plane crashed and it is currently on fire. Passengers exited the plane and are
   [8], [0], [4], [2], [5], [8], [30], [37,5%], [50%],
   [8], [2], [0], [-], [5], [8], [30], [100%], [100%],
   [8], [2], [4], [1], [5], [8], [30], [100%], [100%],
-  [8], [2], [4], [2], [5], [8], [30], [75%], [100%],
 ))
 
-The plane crash scenario emphasizes the importance of _first-responders_ in ensuring the safety of survivors. Whithout _first-responders_, when more civilians are _in-need_ rather than not, there will always be someone _in-need_ that cannot be brought to safety. In this case the presence of _drones_ allows to save some lives, but this is not enough to ensure the safety of all the survivors. When instead _first-responders_ are present, all the survivors can be saved and drones could be superfluous depending on the number of _first-responders_, their training level and moving policy.
+The plane crash scenario emphasizes the importance of _first-responders_ in ensuring the safety of survivors. Without _first-responders_, when more civilians are _in-need_ rather than not, there will always be someone _in-need_ that cannot be brought to safety. In this case the presence of _drones_ allows to save some lives, but this is not enough to ensure the safety of all the survivors. When instead _first-responders_ are present, all the survivors can be saved and drones could be superfluous depending on the number of _first-responders_, their training level and moving policy.
+
+Since _drones_ are superfluous in this scenario _first_responders_ are not influenced by the failure of the drones sensors nor the probability of the _survivors_ to listen to the instructions, running the smc model yeld the same result that $N%_max$ = $N%$ = 100% independently from the probability parameters.
+#figure(
+    image("images/planeProb.png", width: 12cm),
+    caption: [Probability of all survivors being safe after T_scs],
+    numbering: none
+  )
 
 == Lone survivor
 
 During a fire, one _first-responder_ is called to save as many lives as possible. Due to the particular topography and the lack of wind, the space is full of smoke, impeding the _first-responder_ ability to see anyone directly (moving policy `RANDOM`). On the opposite, the _survivors_ are locals and can navigate the space even with their eyes closed (moving policy `DIRECT`).
+
+
 
 #align(center, table(columns: 9,
   [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
@@ -327,6 +335,22 @@ By deploying two _drones_, _survivors_ are instructed to reach out to the _first
 
 Due to the single _first-responder_ present on the scene, a lower assist time is crucial to save more individuals. Also, since we cannot change the movement speed, we can only improve the assist time for example by providing better training or better equipment. Lowering $T_"fr"$ allows to increase the survival rate as shown by the experimental results.
 
+Setting the probability of the _drones_ sensor to fail to 10% and the probability of the _survivors_ to listen to the instructions to 40% , we can guarantee that, within T_scs, that at least 2 survivors will be safe ($N%$ = 33%) with a probability of 96.93%.
+The max possible number of survivors saved is 6 with a probability of $N%max$ = 32.40%.
+
+#align(center, grid(columns: 3, gutter: 1cm, align: bottom,
+  figure(
+    image("images/lone_min.png", width: 7cm),
+    caption: [2 safe],
+    numbering: none
+  ),
+  figure(
+    image("images/lone_max.png", width: 7cm),
+    caption: [6 safe],
+    numbering: none
+  )
+))
+
 == Divided branches
 
 First responders arriving on the scene finds a wall of fire dividing the space in two. Due to their training, all the _first-responders_ moves to the nearest _in-need_ (moving policy `DIRECT`). Survivors are also assumed to use the moving policy `DIRECT`.
@@ -343,6 +367,13 @@ When drones are deployed, _survivors_ that are not in need of assistance are ins
 
 Although an improvement is achieved, the survival rates are not improved by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
 
+With or without drones, when excecuting the stochastic qeries we obtain $N%_max$ = $N%$ = 50%.
+
+#figure(
+    image("images/branchProb.png", width: 12cm),
+    caption: [Probability of all survivors being safe after T_scs],
+    numbering: none
+  )
 = Conclusion
 
 In this project, we developed a model using Uppaal to simulate search-and-rescue operations involving survivors, first responders, and drones. The model is quiet flexible and almost every parameter can be changed to suit most simulations.
