@@ -68,10 +68,8 @@ In each of the following sections we will describe the model as it was before th
 
 == State and Parameters Representation
 
-// The model is implemented in Uppaal, a tool that allows to model, validate and verify NTAs and NSTAs.
-
 Each agent type (_survivor_, _first-responder_, _drone_) is represented by an automaton, called *template* in Uppaal. These templates are characterized by many different parameters, and are implemented in Uppaal in the following way:
-- The template signature (the parameters list) contains only one constant parameter, the agent ID, annotated with a custom type defined as an integer with the range of possible IDs (e.g. `typedef int[0, N_DRONES-1] drone_t;`). This way, by listing the template names in the _System declarations_ (`system Drone, Survivor, FirstResponder;`), Uppaal can automatically generate the right number of instances of each template;
+- The template signature (the parameters list) contains only one constant parameter, the agent ID, annotated with a custom type defined as an integer with the range of possible IDs (e.g. `typedef int[0, N_DRONES-1] drone_t;`). This way, by listing the template names in the _System declarations_ (`system Drone, Survivor, FirstResponder;`), Uppaal can automatically generate the right number of instances of each template.
 - The other agents' parameters (e.g. $N_v$, $N_r$, $T_"zr"$, etc.) are defined in constant global arrays (e.g. `const int N_v[drone_t] = {1, 1};`). Each template instance can then index these arrays with its own ID to access its own parameters (e.g. `N_v[id]`).
 
 This setup allows for easily defining the simulation parameters all inside the _Declarations_ section, without modifying either the templates or the _System declarations_, and to easily assign different parameters to each template instance.
@@ -143,11 +141,11 @@ All the moving policies work in the same way: given a target position, they prod
 A move is considered valid if the target is inside the map bounds and the cell is empty, i.e. not occupied by a fire or another agent.
 
 In order to support random choices, the moving policy implementation works as follows:
-- On the edge where we want to perform the move, a non-deterministic selection of offsets `i` and `j` is performed to identify a possible adjacent cell to move to (shown in @moving_policy_edge);
+- On the edge where we want to perform the move, a non-deterministic selection of offsets `i` and `j` is performed to identify a possible adjacent cell to move to (shown in @moving_policy_edge).
 - The function `is_move_valid(i, j)` evaluates whether a given adjacent cell is a valid move or not, for the selected moving policy.
 
 To try out different moving policies, we have implemented 2 simple policies:
-- The *random* policy simply checks if the move is feasible (i.e. whether the cell is not occupied by a fire or another agent). In @moving_policy_random we can see that the move is valid if the cell is empty. By "enabling" all the feasible moves, the model non-deterministically selects one of them;
+- The *random* policy simply checks if the move is feasible (i.e. whether the cell is not occupied by a fire or another agent). In @moving_policy_random we can see that the move is valid if the cell is empty. By "enabling" all the feasible moves, the model non-deterministically selects one of them.
 - The *direct* policy only enables the moves with the lowest direct distance to the target. As shown by @moving_policy_direct, if more than one cell is at the lowest distance, all of them are enabled and a random one among those will be select.
 
 #align(center, grid(columns: 3, gutter: 1cm, align: bottom,
@@ -234,7 +232,7 @@ Note that we built the model so that _survivors_ will never move near a fire, th
 === First-responder
 
 _First-responders_ defaults to moving towards the nearest survivor _in-need_, but can stop moving in 2 cases:
-- When they reach the targeted survivor _in-need_ they start assisting. After $T_"fr"$ the assistance is completed and the survivor _in-need_ is considered safe;
+- When they reach the targeted survivor _in-need_ they start assisting. After $T_"fr"$ the assistance is completed and the survivor _in-need_ is considered safe.
 - When they are asked by a _survivor_ to assist someone _in-need_, they stop moving to wait for the _survivor_ to reach them. This is modeled with a wait equal to the distance between the _survivor_ and the _first-responder_.
 
 === Drone
@@ -252,26 +250,25 @@ To instruct a _survivor_, the _drone_ enters a sequence of states to select the 
 _Drones_ also have a fixed moving pattern that follows a predetermined path. This path is decided prior to the simulation and is not influenced by the state of the map or the agents. This is a simplification to keep the model complexity low and to avoid the need for the _drone_ to plan its path dynamically. The current path is a square with a parametric side length, each _drone_ can be setup with a different dimension and with a specific starting position.
 ]
 
-In the *faster model* after selecting the actor needed to perform an action the _drone_ sends a message to all the actors involved with the total waiting time needed to complete the action.
-
+In the *faster model*, after selecting all the actors to instruct, the _drone_ calculates the total wait time for each actor involved and sends it to them.
 
 = Scenarios & Properties
 
-To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have simulated trough it. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
+To highlight the strength and weaknesses of the model, we have defined a set of scenarios that are designed to test it under different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
 
 For all models, we have established the following parameters, which are scenario-independent and cannot be controlled:
-- $T_v = 30$: The time before an _in-need_ becomes a casualty;
-- $T_"zr" = 10$: The time a zero-responder needs to assist an _in-need_;
-The other parameters are changed to illustrate the functionality and efficiency of the system.
+- $T_v = 30$: The time before an _in-need_ becomes a casualty.
+- $T_"zr" = 10$: The time a zero-responder needs to assist an _in-need_.
+The other parameters are tuned to illustrate the functionality and efficiency of the system.
 
-We always kept T_scs at 60 second to allow the system to reach a stable state before the simulation ends.
+We always kept $T_"scs"$ at 60 time intervals to allow the system to reach a stable state before the simulation ends.
 For each scenario, we calculated:
-- $N%_max$: The maximum percentage of safe individuals over the total number of survivors in T_scs;
-- $N%$: The guaranteed number of safe individuals within T_scs.
+- $N%_max$: The maximum percentage of safe individuals over the total number of survivors within $T_"scs"$.
+- $N%$: The guaranteed number of safe individuals within $T_"scs"$.
 
 All the optional stochastic features have been implemented:
-- The _survivors_ acknowledge the instruction and enact with probability $S#sub[listen]$, and ignore it (or miss it) with probability $1 - S#sub[listen]$. We assume _survivors_ share the same behavior, hence the same probability is used for all of them.
-- The _drones_ vision sensors fail with probability $P#sub[fail]$. We assume _drones_ share the same sensors, hence the same failure probability is used for all of them.
+- The _survivors_ acknowledge the instruction and enact with probability $S_"listen"$, and ignore it (or miss it) with probability $1 - S_"listen"$. We assume _survivors_ share the same behavior, hence the same probability is used for all of them.
+- The _drones_ vision sensors fail with probability $P_"fail"$. We assume _drones_ share the same sensors, hence the same failure probability is used for all of them.
 
 #align(center, grid(columns: 3, gutter: 1cm, align: bottom,
   figure(
@@ -294,51 +291,52 @@ All the optional stochastic features have been implemented:
 == Plane Crash
 
 A plane crashed and it is currently on fire. Passengers exited the plane and are scattered around the map. A single ambulance arrives on the scene, providing the _survivors_ with one exit spot. The area is free of obstacles and _survivors_ and _first-responders_ can clearly see their surroundings, therefore they are configured with the policy `DIRECT`. The scenario is considered to vary depending on two factors:
-- The _drones_ vision range depends on the environment. If the incident is in an open field, the _drones_ have a larger vision range, while in a forest, the vision range is smaller;
-- The ambulance staff may not be prepared to directly assisting the _survivors_, therefore _first-responders_ may not be available.
+- The _drones_ vision range depends on the environment. If the incident is in an open field, the _drones_ have a larger vision range, while in a forest, the vision range is smaller.
+- The ambulance staff may not be prepared to directly assist the _survivors_, therefore _first-responders_ may not be available.
 
-#align(center, table(columns: 9,
-  [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
-  [8], [0], [0], [-], [5], [8], [30], [25%], [25%],
-  [8], [0], [4], [1], [5], [8], [30], [25%], [25%],
-  [8], [0], [4], [2], [5], [8], [30], [37,5%], [50%],
-  [8], [2], [0], [-], [5], [8], [30], [100%], [100%],
-  [8], [2], [4], [1], [5], [8], [30], [100%], [100%],
-))
+#figure(
+  align(center, table(columns: 9,
+    [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
+    [8], [0], [0], [-], [5], [8], [30], [25%], [25%],
+    [8], [0], [4], [1], [5], [8], [30], [25%], [25%],
+    [8], [0], [4], [2], [5], [8], [30], [37,5%], [50%],
+    [8], [2], [0], [-], [5], [8], [30], [100%], [100%],
+    [8], [2], [4], [1], [5], [8], [30], [100%], [100%],
+)), caption: [Plane Crash results]) <plane_crash_results>
 
 The plane crash scenario emphasizes the importance of _first-responders_ in ensuring the safety of survivors. Without _first-responders_, when more civilians are _in-need_ rather than not, there will always be someone _in-need_ that cannot be brought to safety. In this case the presence of _drones_ allows to save some lives, but this is not enough to ensure the safety of all the survivors. When instead _first-responders_ are present, all the survivors can be saved and drones could be superfluous depending on the number of _first-responders_, their training level and moving policy.
 
 Since _drones_ are superfluous in this scenario, _first-responders_ are not influenced by the failure of the drones sensors nor the probability of _survivors_ listening to instructions, therefore running the SMC model yields $N%_max$ = $N%$ = 100%.
+
 #figure(
     image("images/planeProb.png", width: 12cm),
-    caption: [Probability of all survivors being safe after T_scs],
+    caption: [Probability of all survivors being safe after $T_"scs"$],
     numbering: none
   )
 
-== Lone survivor
+== Lone Survivor
 
 During a fire, one _first-responder_ is called to save as many lives as possible. Due to the particular topography and the lack of wind, the space is full of smoke, impeding the _first-responder_ ability to see anyone directly (moving policy `RANDOM`). On the contrary, the _survivors_ are locals and can navigate the space even with their eyes closed (moving policy `DIRECT`).
 
-
-
-#align(center, table(columns: 9,
-  [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
-  [6], [1], [0], [-], [5], [8], [30], [16.7%], [83.3%],
-  [6], [1], [2], [1], [5], [8], [30], [50%], [66.7%],
-  [6], [1], [2], [2], [4], [8], [30], [66.6%], [83.3%],
-  [6], [1], [2], [2], [3], [8], [30], [66.6%], [83.3%],
-  [6], [1], [2], [2], [2], [8], [30], [83.3%], [100%],
-  [6], [1], [2], [2], [1], [8], [30], [83.3%], [100%],
-))
+#figure(
+  align(center, table(columns: 9,
+    [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
+    [6], [1], [0], [-], [5], [8], [30], [16.7%], [83.3%],
+    [6], [1], [2], [1], [5], [8], [30], [50%], [66.7%],
+    [6], [1], [2], [2], [4], [8], [30], [66.6%], [83.3%],
+    [6], [1], [2], [2], [3], [8], [30], [66.6%], [83.3%],
+    [6], [1], [2], [2], [2], [8], [30], [83.3%], [100%],
+    [6], [1], [2], [2], [1], [8], [30], [83.3%], [100%],
+)), caption: [Lone Survivor results]) <lone_survivor_results>
 
 In this scenario, without _drone_ assistance, the _first-responder_ is able to save only a limited number of lives. This depends heavily on his inability to clearly see the survivors and reaching them directly. In very rare cases, the _first-responder_ is lucky enough to reach the _survivors_ in a very short set of moves. This is reflected by extreme values of $N_%$.
 
-By deploying two _drones_, _survivors_ are instructed to reach out to the _first-responder_, and bring him close to the others _in-need_. In this case, the _first-responder_ will reach the group of _in-needs_ consistently more often. This is reflected in an higher $N_"%min"$, meaning that it is guaranteed that more _survivors_ will always be saved. A drawback is that we will always achieve a lower survival rate (i.e. a lower $N_"%max"$). This reflects the fact that the _first-responder_ has to wait more time for the survivor to reach him with respect to the time it would take if it could use the policy `DIRECT`.
+By deploying two _drones_, _survivors_ are instructed to reach out to the _first-responder_, and bring him close to the _in-needs_. In this case, the _first-responder_ will reach the group of _in-need_ consistently more often. This results in an higher $N_"%min"$, meaning that it is guaranteed that more _survivors_ will always be saved, but a lower overall survival rate is achieved, which gives a lower $N_"%max"$. We can attribute this to the fact that the _first-responder_ "wastes" time to wait for the survivor to reach him, when he could be moving towards the _in-need_ directly, had he been using the policy `DIRECT`.
 
-Due to the single _first-responder_ present on the scene, a lower assist time is crucial to save more individuals. Also, since we cannot change the movement speed, we can only improve the assist time for example by providing better training or better equipment. Lowering $T_"fr"$ allows to increase the survival rate as shown by the experimental results.
+Due to a single _first-responder_ being present on the scene, a lower assist time $T_"fr"$ is crucial to save more individuals: lowering $T_"fr"$ increases the survival rate, as shown in @lone_survivor_results.
 
-Setting the probability of the _drones_ sensor to fail to 10% and the probability of the _survivors_ to listen to the instructions to 40% , we can guarantee that, within T_scs, that at least 2 survivors will be safe ($N%$ = 33%) with a probability of 96.93%.
-The max possible number of survivors saved is 6 with a probability of $N%max$ = 32.40%.
+Setting the probability of the _drones_ sensor to fail to 10% and the probability of the _survivors_ to listen to the instructions to 40%, we can guarantee that, within $T_"scs"$, at least 2 survivors will be safe ($N%$ = 33%) with a probability of 96.93%.
+The maximum possible number of survivors saved is 6 with a probability of $N%max$ = 32.40%.
 
 #align(center, grid(columns: 2, gutter: 1cm, align: bottom,
   figure(
@@ -353,40 +351,38 @@ The max possible number of survivors saved is 6 with a probability of $N%max$ = 
   )
 ))
 
-== Divided branches
+== Divided Branches
 
-First responders arriving on the scene finds a wall of fire dividing the space in two. Due to their training, all the _first-responders_ moves to the nearest _in-need_ (moving policy `DIRECT`). Survivors are also assumed to use the moving policy `DIRECT`.
+_First-responders_ arriving on the scene find a wall of fire that splits the area in half. Multiple groups of _in-needs_ are spread on the two sides of the fire. Due to their training (modeled by applying policy `DIRECT`), all _first-responders_ move to the nearest _in-need_. Survivors are also assumed to use the moving policy `DIRECT`.
 
-#align(center, table(columns: 10,
-  [*Description*], [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
-  [No drones], [10], [2], [0], [-], [5], [8], [30], [40%], [60%],
-  [1 drone], [10], [2], [2], [1], [5], [8], [30], [50%], [60%],
-))
+#figure(
+  align(center, table(columns: 10,
+    [*Description*], [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
+    [No drones], [10], [2], [0], [-], [5], [8], [30], [40%], [60%],
+    [1 drone], [10], [2], [2], [1], [5], [8], [30], [50%], [60%],
+)), caption: [Divided Branches results]) <divided_branches_results>
 
-This scenario is designed to test the effectiveness of the model to bring _first-responders_ to all groups of survivors _in-need_. With the moving policy `DIRECT`, _first-responders_ try to reach the save nearest group, and remains in that spot until all the _in-need_ individuals of that group are brought to safety. Even if enough _first-responders_ are deployed to save all _survivors_, they will be stuck on the first group while trying to assist them.
+This scenario is designed to test the effectiveness of the model in bringing _first-responders_ to all groups of _in-needs_. With the moving policy `DIRECT`, _first-responders_ try to reach the nearest group, and move around until all the _in-need_ individuals of that group are brought to safety. Even if enough _first-responders_ are deployed to save all _survivors_, they will be stuck on the first group while trying to assist them, and cannot reach the other groups within $T_"scs"$.
 
-When drones are deployed, _survivors_ that are not in need of assistance are instructed to reach the _first-responders_ to bring them to their group. This effectively spreads out the _first-responders_, solving the policy's limitation. This is reflected in an higher $N_"%min"$, meaning that more _survivors_ are guaranteed to be saved.
+When drones are deployed, _survivors_ that are not in need of assistance are instructed to reach the _first-responders_ to bring them to their group. This effectively spreads out the _first-responders_, solving the policy `DIRECT`'s limitation. This is evidenced by an higher $N_"%min"$, meaning that more _in-need_ are guaranteed to be saved.
 
-Although an improvement is achieved, the survival rates are not improved by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
+Although an improvement is achieved, the overall survival rates are not improved by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate, either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
 
-With or without drones, when executing the stochastic queries we obtain $N%_max$ = $N%$ = 50%.
+For the reasons we just described, drones don't seem to be affecting stochastic queries for this scenario, as we obtain $N%_max$ = $N%$ = 50% in both cases.
 
 #figure(
   image("images/branchProb.png", width: 12cm),
-  caption: [Probability of all survivors being safe after T_scs],
+  caption: [Probability of all survivors being safe after $T_"scs"$],
   numbering: none
 )
 
 = Conclusion
 
-In this project, we developed a model using Uppaal to simulate search-and-rescue operations involving survivors, first responders, and drones. The model is quiet flexible and almost every parameter can be changed to suit most simulations.
+For this project, we developed a model using Uppaal to simulate and formally verify search-and-rescue operations involving survivors, first responders, and drones. The model is quite flexible and almost every parameter can be tuned to suit most simulations.
 
-Developing two models allowed us at first to create a complex but true to life model, capable of simulating easier scenarios in a more expressive and easy to understand way, and then by simplifying it to understand what was essential and what could be removed in order to speed up simulation time while maintaining the same core functionalities.
+Developing two models allowed us to first create a complex but true-to-life system, capable of simulating simpler scenarios in a natural way that was easy to follow. We then proceeded to simplify it to keep the essential parts only, to lower simulation cost and verification time dramatically while maintaining functionality.
 
-Statistical model checking introduces uncertainty allowing us to understand the model's behavior in a more realistic scenario, where agents can make mistakes or fail to perform their tasks.
-
-In conclusion, our graphical interface allows us to easily create different scenarios and our model enable us to study them, maximizing the survival rate by assessing the effect that changes in different parameters have on the system.
-
+Statistical model checking introduces uncertainties that allowed us to understand the model's behavior in a more realistic scenario, where agents can make mistakes or fail to perform their tasks.
 
 #pagebreak()
 
@@ -394,7 +390,7 @@ In conclusion, our graphical interface allows us to easily create different scen
 
 == Simulation Graphical Tool
 
-To facilitate the development of the model we've created a graphical tool capable of visually represent and interact with the simulation model. The tool supports 3 working modes: editor, trace visualizer and live visualizer.
+To facilitate the development of the model we've created a graphical tool capable of visually representing and interacting with the simulation model. The tool supports 3 working modes: editor, trace visualizer and live visualizer.
 
 Creating a simulation scenario requires deciding on various parameters, such as the map dimensions, agent placements, locations of fires and exits, and specific agent parameters like a _drone_'s vision range. To facilitate the placement of entities on the map, the graphical tool can be launched in editor mode. This mode enables selective placement of entities through a combination of mouse and keyboard inputs:
 - Clicking the mouse places an entity in a cell.
