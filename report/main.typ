@@ -262,7 +262,6 @@ All the optional stochastic features have been implemented:
 
 To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have simulated trough it. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
 
-
 For all models, we have established the following parameters, which are scenario-independent and cannot be controlled:
 - $T_v = 30$: The time before an _in-need_ becomes a casualty;
 - $T_"zr" = 10$: The time a zero-responder needs to assist an _in-need_;
@@ -292,27 +291,57 @@ For each scenario, we calculated:
 
 == Plane Crash
 
-Plane goes kaboom.
+A plane crashed and it is currently on fire. Passengers exited the plane and are scattered around the map. A single ambulance arrives on the scene, providing the _survivors_ with one exit spot. The area is free of obstacles and _survivors_ and _first-responders_ can clearly see their surroundings, therefore they are configured with the policy `DIRECT`. The scenario is considered to vary depending on two factors:
+- The _drones_ vision range depends on the environment. If the incident is in an open field, the _drones_ have a larger vision range, while in a forest, the vision range is smaller;
+- The ambulance staff may not be prepared to directly assisting the _survivors_, therefore _first-responders_ may not be available.
+
+#align(center, table(columns: 9,
+  [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
+  [8], [0], [0], [-], [5], [8], [30], [25%], [25%],
+  [8], [0], [4], [1], [5], [8], [30], [25%], [25%],
+  [8], [0], [4], [2], [5], [8], [30], [37,5%], [50%],
+  [8], [2], [0], [-], [5], [8], [30], [100%], [100%],
+  [8], [2], [4], [1], [5], [8], [30], [100%], [100%],
+  [8], [2], [4], [2], [5], [8], [30], [75%], [100%],
+))
+
+The plane crash scenario emphasizes the importance of _first-responders_ in ensuring the safety of survivors. Whithout _first-responders_, when more civilians are _in-need_ rather than not, there will always be someone _in-need_ that cannot be brought to safety. In this case the presence of _drones_ allows to save some lives, but this is not enough to ensure the safety of all the survivors. When instead _first-responders_ are present, all the survivors can be saved and drones could be superfluous depending on the number of _first-responders_, their training level and moving policy.
 
 == Lone survivor
-During a fire a _first-responder_ is called to save as many lives as possible. Due to the geometry and the poor ventilation the space is full of smoke, impeding the _first-responder_ ability to see any in need directly (moving policy random).
-In this scenario, without drone assistance, the _first-responder_ is able to save at most $N%_max$ =  83.33% and at minimum $N%$ = 16.67% depending on the random path.
 
-By activating the system with $N_v$ = 1 and $N_r$ = 2, the _drone_ instruct a survivor to bring a  _first-responder_ to the in-need. Effectively the _first-responder_ needs to wait more time, but it always reach the group of in needs obtaining  $N%_max$ = 66.67% (lower due to wait) but improving the minimum saved to $N%$ = 50%.
+During a fire, one _first-responder_ is called to save as many lives as possible. Due to the particular topography and the lack of wind, the space is full of smoke, impeding the _first-responder_ ability to see anyone directly (moving policy `RANDOM`). On the opposite, the _survivors_ are locals and can navigate the space even with their eyes closed (moving policy `DIRECT`).
 
-In this scenario, the _first-responder_ is too slow to reach and heal the in-need to save more individuals. Since we cannot change the speed of the _first-responder_, we can only improve the assist time to $T_"fr" = 1$, (in a real-world scenario, this could be achieved through better training or better equipment), resulting in $N%_max$ =  100% and $N%$ = 83.33%. This is the configuration presented in faster_model_scenario_2.
+#align(center, table(columns: 9,
+  [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
+  [6], [1], [0], [-], [5], [8], [30], [16.7%], [83.3%],
+  [6], [1], [2], [1], [5], [8], [30], [50%], [66.7%],
+  [6], [1], [2], [2], [4], [8], [30], [66.6%], [83.3%],
+  [6], [1], [2], [2], [3], [8], [30], [66.6%], [83.3%],
+  [6], [1], [2], [2], [2], [8], [30], [83.3%], [100%],
+  [6], [1], [2], [2], [1], [8], [30], [83.3%], [100%],
+))
 
-This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving randomly) to a group of survivors _in-need_. A single _survivor_ is placed in a corner of the map near a group of _in-need_, with the _first-responder_ located in the opposite corner. The _survivor_ is tasked by the _drone_ to fetch the _first-responder_ and must navigate through the map to reach them and assist the _in-need_ individuals. After that, the _first-responder_ will start helping all the _in-need_ survivors nearby until either all are dead or safe.
+In this scenario, without _drone_ assistance, the _first-responder_ is able to save a limited number of lives. This depends heavily on his inability to clearly see the survivors and reaching them directly. In very rare cases, the _first-responder_ is lucky enough to reach the _survivors_ in a very short set of moves. This is reflected by extreme values of $N_%$.
+
+By deploying two _drones_, _survivors_ are instructed to reach out to the _first-responder_, and bring him close to the others _in-need_. In this case, the _first-responder_ will reach the group of _in-needs_ consistently more often. This is reflected in an higher $N_"%min"$, meaning that it is guaranteed that more _survivors_ will always be saved. A drawback is that we will always achieve a lower survival rate (i.e. a lower $N_"%max"$). This reflects the fact that the _first-responder_ has to wait more time for the survivor to reach him with respect to the time it would take if it could use the policy `DIRECT`.
+
+Due to the single _first-responder_ present on the scene, a lower assist time is crucial to save more individuals. Also, since we cannot change the movement speed, we can only improve the assist time for example by providing better training or better equipment. Lowering $T_"fr"$ allows to increase the survival rate as shown by the experimental results.
 
 == Divided branches
 
-First responders arriving on the scene finds a wall of fire dividing the space in two. Due to their training, all the _first-responders_ moves to the nearest _in-need_ (Moving policy `DIRECT`), even when seeing another _first-responder_ going in that direction. This causes the _first-responders_ to focus first on the nearest group of survivors, and then on the group on the other side of the wall, reaching it too late.
+First responders arriving on the scene finds a wall of fire dividing the space in two. Due to their training, all the _first-responders_ moves to the nearest _in-need_ (moving policy `DIRECT`). Survivors are also assumed to use the moving policy `DIRECT`.
 
-This scenario is designed to test the effectiveness of the model in bringing _first-responders_ to all groups of _in-need_ individuals, increasing the chance of more survivors reaching safety. When using the policy `DIRECT`, _first-responders_ try to reach the nearest _in-need_, and after assisting him they go to the next closest, and so on. Without _drones_ assistance, all the _first-responders_ would go to the same group of _in-need_, leaving the others to die. With our system, the _first-responders_ get split assisting both groups.
+#align(center, table(columns: 10,
+  [*Description*], [*$N_"SURV."$*], [*$N_"FR"$*], [*$N_"DRONES"$*], [*$N_v$*], [*$T_"fr"$*], [*$T_"zr"$*], [*$T_v$*], [*min $N_%$*], [*max $N_%$*],
+  [No drones], [10], [2], [0], [-], [5], [8], [30], [40%], [60%],
+  [1 drone], [10], [2], [2], [1], [5], [8], [30], [50%], [60%],
+))
 
-As before, we first check the survivor rate of the model without drones, obtaining $N%_max$ = 60% and $N%$ = 40%.
+This scenario is designed to test the effectiveness of the model to bring _first-responders_ to all groups of survivors _in-need_. With the moving policy `DIRECT`, _first-responders_ try to reach the save nearest group, and remains in that spot until all the _in-need_ individuals of that group are brought to safety. Even if enough _first-responders_ are deployed to save all _survivors_, they will be stuck on the first group while compiting to assist them.
 
-By turning on the system with $N_v$ = 1 and $N_r$ = 2, we obtain $N%_max$ = 60% and $N%$ = 50% improving the result, but not by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
+When drones are deployed, _survivors_ that are not in need of assistance are instructed to reach the _first-responders_ to bring them to their group. This effectively spreads out the _first-responders_, solving the policy's limitation. This is reflected in an higher $N_"%min"$, meaning that more _survivors_ are guaranteed to be saved.
+
+Although an improvement is achieved, the survival rates are not improved by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
 
 = Conclusion
 
