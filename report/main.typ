@@ -30,24 +30,24 @@ This document presents a formal model implemented with #link("https://uppaal.org
 
 = High-Level Model Description
 
-The model adopted for the search-and-rescue mission involves 3 different types of agents: _survivors_, _first-responders_ and _drones_. They are placed in different numbers inside a rectangular map, where exits (i.e. safe zones reached by _survivors_ to get to safety) and fires are fixed in place from the beginning of the simulation.
+The model adopted for the search-and-rescue mission involves 3 different types of agents: _survivors_, _first-responders_ and _drones_. They are placed in different amount inside a rectangular map, where exits (i.e. safe zones reached by _survivors_ to get to safety) and fires are fixed in place from the beginning of the simulation.
 
-The key characteristics of the agents are these:
-- *Survivors*: Can be in 3 different states, depending whether they find themselves near a fire or if they are following instructions.
-  - *In-need* (i.e. near a fire): They cannot move and needs to be assisted. After $T_v$ time units, they became a casualty and die.
+The key characteristics of the agents are the following:
+- *Survivors*: They can be in 3 different states, depending on whether they find themselves near a fire or if they are following instructions.
+  - *In-need* (i.e. near a fire): They cannot move and need to be assisted. After $T_v$ time units, they became a casualty and die.
   - *Busy* (acting as _zero-responders_): The _survivor_ is following an instruction and can be either assisting directly or contacting a _first-responder_ to get help.
-  - *Moving*: When _survivors_ are not near a fire or busy enacting some instruction, they can move towards an exit to get to safety following some _moving policy_.
+  - *Moving*: When _survivors_ are not near a fire or busy enacting instructions, they can move towards an exit to get to safety following some _moving policy_.
 - *First-responders*:
   - *Assisting*: When a survivor _in-need_ is within a 1-cell range, the _first-responder_ will assist them for $T_"fr"$ time units. After that, the assisted _survivor_ is considered safe.
   - *Moving*: When free from other tasks, the _first-responder_ can move following some _moving policy_.
-- *Drones*: They survey their surroundings, limited by the field of view $N_v$ of the sensors, and following a pre-determined path moving 1 cell at each time step. When two _survivors_, one _in-need_ and one free, are detected, the _drone_ can instruct the free _survivor_ to assist the one _in-need_ directly or to contact a _first-responder_.
+- *Drones*: They survey their surroundings, limited by the field of view $N_v$ of their sensors, following a pre-determined path, moving 1 cell at each time step. When two _survivors_, one _in-need_ and one free, are detected, the _drone_ can instruct the free _survivor_ to assist the one _in-need_ directly, or to contact a _first-responder_.
 
 == Model Assumptions
 
 To simplify the model described in the assignment, the following assumptions have been made:
 - The map is a 2D grid with a fixed number of rows and columns, and fires and exits are static (i.e. they won't change during simulation).
-- Movements from one cell to another allows for diagonal movements. Therefore, the distance can be easily computed as the maximum between the difference of the x and y coordinates.
-- Movements of _survivors_ and _first-responders_ towards a human target (e.g. a _survivor_ goes to a _first-responder_), are modeled with a wait state, where the agents remains idle for the duration of the movement, and then with a change in coordinates. This reduces the complexity of the model, lowering the number of states of the simulation and thus speeding up the verification process.
+- Diagonal movements from one cell to another are allowed. Therefore, the distance can be easily computed as the maximum between the difference of the x and y coordinates.
+- The movement of _survivors_ and _first-responders_ towards a human target (e.g. a _survivor_ goes to a _first-responder_) is modeled with a wait state, where the agents remain idle for the duration of the movement, and then the coordinates are set to the target position. This reduces the complexity of the model, lowering the number of states of the simulation and thus speeding up the verification process.
 - _Drones_ know the global position of all the _first-responders_ and their status, at any given time. This allows them to instruct _survivors_ to contact the nearest _first-responder_.
 - All _survivors_ know the location of the exits and can determine the nearest one.
 - _Survivors_ cannot start the simulation inside a fire cell.
@@ -58,11 +58,11 @@ To simplify the model described in the assignment, the following assumptions hav
 
 == Faster Model <faster_model>
 
-After developing the model described below we discovered that the verification process was too slow, making it difficult to test different scenarios and configurations. To speed up the verification process, we have made some changes to the model described in the following sections. Instead of modeling the interaction between the actors, as they happen in real life, we model only the necessary part of it. Instead of the actors moving on the map, we model the movement as a wait states. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before teleport to the target position. If a movement is composed of different steps ( i.e. _zero-responder_ going to call a _fist-responder_ and then back to the _in-need_) it is now modelled as a unique wait state of the time needed to travel that distance. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
+After developing the model described below we discovered that the verification process was too slow, making it difficult to test different scenarios and configurations. To speed up the verification process, we have made some changes to the model described in the following sections. Instead of modeling the interaction between the actors as they would play out in real life, we only model the necessary parts of it. Instead of the actors moving on the map, we model the movement as a wait states. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before "teleporting" to the target position. If a movement is composed of different steps (i.e. _zero-responder_ goes to call a _fist-responder_ and then back to the _in-need_), it is now modeled as a single wait state that waits for the time needed to travel the full path. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
 
 When a _drone_ detects a survivor _in-need_ and a _zero-responder_ (and a _first-responder_ if needed), it sends a message to the _zero-responder_ with the correct wait time (depending on the distance and the assistance time). The same applies to the _first-responder_ (if needed) and the _in-need_, so that the _in-need_ waits either until they are dead or the wait time has expired (becoming safe).
 
-To reduce computation, frequently used variables are stored in global variables, i.e. instead of searching for the position of an actor in the map we store it in a global variable.
+To reduce computations, frequently used values are stored in global variables for quicker access during iteration. For instance, instead of scanning the whole map grip for the position of an actor, we store positions in a global array indexed by the survivor ID and access the array sequentially, turning a $O(n^2)$ operation into a $O(n)$ one.
 
 In each of the following sections we will describe the model as it was before the changes, and then we will describe the changes made to the model.
 
@@ -71,12 +71,13 @@ In each of the following sections we will describe the model as it was before th
 // The model is implemented in Uppaal, a tool that allows to model, validate and verify NTAs and NSTAs.
 
 Each agent type (_survivor_, _first-responder_, _drone_) is represented by an automaton, called *template* in Uppaal. These templates are characterized by many different parameters, and are implemented in Uppaal in the following way:
-- The template signature (the parameters list) contains only one constant parameter, the agent id, annotated with a custom type defined as an integer with the range of possible ids (e.g. `typedef int[0, N_DRONES-1] drone_t;`). This way, by listing the template names in the _System declarations_ (`system Drone, Survivor, FirstResponder;`), Uppaal can automatically generate the right number of instances of each template;
-- The other agents' parameters (e.g. $N_v$, $N_r$, $T_"zr"$, etc.) are defined in constant global arrays (e.g. `const int N_v[drone_t] = {1, 1};`). Each template instance can then index these arrays with its own id to access its own parameters (e.g. `N_v[id]`).
+- The template signature (the parameters list) contains only one constant parameter, the agent ID, annotated with a custom type defined as an integer with the range of possible IDs (e.g. `typedef int[0, N_DRONES-1] drone_t;`). This way, by listing the template names in the _System declarations_ (`system Drone, Survivor, FirstResponder;`), Uppaal can automatically generate the right number of instances of each template;
+- The other agents' parameters (e.g. $N_v$, $N_r$, $T_"zr"$, etc.) are defined in constant global arrays (e.g. `const int N_v[drone_t] = {1, 1};`). Each template instance can then index these arrays with its own ID to access its own parameters (e.g. `N_v[id]`).
 
-This setup allows for easily defining the simulation parameters all inside the _Declarations_ section, thus without modifying either the templates or the _System declarations_, and to easily assign different parameters to each template instance.
+This setup allows for easily defining the simulation parameters all inside the _Declarations_ section, without modifying either the templates or the _System declarations_, and to easily assign different parameters to each template instance.
 
-In the *faster model* some of the agents parameters are stored in variables, not arrays, loosing the possibility to specify different parameters for each agent but reducing the complexity of the drone template.
+In the *faster model* some of the agents' parameters are stored in variables, not arrays, losing the ability of specifying different parameters for each agent, but reducing the complexity of the drone template.
+
 === Map Representation
 
 #wrap-content(rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
@@ -98,11 +99,11 @@ typedef int[0, 8] cell_t;
 cell_t map[N_COLS][N_ROWS];
 ```
 ]), align: right)[
-Despite each agent holding internally its own position, a global representation of the map is needed for agents who require to know the state of other agents (e.g. _drones_ need to know the position of _first-responders_ to instruct _survivors_ to contact them).
+Despite each agent holding its own position internally, a global representation of the map is needed for agents that require to know the state of other agents (e.g. _drones_ need to know the position of _first-responders_ to instruct _survivors_ to contact them).
 
-The map is represented as a 2D grid of cells, with each cell indicating which type of human agent is within. This choice is made to avoid each agent holding a reference to all other agents, which would make the model more complex and harder to maintain.
+The map is represented as a 2D grid of cells, with each cell indicating the type of human agent occupying it. This avoids each agent needing to hold a reference to all other agents, which would make the model more complex and harder to maintain.
 
-When one agent changes position, it updates the map accordingly. For example, when a _survivor_ moves, it empties the cell it was occupying and fills the new cell with its type.
+When one agent changes position, it updates the map accordingly. For example, when a _survivor_ moves, it empties the cell it was previously occupying and sets the new cell to its type.
 ]
 
 #align(center, rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
@@ -116,7 +117,7 @@ When one agent changes position, it updates the map accordingly. For example, wh
 ```
 ]))
 
-In the *faster model* other then the map the position of each actor (and exit) is stored in an array and updated at each movement to reduce calculation in the following templates.
+In the *faster model*, other than in the map, the position of each actor (and exit) is stored in an array and updated at each movement to reduce calculations in the following templates.
 
 == Synchronization and Message Passing
 
@@ -130,23 +131,24 @@ Following the previous example, the synchronization follows these steps:
 
 #align(center, image("images/Synchronization and message passing.png", width: auto))
 
-In the *faster model* the message passing is simplified by only passing, to all the actors involved, the total waiting time needed to complete the action.
-This could be a drone passing the waiting time to a _zero-responder_ , _in-need_ and _first-responder_ (if present) or a _first-responder_ passing the waiting time to the _in-need_.
+In the *faster model* the messages passed to all the actors involved only contain the total waiting time needed to complete the action.
+This could be a drone passing the wait time to a _zero-responder_ , _in-need_ and _first-responder_ (if present) or a _first-responder_ passing the wait time to the _in-need_.
+
 == Moving Policies
 
 Both _survivors_ and _first-responders_ are characterized by a custom moving policy. _Survivors_ use this moving policy to reach the nearest exit, while _first-responders_ use it to reach a _survivor_ in need of assistance.
 
-These moving policies all function in the same way; given a target position, they produce the next move to take towards the target. Therefore, they can be abstracted and implemented in a generalized way.
+All the moving policies work in the same way: given a target position, they produce the next move to take towards the target. Therefore, they can be abstracted and implemented in a generalized way.
 
-A move is considered valid if the target is in the map bound and the cell is empty, i.e. not occupied by a fire or another agent.
+A move is considered valid if the target is inside the map bounds and the cell is empty, i.e. not occupied by a fire or another agent.
 
 In order to support random choices, the moving policy implementation works as follows:
 - On the edge where we want to perform the move, a non-deterministic selection of offsets `i` and `j` is performed to identify a possible adjacent cell to move to (shown in @moving_policy_edge);
-- The function `is_move_valid(i, j)` evaluates whether a given adjacent cell is a valid move or not, using the selected moving policy.
+- The function `is_move_valid(i, j)` evaluates whether a given adjacent cell is a valid move or not, for the selected moving policy.
 
-To experiment with different moving policies, we have implemented 2 simple policies:
+To try out different moving policies, we have implemented 2 simple policies:
 - The *random* policy simply checks if the move is feasible (i.e. whether the cell is not occupied by a fire or another agent). In @moving_policy_random we can see that the move is valid if the cell is empty. By "enabling" all the feasible moves, the model non-deterministically selects one of them;
-- The *direct* policy enables only the moves with the lowest direct distance to the target. As shown by @moving_policy_direct, if more than one adjacent cell has the same distance to the target, the policy enables all of them and the model will randomly select among those.
+- The *direct* policy only enables the moves with the lowest direct distance to the target. As shown by @moving_policy_direct, if more than one cell is at the lowest distance, all of them are enabled and a random one among those will be select.
 
 #align(center, grid(columns: 3, gutter: 1cm, align: bottom,
   [#figure(
@@ -188,7 +190,7 @@ bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
 ```
 ])
 
-Both moving are not changed in the *faster model* except for using the position of actors stored in the global arrays when needed.
+Both moving policies remain unchanged in the *faster model*, the only difference being using the position of actors stored in the global arrays for quicker access.
 
 == Templates
 
@@ -227,7 +229,7 @@ Other _survivors_ who are not near a fire default to moving towards an exit, fol
 - If they receive an instruction from a _drone_ to directly assist someone _in-need_ or call a _first-responder_, they stop targeting an exit and start following the instruction. In both cases, the _survivor_ reaching the new target is modeled by waiting for a duration equal to the distance to the target, rather than actually moving on the map. Although this does not accurately model the simulated scenario, particularly the interaction between moving agents on the map, it is necessary to keep the model simple and maintain acceptable verification times.
 - When they have no available moves. This could be due to the map topology blocking the _survivor_'s path or the moving policy not allowing any moves. For example, the `DIRECT` moving policies presented earlier can potentially lead to a _survivor_ being stuck in a loop where moving around an obstacle frees the previous cell, which is then re-selected. We deemed these cases acceptable because we considered it reasonable for the map topology to present challenges and for civilians to struggle in finding the proper path.
 
-Note that we built the model such that _survivors_ will never move near a fire, thus they cannot become _in-need_ during the simulation.
+Note that we built the model so that _survivors_ will never move near a fire, therefore they cannot become _in-need_ during the simulation if they do not start as such.
 
 === First-responder
 
@@ -237,9 +239,9 @@ _First-responders_ defaults to moving towards the nearest survivor _in-need_, bu
 
 === Drone
 
-_Drones_ are equipped with vision sensors capable of detecting _survivors_ within a predetermined range $N_v$. When they detect both a "free" _survivor_ (a.k.a. _zero-responder_) and someone _in-need_, they can instruct the _survivor_ to assist.
+_Drones_ are equipped with vision sensors capable of detecting _survivors_ within a pre-determined range $N_v$. When they detect both a "free" _survivor_ and one _in-need_, they instruct the _survivor_ to assist.
 
-When a possible _zero-responder_ and someone _in-need_ are in range of the sensors, the _drone_ start a sequence to select the agents to involve in a particular command. It first selects the possible _zero-responder_, it selects the survivor _in-need_ and then, depending on whether there is at least one _first-responder_ available or not, decides whether to make the _zero-responder_ assist directly or making him call a _first-responder_ which is then selected.
+To instruct a _survivor_, the _drone_ enters a sequence of states to select the agents to involve in a particular command. It first selects the "free" _survivor_ and the survivor _in-need_, then depending on the number of available _first-responder_, decides whether to make the _survivor_ act as a _zero-responder_ and assist the _in-need_ directly, or select a _first-responder_ to be called by the _survivor_, which will then perform the assistance.
 
 #wrap-content(
   figure(
@@ -306,7 +308,7 @@ A plane crashed and it is currently on fire. Passengers exited the plane and are
 
 The plane crash scenario emphasizes the importance of _first-responders_ in ensuring the safety of survivors. Without _first-responders_, when more civilians are _in-need_ rather than not, there will always be someone _in-need_ that cannot be brought to safety. In this case the presence of _drones_ allows to save some lives, but this is not enough to ensure the safety of all the survivors. When instead _first-responders_ are present, all the survivors can be saved and drones could be superfluous depending on the number of _first-responders_, their training level and moving policy.
 
-Since _drones_ are superfluous in this scenario _first_responders_ are not influenced by the failure of the drones sensors nor the probability of the _survivors_ to listen to the instructions, running the smc model yeld the same result that $N%_max$ = $N%$ = 100% independently from the probability parameters.
+Since _drones_ are superfluous in this scenario, _first-responders_ are not influenced by the failure of the drones sensors nor the probability of _survivors_ listening to instructions, therefore running the SMC model yields $N%_max$ = $N%$ = 100%.
 #figure(
     image("images/planeProb.png", width: 12cm),
     caption: [Probability of all survivors being safe after T_scs],
@@ -315,7 +317,7 @@ Since _drones_ are superfluous in this scenario _first_responders_ are not influ
 
 == Lone survivor
 
-During a fire, one _first-responder_ is called to save as many lives as possible. Due to the particular topography and the lack of wind, the space is full of smoke, impeding the _first-responder_ ability to see anyone directly (moving policy `RANDOM`). On the opposite, the _survivors_ are locals and can navigate the space even with their eyes closed (moving policy `DIRECT`).
+During a fire, one _first-responder_ is called to save as many lives as possible. Due to the particular topography and the lack of wind, the space is full of smoke, impeding the _first-responder_ ability to see anyone directly (moving policy `RANDOM`). On the contrary, the _survivors_ are locals and can navigate the space even with their eyes closed (moving policy `DIRECT`).
 
 
 
@@ -329,7 +331,7 @@ During a fire, one _first-responder_ is called to save as many lives as possible
   [6], [1], [2], [2], [1], [8], [30], [83.3%], [100%],
 ))
 
-In this scenario, without _drone_ assistance, the _first-responder_ is able to save a limited number of lives. This depends heavily on his inability to clearly see the survivors and reaching them directly. In very rare cases, the _first-responder_ is lucky enough to reach the _survivors_ in a very short set of moves. This is reflected by extreme values of $N_%$.
+In this scenario, without _drone_ assistance, the _first-responder_ is able to save only a limited number of lives. This depends heavily on his inability to clearly see the survivors and reaching them directly. In very rare cases, the _first-responder_ is lucky enough to reach the _survivors_ in a very short set of moves. This is reflected by extreme values of $N_%$.
 
 By deploying two _drones_, _survivors_ are instructed to reach out to the _first-responder_, and bring him close to the others _in-need_. In this case, the _first-responder_ will reach the group of _in-needs_ consistently more often. This is reflected in an higher $N_"%min"$, meaning that it is guaranteed that more _survivors_ will always be saved. A drawback is that we will always achieve a lower survival rate (i.e. a lower $N_"%max"$). This reflects the fact that the _first-responder_ has to wait more time for the survivor to reach him with respect to the time it would take if it could use the policy `DIRECT`.
 
