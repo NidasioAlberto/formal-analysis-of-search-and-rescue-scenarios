@@ -30,11 +30,11 @@ This document presents a formal model implemented with #link("https://uppaal.org
 
 = High-Level Model Description
 
-The model adopted for the search-and-rescue mission involves 3 different types of agents: _survivors_, _first-responders_ and _drones_. They are placed in different numbers inside a rectangular map, where exits (i.e. safe zones reached by _survivors_ to get to safety) and fires are fixed in place from the beginning of the scenario.
+The model adopted for the search-and-rescue mission involves 3 different types of agents: _survivors_, _first-responders_ and _drones_. They are placed in different numbers inside a rectangular map, where exits (i.e. safe zones reached by _survivors_ to get to safety) and fires are fixed in place from the beginning of the simulation.
 
 The key characteristics of the agents are these:
 - *Survivors*: Can be in 3 different states, depending whether they find themselves near a fire or if they are following instructions.
-  - *In-need* (i.e. near a fire): They cannot move and needs to be assisted. After $T_v$ time units, they became a casualty.
+  - *In-need* (i.e. near a fire): They cannot move and needs to be assisted. After $T_v$ time units, they became a casualty and die.
   - *Busy* (acting as _zero-responders_): The _survivor_ is following an instruction and can be either assisting directly or contacting a _first-responder_ to get help.
   - *Moving*: When _survivors_ are not near a fire or busy enacting some instruction, they can move towards an exit to get to safety following some _moving policy_.
 - *First-responders*:
@@ -58,11 +58,11 @@ To simplify the model described in the assignment, the following assumptions hav
 
 == Faster Model <faster_model>
 
-After developing the model described below we discovered that the verification process was too slow, making it difficult to test different scenarios and configurations. To speed up the verification process, we have made some changes to the model described in the following sections. Instead of modeling the interaction between the actors, as they happen in real life, we model only the necessary part of it. Instead of having the actors move on the map, we model the movement as a wait state. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before teleport to the target position. If a movement is composed of different steps ( i.e. _zero-responder_ going to call a _fist-responder_ and then back to the _in-need_) it is now modelled as a unique wait state of the time needed to travel that distance. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
+After developing the model described below we discovered that the verification process was too slow, making it difficult to test different scenarios and configurations. To speed up the verification process, we have made some changes to the model described in the following sections. Instead of modeling the interaction between the actors, as they happen in real life, we model only the necessary part of it. Instead of the actors moving on the map, we model the movement as a wait states. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before teleport to the target position. If a movement is composed of different steps ( i.e. _zero-responder_ going to call a _fist-responder_ and then back to the _in-need_) it is now modelled as a unique wait state of the time needed to travel that distance. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
 
 When a _drone_ detects a survivor _in-need_ and a _zero-responder_ (and a _first-responder_ if needed), it sends a message to the _zero-responder_ with the correct wait time (depending on the distance and the assistance time). The same applies to the _first-responder_ (if needed) and the _in-need_, so that the _in-need_ waits either until they are dead or the wait time has expired (becoming safe).
 
-To reduce computation frequently used variables are stored in global variables, i.e. instead of searching for the position of an actor in the map we store it in a global variable.
+To reduce computation, frequently used variables are stored in global variables, i.e. instead of searching for the position of an actor in the map we store it in a global variable.
 
 In each of the following sections we will describe the model as it was before the changes, and then we will describe the changes made to the model.
 
