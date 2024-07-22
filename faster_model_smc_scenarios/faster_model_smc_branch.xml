@@ -51,7 +51,7 @@ typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
  * Survivors: 8
  * First responders: 2
  */
-
+/*
 const map_id_t map_id = MAP_SCENARIO_1;
 
 // Map size
@@ -87,7 +87,7 @@ const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY
 const int N_EXIT_BLOCK = 2;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
 const pos_t exit_pos[exit_t] = {{5, 0}, {6, 0}};
-
+*/
 /**
  * Scenario 2: Lone survivor
  *
@@ -142,7 +142,7 @@ const pos_t exit_pos[exit_t] = {{9, 4}, {9, 5}};
  * First responders: 2
  * Drones: 4
  */
-/*
+
 const map_id_t map_id = MAP_SCENARIO_3;
 
 // Map size
@@ -178,7 +178,7 @@ const policy_t first_resp_policies[first_resp_t] = {POLICY_DIRECT_SINGLE, POLICY
 const int N_EXIT_BLOCK = 4;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
 const pos_t exit_pos[exit_t] = {{7, 0}, {8, 0}, {14, 7}, {14, 8}};
-*/
+
 /**
  * Scenario 4: Professor's example scenario
  *
@@ -1326,6 +1326,8 @@ progress { safe_survivors + dead_survivors; }
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 20:27:41 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[]
@@ -1334,6 +1336,8 @@ forall (i : drone_t)
 		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
 		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 20:32:24 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[]
@@ -1344,50 +1348,264 @@ forall (i : survivor_t)
 			   not Survivor(i).Safe &amp;&amp; not Survivor(j).Safe)  imply
 		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 20:37:39 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : survivor_t) Survivor(i).Safe || Survivor(i).Dead</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 21:12:19 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 21:16:47 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 21:24:28 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-22 21:28:50 +0200">
+				<details>6</details>
+			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
+			<result outcome="success" type="quantity" value="4" timestamp="2024-07-22 21:33:12 +0200">
+				<details>4</details>
+			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-22 21:37:36 +0200">
+				<details>6</details>
+			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
 			<comment/>
+			<result outcome="success" type="quantity" value="4" timestamp="2024-07-22 21:42:08 +0200">
+				<details>4</details>
+			</result>
 		</query>
 		<query>
 			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-07-22 21:47:21 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>
 			<comment/>
+			<result outcome="failure" type="quality" timestamp="2024-07-22 21:52:40 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SAFE)</formula>
 			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2024-07-22 21:52:40 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.333333)" color="0x0000ff" encoding="csv">23.0,0.25
+23.333333333333332,0.375
+23.666666666666668,0.041666666666666664
+24.0,1.5416666666666667
+24.333333333333332,0.125
+24.666666666666668,0.0
+25.0,0.375
+25.333333333333332,0.0
+25.666666666666668,0.0
+26.0,0.2916666666666667
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,1.5416666666666665
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.333333)" color="0xa0a0ff" encoding="csv">23.0,0.172608584683674
+23.333333333333332,0.22407193574325335
+23.666666666666668,0.07497131085391912
+24.0,0.6334997211807669
+24.333333333333332,0.11697481982594136
+24.666666666666668,0.04994408370585468
+25.0,0.22407193574325335
+25.333333333333332,0.04994408370585468
+25.666666666666668,0.04994408370585468
+26.0,0.19011034044555922
+					</series>
+					<series title="lower limit" type="b(0.333333)" color="0x0000ff" encoding="csv">23.0,0.031197509141384482
+23.333333333333332,0.05878331705656036
+23.666666666666668,3.515744052335976E-4
+24.0,0.393100046479662
+24.333333333333332,0.008676497316343764
+24.666666666666668,0.0
+25.0,0.05878331705656036
+25.333333333333332,0.0
+25.666666666666668,0.0
+26.0,0.039989500933602505
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,1.9004991635423008
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.333333)" color="0x0000ff" encoding="csv">23.0,0.08333333333333333
+23.333333333333332,0.125
+23.666666666666668,0.013888888888888888
+24.0,0.5138888888888888
+24.333333333333332,0.041666666666666664
+24.666666666666668,0.0
+25.0,0.125
+25.333333333333332,0.0
+25.666666666666668,0.0
+26.0,0.09722222222222222
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,0.5138888888888888
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.333333)" color="0xa0a0ff" encoding="csv">23.0,0.172608584683674
+23.333333333333332,0.22407193574325335
+23.666666666666668,0.07497131085391912
+24.0,0.6334997211807669
+24.333333333333332,0.11697481982594136
+24.666666666666668,0.04994408370585468
+25.0,0.22407193574325335
+25.333333333333332,0.04994408370585468
+25.666666666666668,0.04994408370585468
+26.0,0.19011034044555922
+					</series>
+					<series title="lower limit" type="b(0.333333)" color="0x0000ff" encoding="csv">23.0,0.031197509141384482
+23.333333333333332,0.05878331705656036
+23.666666666666668,3.515744052335976E-4
+24.0,0.393100046479662
+24.333333333333332,0.008676497316343764
+24.666666666666668,0.0
+25.0,0.05878331705656036
+25.333333333333332,0.0
+25.666666666666668,0.0
+26.0,0.039989500933602505
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,0.6334997211807669
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">23.0,0.0
+23.333333333333332,0.08333333333333333
+23.666666666666668,0.20833333333333334
+24.0,0.2222222222222222
+24.333333333333332,0.7361111111111112
+24.666666666666668,0.7777777777777778
+25.0,0.7777777777777778
+25.333333333333332,0.9027777777777778
+25.666666666666668,0.9027777777777778
+26.0,0.9027777777777778
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">23.0,0.04994408370585468
+23.333333333333332,0.172608584683674
+23.666666666666668,0.32022951112937165
+24.0,0.3356366278546927
+24.333333333333332,0.8330460439665763
+24.666666666666668,0.8673176152121594
+25.0,0.8673176152121594
+25.333333333333332,0.9600104990663975
+25.666666666666668,0.9600104990663975
+26.0,0.9600104990663975
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">23.0,0.0
+23.333333333333332,0.031197509141384482
+23.666666666666668,0.12155120290780827
+24.0,0.1326823847878405
+24.333333333333332,0.6189720732283238
+24.666666666666668,0.6643633721453073
+25.0,0.6643633721453073
+25.333333333333332,0.8098896595544408
+25.666666666666668,0.8098896595544408
+26.0,0.8098896595544408
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">23.0,0.0
+23.333333333333332,0.08333333333333333
+23.666666666666668,0.20833333333333334
+24.0,0.2222222222222222
+24.333333333333332,0.7361111111111112
+24.666666666666668,0.7777777777777778
+25.0,0.7777777777777778
+25.333333333333332,0.9027777777777778
+25.666666666666668,0.9027777777777778
+26.0,0.9027777777777778
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.333333)" color="0x0000ff" encoding="csv">23.0,6.0
+23.333333333333332,9.0
+23.666666666666668,1.0
+24.0,37.0
+24.333333333333332,3.0
+24.666666666666668,0.0
+25.0,9.0
+25.333333333333332,0.0
+25.666666666666668,0.0
+26.0,7.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">24.214504421885454,0.0
+24.214504421885454,37.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.33333, bucket count=10
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [23, 26]
+Mean estimate of displayed sample: 24.215 ± 0.17852 (95% CI)</comment>
+				</plot>
+			</result>
 		</query>
 		<query>
 			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SURVIVORS)</formula>
 			<comment/>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2024-07-22 21:52:41 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
 		</query>
 	</queries>
 </nta>
