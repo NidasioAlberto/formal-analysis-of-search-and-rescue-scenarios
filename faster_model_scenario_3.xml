@@ -34,8 +34,7 @@ const int MAP_SCENARIO_FIRST = 1;
 const int MAP_SCENARIO_1 =  1;
 const int MAP_SCENARIO_2 =  2;
 const int MAP_SCENARIO_3 =  3;
-const int MAP_SCENARIO_4 =  4;
-const int MAP_SCENARIO_LAST = 4;
+const int MAP_SCENARIO_LAST = 3;
 
 typedef int[MAP_SCENARIO_FIRST, MAP_SCENARIO_LAST] map_id_t;
 
@@ -79,7 +78,7 @@ const int N_EXIT_BLOCK = 4;
 typedef int[0, N_EXIT_BLOCK-1] exit_t;
 const pos_t exit_pos[exit_t] = {{4,0}, {4,0}, {9,4}, {9,5}};
 
-const map_id_t map_id = MAP_SCENARIO_4;
+const map_id_t map_id = MAP_SCENARIO_3;
 
 
 /******************************************************************************
@@ -417,49 +416,8 @@ void init_map() {
         map[6][1] = CELL_FIRE;
         map[6][2] = CELL_FIRE;
         map[6][3] = CELL_FIRE;
-       
-    } else if (map_id == MAP_SCENARIO_2) {
-       
-        map[5][5] = CELL_FIRE;
-        map[5][6] = CELL_FIRE;
-        map[5][7] = CELL_FIRE;
-        map[5][8] = CELL_FIRE;
-        map[5][9] = CELL_FIRE;
-        map[6][5] = CELL_FIRE;
-        map[6][6] = CELL_FIRE;
-        map[6][7] = CELL_FIRE;
-        map[6][8] = CELL_FIRE;
-        map[6][9] = CELL_FIRE;
-        map[7][4] = CELL_FIRE;
-        map[7][5] = CELL_FIRE;
-        map[7][6] = CELL_FIRE;
-        map[7][7] = CELL_FIRE;
-        map[7][8] = CELL_FIRE;
-        map[7][9] = CELL_FIRE;
-        map[7][10] = CELL_FIRE;
-        map[8][4] = CELL_FIRE;
-        map[8][5] = CELL_FIRE;
-        map[8][6] = CELL_FIRE;
-        map[8][7] = CELL_FIRE;
-        map[8][8] = CELL_FIRE;
-        map[8][9] = CELL_FIRE;
-        map[8][10] = CELL_FIRE;
-        map[9][4] = CELL_FIRE;
-        map[9][5] = CELL_FIRE;
-        map[9][6] = CELL_FIRE;
-        map[9][7] = CELL_FIRE;
-        map[9][8] = CELL_FIRE;
-        map[9][9] = CELL_FIRE;
-        map[9][10] = CELL_FIRE;
-        map[10][4] = CELL_FIRE;
-        map[10][5] = CELL_FIRE;
-        map[10][6] = CELL_FIRE;
-        map[10][7] = CELL_FIRE;
-        map[10][8] = CELL_FIRE;
-        map[11][5] = CELL_FIRE;
-        map[11][6] = CELL_FIRE;
-        map[11][7] = CELL_FIRE;
-    } else if (map_id == MAP_SCENARIO_3)
+        
+    } else if (map_id == MAP_SCENARIO_2)
     {
    		map[3][7] = 1; // FIRE
    		map[4][2] = 1; // FIRE
@@ -475,7 +433,7 @@ void init_map() {
    		map[5][6] = 1; // FIRE
    		map[5][7] = 1; // FIRE
 
-    }else if (map_id == MAP_SCENARIO_4)
+    }else if (map_id == MAP_SCENARIO_3)
     {
     	map[2][3] = 1; // FIRE
 		map[2][4] = 1; // FIRE

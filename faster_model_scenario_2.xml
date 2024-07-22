@@ -417,49 +417,8 @@ void init_map() {
         map[6][1] = CELL_FIRE;
         map[6][2] = CELL_FIRE;
         map[6][3] = CELL_FIRE;
-       
-    } else if (map_id == MAP_SCENARIO_2) {
-       
-        map[5][5] = CELL_FIRE;
-        map[5][6] = CELL_FIRE;
-        map[5][7] = CELL_FIRE;
-        map[5][8] = CELL_FIRE;
-        map[5][9] = CELL_FIRE;
-        map[6][5] = CELL_FIRE;
-        map[6][6] = CELL_FIRE;
-        map[6][7] = CELL_FIRE;
-        map[6][8] = CELL_FIRE;
-        map[6][9] = CELL_FIRE;
-        map[7][4] = CELL_FIRE;
-        map[7][5] = CELL_FIRE;
-        map[7][6] = CELL_FIRE;
-        map[7][7] = CELL_FIRE;
-        map[7][8] = CELL_FIRE;
-        map[7][9] = CELL_FIRE;
-        map[7][10] = CELL_FIRE;
-        map[8][4] = CELL_FIRE;
-        map[8][5] = CELL_FIRE;
-        map[8][6] = CELL_FIRE;
-        map[8][7] = CELL_FIRE;
-        map[8][8] = CELL_FIRE;
-        map[8][9] = CELL_FIRE;
-        map[8][10] = CELL_FIRE;
-        map[9][4] = CELL_FIRE;
-        map[9][5] = CELL_FIRE;
-        map[9][6] = CELL_FIRE;
-        map[9][7] = CELL_FIRE;
-        map[9][8] = CELL_FIRE;
-        map[9][9] = CELL_FIRE;
-        map[9][10] = CELL_FIRE;
-        map[10][4] = CELL_FIRE;
-        map[10][5] = CELL_FIRE;
-        map[10][6] = CELL_FIRE;
-        map[10][7] = CELL_FIRE;
-        map[10][8] = CELL_FIRE;
-        map[11][5] = CELL_FIRE;
-        map[11][6] = CELL_FIRE;
-        map[11][7] = CELL_FIRE;
-    } else if (map_id == MAP_SCENARIO_3)
+        
+    } else if (map_id == MAP_SCENARIO_2)
     {
    		map[3][7] = 1; // FIRE
    		map[4][2] = 1; // FIRE
@@ -475,7 +434,7 @@ void init_map() {
    		map[5][6] = 1; // FIRE
    		map[5][7] = 1; // FIRE
 
-    }else if (map_id == MAP_SCENARIO_4)
+    }else if (map_id == MAP_SCENARIO_3)
     {
     	map[2][3] = 1; // FIRE
 		map[2][4] = 1; // FIRE
@@ -1181,20 +1140,20 @@ forall (i : survivor_t)
 		<query>
 			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-20 19:17:40 +0200">
+			<result outcome="success" type="quality" timestamp="2024-07-22 10:24:20 +0200">
 			</result>
 		</query>
 		<query>
 			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="6" timestamp="2024-07-20 20:25:59 +0200">
+			<result outcome="success" type="quantity" value="6" timestamp="2024-07-22 10:23:52 +0200">
 				<details>6</details>
 			</result>
 		</query>
 		<query>
 			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="5" timestamp="2024-07-20 20:25:59 +0200">
+			<result outcome="success" type="quantity" value="5" timestamp="2024-07-22 10:23:53 +0200">
 				<details>5</details>
 			</result>
 		</query>
