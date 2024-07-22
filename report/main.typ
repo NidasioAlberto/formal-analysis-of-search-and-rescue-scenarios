@@ -361,13 +361,13 @@ First responders arriving on the scene finds a wall of fire dividing the space i
   [1 drone], [10], [2], [2], [1], [5], [8], [30], [50%], [60%],
 ))
 
-This scenario is designed to test the effectiveness of the model to bring _first-responders_ to all groups of survivors _in-need_. With the moving policy `DIRECT`, _first-responders_ try to reach the save nearest group, and remains in that spot until all the _in-need_ individuals of that group are brought to safety. Even if enough _first-responders_ are deployed to save all _survivors_, they will be stuck on the first group while compiting to assist them.
+This scenario is designed to test the effectiveness of the model to bring _first-responders_ to all groups of survivors _in-need_. With the moving policy `DIRECT`, _first-responders_ try to reach the save nearest group, and remains in that spot until all the _in-need_ individuals of that group are brought to safety. Even if enough _first-responders_ are deployed to save all _survivors_, they will be stuck on the first group while trying to assist them.
 
 When drones are deployed, _survivors_ that are not in need of assistance are instructed to reach the _first-responders_ to bring them to their group. This effectively spreads out the _first-responders_, solving the policy's limitation. This is reflected in an higher $N_"%min"$, meaning that more _survivors_ are guaranteed to be saved.
 
 Although an improvement is achieved, the survival rates are not improved by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
 
-With or without drones, when excecuting the stochastic qeries we obtain $N%_max$ = $N%$ = 50%.
+With or without drones, when executing the stochastic queries we obtain $N%_max$ = $N%$ = 50%.
 
 #figure(
     image("images/branchProb.png", width: 12cm),
