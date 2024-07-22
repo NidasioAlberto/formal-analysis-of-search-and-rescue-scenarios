@@ -54,6 +54,15 @@ To simplify the model described in the assignment, the following assumptions hav
 
 #pagebreak()
 
+
+= Faster Model <faster_model>
+
+To speed up the verification process, we have made some changes to the model. Instead of modeling the interaction between the actors, we model only the necessary part of the interactions. Instead of having the actors move on the map, we model the movement as a wait state. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before reaching the target position. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
+
+Instead of various actors interacting with each other, we model the interaction as a message passing system. When a _drone_ detects a survivor _in-need_ and a _zero-responder_ (and a _first-responder_ if needed), it sends a message to the _zero-responder_ with the correct wait time (depending on the distance and the assistance time). The same applies to the _first-responder_ (if needed) and the _in-need_, so that the _in-need_ waits either until they are dead or the wait time has expired (becoming safe).
+
+Other model-specific optimizations have been made to reduce computations by saving the positions of actors in global variables, removing the need to search for the positions of the actors on the map.
+
 = Model Description and Design Choices
 
 == State and Parameters Representation
@@ -236,51 +245,10 @@ All the optional stochastic features have been implemented:
 - The _survivors_ acknowledge the instruction and enact with probability $S#sub[listen]$, and ignore it (or miss it) with probability $1 - S#sub[listen]$. We assume _survivors_ share the same behavior, hence the same probability is used for all of them.
 - The _drones_ vision sensors fail with probability $P#sub[fail]$. We assume _drones_ share the same sensors, hence the same failure probability is used for all of them.
 
-= Scenarios
+= Scenarios & Properties
 
-To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have run through the model. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
+To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have simulated trough it. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
 
-#align(center, grid(columns: 3, gutter: 1cm, align: bottom,
-  figure(
-    image("images/scenario_1.png", width: 5cm),
-    caption: [Scenario 1],
-    numbering: none
-  ),
-  figure(
-    image("images/scenario_2.png", width: 5cm),
-    caption: [Scenario 2],
-    numbering: none
-  ),
-  figure(
-    image("images/scenario_3.png", width: 5cm),
-    caption: [Scenario 3],
-    numbering: none
-  )
-))
-
-== Basic scenario
-
-This is the first scenario we used to test the model, it is the one used in the assignment. It was used as a benchmark for our model and to verify the correctness of the implementation and of the queries.
-
-While verifying different queries, we realized that our model was too complex and slow. We then decided to simplify the model as explained in @faster_model. This allowed us to reduce the number of states and transitions, and thus the verification time.
-
-== Lone survivor
-
-This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving randomly) to a group of survivors _in-need_. A single _survivor_ is placed in a corner of the map near a group of _in-need_, with the _first-responder_ located in the opposite corner. The _survivor_ is tasked by the _drone_ to fetch the _first-responder_ and must navigate through the map to reach them and assist the _in-need_ individuals. After that, the _first-responder_ will start helping all the _in-need_ survivors nearby until either all are dead or safe.
-
-== Divided branches
-
-This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving directly to the closest _in-need_) to a group of _in-need_ individuals further than the ones already assisted. The policy of the _first-responder_ is to go to the closest _in-need_, and then to the next closest, and so on. Without _drone_ assistance, all the _first-responders_ would go to the same _in-need_, leaving the others to die. With our system, only the necessary _first-responders_ are instructed to go to the _in-need_, while the others are left to assist other _in-need_ individuals.
-
-= Faster Model <faster_model>
-
-To speed up the verification process, we have made some changes to the model. Instead of modeling the interaction between the actors, we model only the necessary part of the interactions. Instead of having the actors move on the map, we model the movement as a wait state. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before reaching the target position. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
-
-Instead of various actors interacting with each other, we model the interaction as a message passing system. When a _drone_ detects a survivor _in-need_ and a _zero-responder_ (and a _first-responder_ if needed), it sends a message to the _zero-responder_ with the correct wait time (depending on the distance and the assistance time). The same applies to the _first-responder_ (if needed) and the _in-need_, so that the _in-need_ waits either until they are dead or the wait time has expired (becoming safe).
-
-Other model-specific optimizations have been made to reduce computations by saving the positions of actors in global variables, removing the need to search for the positions of the actors on the map.
-
-= Properties
 
 For all models, we have established the following parameters, which are scenario-independent and cannot be controlled:
 - $T_v = 30$: The time before an _in-need_ becomes a casualty;
@@ -291,26 +259,50 @@ For each scenario, we calculated:
 - $N%_max$: The maximum percentage of safe individuals over the total number of survivors (checked by: "sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors")
 - $N%$: The guaranteed number of safe individuals (checked by "inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors")
 
-== Basic scenario
+#align(center, grid(columns: 3, gutter: 1cm, align: bottom,
+  figure(
+    image("images/scenario_1.png", width: 5cm),
+    caption: [Plane crash],
+    numbering: none
+  ),
+  figure(
+    image("images/scenario_2.png", width: 5cm),
+    caption: [Lone survivor],
+    numbering: none
+  ),
+  figure(
+    image("images/scenario_3.png", width: 5cm),
+    caption: [Dividing branches],
+    numbering: none
+  )
+))
 
-At first, we ran the basic scenario without _drone_ assistance to observe how the system behaves without any help. Since our _survivors_ have a self-preservation instinct, they will try to reach the nearest exit without ending a turn near the fire. One of the _in-need_ individuals is saved by the _first-responder_, while the other becomes a casualty because the _first-responder_ cannot reach them in time; $N%_max$ = $N%$ = 88.89%.
+== Plane Crash
 
-Activating the system (enabling the _drones_) with $N_v$ = 1 and $N_r$ = 2 improves $N%_max$ to 100% while not changing $N%$.
-Improving the _drones'_ vision to $N_v$ = 3 allows them to better understand the situation, increasing $N%$ to 100%. This is the configuration presented in faster_model_scenario_1.
+Plane goes kaboom.
 
 == Lone survivor
+During a fire a _first-responder_ is called to save as many lives as possible. Due to the geometry and the poor ventilation the room is full of smoke, impeding the _first-responder_ ability to see any in need directly (moving policy random).
+In this scenario, without drone assistance, the _first-responder_ is able to save at most $N%_max$ =  83.33% and at minimum $N%$ = 16.67% depending on the random path.
 
-We start by assessing the performance of the scenario without drone assistance. The _first-responder_, moving randomly, is unable to reach the in-need in time, resulting in $N%_max$ =  83.33% and $N%$ = 16.67%.
+By activating the system with $N_v$ = 1 and $N_r$ = 2, the _drone_ instruct a survivor to bring a  _first-responder_ to the in-need. Effectively the _first-responder_ needs to wait more time, but it always reach the group of in needs obtaining  $N%_max$ = 66.67% (lower due to wait) but improving the minimum saved to $N%$ = 50%.
 
-By activating the system with $N_v$ = 1 and $N_r$ = 2, the _first-responder_ is directed to the in-need. It needs to wait to be called by the zero-responder and then reach the in-need, lowering $N%_max$ to 66.67% but improving $N%$ to 50%.
+In this scenario, the _first-responder_ is too slow to reach and heal the in-need to save more individuals. Since we cannot change the speed of the _first-responder_, we can only improve the assist time to $T_"fr" = 1$, (in a real-world scenario, this could be achieved through better training or better equipment), resulting in $N%_max$ =  100% and $N%$ = 83.33%. This is the configuration presented in faster_model_scenario_2.
 
-In this scenario, the _first-responder_ is too slow to reach the in-need to save more individuals. Since we cannot change the speed of the _first-responder_, we can only improve the assist time to $T_"fr" = 1$, (in a real-world scenario, this could be achieved through better training or better equipment), resulting in $N%_max$ =  100% and $N%$ = 83.33%. This is the configuration presented in faster_model_scenario_2.
+This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving randomly) to a group of survivors _in-need_. A single _survivor_ is placed in a corner of the map near a group of _in-need_, with the _first-responder_ located in the opposite corner. The _survivor_ is tasked by the _drone_ to fetch the _first-responder_ and must navigate through the map to reach them and assist the _in-need_ individuals. After that, the _first-responder_ will start helping all the _in-need_ survivors nearby until either all are dead or safe.
+
+
 
 == Divided branches
+
+First responders arriving on the scene find a wall of fire dividing the room in two. Due to their training all the _first-responder_ moves to the nearest in need (Moving policy direct), even when seeing other _first-responder_ going in that direction; not finding the other group of in need on the other side of the wall until it is too late.
+
+This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving directly to the closest _in-need_) to a group of _in-need_ individuals further than the ones already assisted. The policy of the _first-responder_ is to go to the closest _in-need_, and then to the next closest, and so on. Without _drone_ assistance, all the _first-responders_ would go to the same _in-need_, leaving the others to die. With our system, only the necessary _first-responders_ are instructed to go to the _in-need_, while the others are left to assist other _in-need_ individuals.
 
 As before, we first check the survivor rate of the model without drones, obtaining $N%_max$ = $N%$ = 70%.
 
 By turning on the system with $N_v$ = 1 and $N_r$ = 2, we obtain $N%_max$ = 70% and $N%$ = 40%. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are far, keeping them occupied longer than without the system.
+
 
 = Conclusion
 
