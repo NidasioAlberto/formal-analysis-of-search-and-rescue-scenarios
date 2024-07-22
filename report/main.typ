@@ -340,7 +340,7 @@ Due to the single _first-responder_ present on the scene, a lower assist time is
 Setting the probability of the _drones_ sensor to fail to 10% and the probability of the _survivors_ to listen to the instructions to 40% , we can guarantee that, within T_scs, that at least 2 survivors will be safe ($N%$ = 33%) with a probability of 96.93%.
 The max possible number of survivors saved is 6 with a probability of $N%max$ = 32.40%.
 
-#align(center, grid(columns: 3, gutter: 1cm, align: bottom,
+#align(center, grid(columns: 2, gutter: 1cm, align: bottom,
   figure(
     image("images/lone_min.png", width: 7cm),
     caption: [2 safe],
@@ -372,10 +372,11 @@ Although an improvement is achieved, the survival rates are not improved by much
 With or without drones, when executing the stochastic queries we obtain $N%_max$ = $N%$ = 50%.
 
 #figure(
-    image("images/branchProb.png", width: 12cm),
-    caption: [Probability of all survivors being safe after T_scs],
-    numbering: none
-  )
+  image("images/branchProb.png", width: 12cm),
+  caption: [Probability of all survivors being safe after T_scs],
+  numbering: none
+)
+
 = Conclusion
 
 In this project, we developed a model using Uppaal to simulate search-and-rescue operations involving survivors, first responders, and drones. The model is quiet flexible and almost every parameter can be changed to suit most simulations.
