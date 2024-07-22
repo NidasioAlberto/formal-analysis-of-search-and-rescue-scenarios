@@ -937,6 +937,12 @@ bool is_exit_near() {
     return is_val_in_unitary_radius(pos, CELL_EXIT);
 }
 
+void empty_map(){
+    if (get_map(pos) != CELL_FIRST_RESP) {
+        set_map(pos, CELL_EMPTY);
+    }
+}
+
 // Resets internal variable to reduce differences between states
 // Should be called when this survivor is not active anymore
 void reset() {
@@ -1029,7 +1035,7 @@ reset()</label>
 		<transition id="id39">
 			<source ref="id29"/>
 			<target ref="id24"/>
-			<label kind="assignment" x="705" y="17">set_map(pos, CELL_EMPTY),
+			<label kind="assignment" x="705" y="17">empty_map(),
 safe_survivors += 1,
 reset()</label>
 		</transition>
@@ -1291,10 +1297,12 @@ system Drone, Survivor, FirstResponder, Initializer;
 progress { safe_survivors + dead_survivors; }
 </system>
 	<queries>
+		<option key="--diagnostic" value="1"/>
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-22 19:06:47 +0200">
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:56:10 +0200">
+				<option key="--diagnostic" value="1"/>
 			</result>
 		</query>
 		<query>
@@ -1304,7 +1312,8 @@ forall (i : drone_t)
 		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
 		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-22 19:07:03 +0200">
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:56:45 +0200">
+				<option key="--diagnostic" value="1"/>
 			</result>
 		</query>
 		<query>
@@ -1316,7 +1325,8 @@ forall (i : survivor_t)
 			   not Survivor(i).Safe &amp;&amp; not Survivor(j).Safe)  imply
 		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2024-07-22 19:07:21 +0200">
+			<result outcome="success" type="quality" timestamp="2024-07-22 19:57:18 +0200">
+				<option key="--diagnostic" value="1"/>
 			</result>
 		</query>
 		<query>
