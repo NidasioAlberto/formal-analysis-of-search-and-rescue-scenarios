@@ -1,3 +1,0 @@
-- [X] Show actors indexes on the map to easily recognize them
-- [ ] Draw actors fovs
-- [ ] Show clocks values (for concrete simulator)
