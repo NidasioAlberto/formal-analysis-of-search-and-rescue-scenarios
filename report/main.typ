@@ -314,7 +314,14 @@ By turning on the system with $N_v$ = 1 and $N_r$ = 2, we obtain $N%_max$ = 60% 
 
 = Conclusion
 
-In conclusion, our model allows us to formally check the safety of a space (within the given assumptions) and can be used to determine the maximum number of people allowed inside, the number of drones and their vision range needed, and the number of first-responders and their training level ($T_"fr"$) to maintain the survival rate at a chosen target.
+In this project, we developed a model using Uppaal to simulate search-and-rescue operations involving survivors, first responders, and drones. The model is quiet flexible and almost every parameter can be changed to suit most simulations.
+
+Developing two models allowed us at first to create a complex but true to life model, capable of simulating easier scenarios in a more expressive and easy to understand way, and then by simplifying it to understand what was essential and what could be removed in order to speed up simulation time while maintaining the same core functionalities.
+
+Statistical model checking introduces uncertainty allowing us to understand the model's behavior in a more realistic scenario, where agents can make mistakes or fail to perform their tasks.
+
+In conclusion, our graphical interface allows us to easily create different scenarios and our model enable us to study them, maximizing the survival rate by assessing the effect that changes in different parameters have on the system.
+
 
 #pagebreak()
 
