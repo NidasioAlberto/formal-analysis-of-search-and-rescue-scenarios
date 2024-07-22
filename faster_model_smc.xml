@@ -1324,64 +1324,6 @@ progress { safe_survivors + dead_survivors; }
 </system>
 	<queries>
 		<query>
-			<formula>A[] not deadlock</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[]
-forall (i : drone_t)
-	forall (j : drone_t)
-		(i != j &amp;&amp; not Drone(i).Init &amp;&amp; not Drone(j).Init) imply
-		not (Drone(i).pos.x == Drone(j).pos.x &amp;&amp; Drone(i).pos.y == Drone(j).pos.y)</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[]
-forall (i : survivor_t)
-	forall (j : survivor_t)
-		(i != j &amp;&amp; not Survivor(i).Init &amp;&amp; not Survivor(j).Init &amp;&amp; 
-			   not Survivor(i).Dead &amp;&amp; not Survivor(j).Dead &amp;&amp;
-			   not Survivor(i).Safe &amp;&amp; not Survivor(j).Safe)  imply
-		not (Survivor(i).pos.x == Survivor(j).pos.x &amp;&amp; Survivor(i).pos.y == Survivor(j).pos.y)</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : survivor_t) Survivor(i).Safe || Survivor(i).Dead</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[] safe_survivors + dead_survivors &lt;= N_SURVIVORS</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A&lt;&gt; safe_survivors + dead_survivors == N_SURVIVORS</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: safe_survivors</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>sup{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>inf{safe_survivors + dead_survivors == N_SURVIVORS}: dead_survivors</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>E&lt;&gt; Initializer.t &gt;= T_scs &amp;&amp; safe_survivors &gt;= N_SAFE</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>A[] Initializer.t &gt;= T_scs imply safe_survivors &gt;= N_SAFE</formula>
-			<comment/>
-		</query>
-		<query>
 			<formula>Pr [&lt;=T_scs] (&lt;&gt; safe_survivors &gt;= N_SAFE)</formula>
 			<comment/>
 		</query>
