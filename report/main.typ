@@ -54,16 +54,17 @@ To simplify the model described in the assignment, the following assumptions hav
 
 #pagebreak()
 
-
-= Faster Model <faster_model>
-
-To speed up the verification process, we have made some changes to the model. Instead of modeling the interaction between the actors, we model only the necessary part of the interactions. Instead of having the actors move on the map, we model the movement as a wait state. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before reaching the target position. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
-
-Instead of various actors interacting with each other, we model the interaction as a message passing system. When a _drone_ detects a survivor _in-need_ and a _zero-responder_ (and a _first-responder_ if needed), it sends a message to the _zero-responder_ with the correct wait time (depending on the distance and the assistance time). The same applies to the _first-responder_ (if needed) and the _in-need_, so that the _in-need_ waits either until they are dead or the wait time has expired (becoming safe).
-
-Other model-specific optimizations have been made to reduce computations by saving the positions of actors in global variables, removing the need to search for the positions of the actors on the map.
-
 = Model Description and Design Choices
+
+== Faster Model <faster_model>
+
+After developing the model described below we discovered that the verification process was too slow, making it difficult to test different scenarios and configurations. To speed up the verification process, we have made some changes to the model described in the following sections. Instead of modeling the interaction between the actors, as they happen in real life, we model only the necessary part of it. Instead of having the actors move on the map, we model the movement as a wait state. This means that when an agent is instructed to move to a certain position, it will wait for a specific amount of time before teleport to the target position. If a movement is composed of different steps ( i.e. _zero-responder_ going to call a _fist-responder_ and then back to the _in-need_) it is now modelled as a unique wait state of the time needed to travel that distance. This simplifies the model and reduces the number of states and transitions, which in turn speeds up the verification process.
+
+When a _drone_ detects a survivor _in-need_ and a _zero-responder_ (and a _first-responder_ if needed), it sends a message to the _zero-responder_ with the correct wait time (depending on the distance and the assistance time). The same applies to the _first-responder_ (if needed) and the _in-need_, so that the _in-need_ waits either until they are dead or the wait time has expired (becoming safe).
+
+To reduce computation frequently used variables are stored in global variables, i.e. instead of searching for the position of an actor in the map we store it in a global variable.
+
+In each of the following sections we will describe the model as it was before the changes, and then we will describe the changes made to the model.
 
 == State and Parameters Representation
 
@@ -74,6 +75,8 @@ Each agent type (_survivor_, _first-responder_, _drone_) is represented by an au
 - The other agents' parameters (e.g. $N_v$, $N_r$, $T_"zr"$, etc.) are defined in constant global arrays (e.g. `const int N_v[drone_t] = {1, 1};`). Each template instance can then index these arrays with its own id to access its own parameters (e.g. `N_v[id]`).
 
 This setup allows for easily defining the simulation parameters all inside the _Declarations_ section, thus without modifying either the templates or the _System declarations_, and to easily assign different parameters to each template instance.
+
+In the *faster model* some of the agents parameters are stored in variables, not arrays, loosing the possibility to specify different parameters for each agent but reducing the complexity of the drone template.
 === Map Representation
 
 #wrap-content(rect(fill: luma(240), radius: 1mm, inset: 0.5em, [
@@ -113,6 +116,8 @@ When one agent changes position, it updates the map accordingly. For example, wh
 ```
 ]))
 
+In the *faster model* other then the map the position of each actor (and exit) is stored in an array and updated at each movement to reduce calculation in the following templates.
+
 == Synchronization and Message Passing
 
 Between the different agents, there are some interactions that require a way to pass a payload. For example, when a _survivor_ is instructed by a _drone_ to contact a _first-responder_, the _survivor_ must receive from the _drone_ both the positions of the _first-responder_ and that of the one _in-need_ to assist.
@@ -125,6 +130,8 @@ Following the previous example, the synchronization follows these steps:
 
 #align(center, image("images/Synchronization and message passing.png", width: auto))
 
+In the *faster model* the message passing is simplified by only passing, to all the actors involved, the total waiting time needed to complete the action.
+This could be a drone passing the waiting time to a _zero-responder_ , _in-need_ and _first-responder_ (if present) or a _first-responder_ passing the waiting time to the _in-need_.
 == Moving Policies
 
 Both _survivors_ and _first-responders_ are characterized by a custom moving policy. _Survivors_ use this moving policy to reach the nearest exit, while _first-responders_ use it to reach a _survivor_ in need of assistance.
@@ -178,6 +185,8 @@ bool direct_is_move_valid(pos_t pos, pos_t move, pos_t target, cell_t type) {
 }
 ```
 ])
+
+Both moving are not changed in the *faster model* except for using the position of actors stored in the global arrays when needed.
 
 == Templates
 
@@ -239,6 +248,8 @@ When a possible _zero-responder_ and someone _in-need_ are in range of the senso
 _Drones_ also have a fixed moving pattern that follows a predetermined path. This path is decided prior to the simulation and is not influenced by the state of the map or the agents. This is a simplification to keep the model complexity low and to avoid the need for the _drone_ to plan its path dynamically. The current path is a square with a parametric side length, each _drone_ can be setup with a different dimension and with a specific starting position.
 ]
 
+In the *faster model* after selecting the actor needed to perform an action the _drone_ sends a message to all the actors involved with the total waiting time needed to complete the action.
+
 == Statistical Model Checking
 
 All the optional stochastic features have been implemented:
@@ -282,7 +293,7 @@ For each scenario, we calculated:
 Plane goes kaboom.
 
 == Lone survivor
-During a fire a _first-responder_ is called to save as many lives as possible. Due to the geometry and the poor ventilation the room is full of smoke, impeding the _first-responder_ ability to see any in need directly (moving policy random).
+During a fire a _first-responder_ is called to save as many lives as possible. Due to the geometry and the poor ventilation the space is full of smoke, impeding the _first-responder_ ability to see any in need directly (moving policy random).
 In this scenario, without drone assistance, the _first-responder_ is able to save at most $N%_max$ =  83.33% and at minimum $N%$ = 16.67% depending on the random path.
 
 By activating the system with $N_v$ = 1 and $N_r$ = 2, the _drone_ instruct a survivor to bring a  _first-responder_ to the in-need. Effectively the _first-responder_ needs to wait more time, but it always reach the group of in needs obtaining  $N%_max$ = 66.67% (lower due to wait) but improving the minimum saved to $N%$ = 50%.
@@ -291,22 +302,19 @@ In this scenario, the _first-responder_ is too slow to reach and heal the in-nee
 
 This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving randomly) to a group of survivors _in-need_. A single _survivor_ is placed in a corner of the map near a group of _in-need_, with the _first-responder_ located in the opposite corner. The _survivor_ is tasked by the _drone_ to fetch the _first-responder_ and must navigate through the map to reach them and assist the _in-need_ individuals. After that, the _first-responder_ will start helping all the _in-need_ survivors nearby until either all are dead or safe.
 
-
-
 == Divided branches
 
-First responders arriving on the scene find a wall of fire dividing the room in two. Due to their training all the _first-responder_ moves to the nearest in need (Moving policy direct), even when seeing other _first-responder_ going in that direction; not finding the other group of in need on the other side of the wall until it is too late.
+First responders arriving on the scene finds a wall of fire dividing the space in two. Due to their training, all the _first-responders_ moves to the nearest _in-need_ (Moving policy `DIRECT`), even when seeing another _first-responder_ going in that direction. This causes the _first-responders_ to focus first on the nearest group of survivors, and then on the group on the other side of the wall, reaching it too late.
 
-This scenario is designed to test the effectiveness of the model in bringing a _first-responder_ (moving directly to the closest _in-need_) to a group of _in-need_ individuals further than the ones already assisted. The policy of the _first-responder_ is to go to the closest _in-need_, and then to the next closest, and so on. Without _drone_ assistance, all the _first-responders_ would go to the same _in-need_, leaving the others to die. With our system, only the necessary _first-responders_ are instructed to go to the _in-need_, while the others are left to assist other _in-need_ individuals.
+This scenario is designed to test the effectiveness of the model in bringing _first-responders_ to all groups of _in-need_ individuals, increasing the chance of more survivors reaching safety. When using the policy `DIRECT`, _first-responders_ try to reach the nearest _in-need_, and after assisting him they go to the next closest, and so on. Without _drones_ assistance, all the _first-responders_ would go to the same group of _in-need_, leaving the others to die. With our system, the _first-responders_ get split assisting both groups.
 
-As before, we first check the survivor rate of the model without drones, obtaining $N%_max$ = $N%$ = 70%.
+As before, we first check the survivor rate of the model without drones, obtaining $N%_max$ = 60% and $N%$ = 40%.
 
-By turning on the system with $N_v$ = 1 and $N_r$ = 2, we obtain $N%_max$ = 70% and $N%$ = 40%. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are far, keeping them occupied longer than without the system.
-
+By turning on the system with $N_v$ = 1 and $N_r$ = 2, we obtain $N%_max$ = 60% and $N%$ = 50% improving the result, but not by much. This highlights a weakness of the system: the drones always prefer the _first-responder_ when available, even if they are very far away, keeping them occupied longer. In this case to further improve the survival rate either more _fist-responders_ are needed or a better decision policy for the _drones_ has to be implemented.
 
 = Conclusion
 
-In conclusion, our model allows us to formally check the safety of a room (within the given assumptions) and can be used to determine the maximum number of people allowed inside, the number of drones and their vision range needed, and the number of first-responders and their training level ($T_"fr"$) to maintain the survival rate at a chosen target.
+In conclusion, our model allows us to formally check the safety of a space (within the given assumptions) and can be used to determine the maximum number of people allowed inside, the number of drones and their vision range needed, and the number of first-responders and their training level ($T_"fr"$) to maintain the survival rate at a chosen target.
 
 #pagebreak()
 
