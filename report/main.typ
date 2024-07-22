@@ -138,6 +138,8 @@ Both _survivors_ and _first-responders_ are characterized by a custom moving pol
 
 These moving policies all function in the same way; given a target position, they produce the next move to take towards the target. Therefore, they can be abstracted and implemented in a generalized way.
 
+A move is considered valid if the target is in the map bound and the cell is empty, i.e. not occupied by a fire or another agent.
+
 In order to support random choices, the moving policy implementation works as follows:
 - On the edge where we want to perform the move, a non-deterministic selection of offsets `i` and `j` is performed to identify a possible adjacent cell to move to (shown in @moving_policy_edge);
 - The function `is_move_valid(i, j)` evaluates whether a given adjacent cell is a valid move or not, using the selected moving policy.
