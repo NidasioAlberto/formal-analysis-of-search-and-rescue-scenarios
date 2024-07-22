@@ -230,6 +230,12 @@ When a possible _zero-responder_ and someone _in-need_ are in range of the senso
 _Drones_ also have a fixed moving pattern that follows a predetermined path. This path is decided prior to the simulation and is not influenced by the state of the map or the agents. This is a simplification to keep the model complexity low and to avoid the need for the _drone_ to plan its path dynamically. The current path is a square with a parametric side length, each _drone_ can be setup with a different dimension and with a specific starting position.
 ]
 
+== Statistical Model Checking
+
+All the optional stochastic features have been implemented:
+- The _survivors_ acknowledge the instruction and enact with probability $S#sub[listen]$, and ignore it (or miss it) with probability $1 - S#sub[listen]$. We assume _survivors_ share the same behavior, hence the same probability is used for all of them.
+- The _drones_ vision sensors fail with probability $P#sub[fail]$. We assume _drones_ share the same sensors, hence the same failure probability is used for all of them.
+
 = Scenarios
 
 To highlight the strength and weaknesses of the model, we have defined a set of scenarios that we have run through the model. The scenarios are designed to test the model in different conditions, such as the presence of multiple fires, the distribution of agents, and the effectiveness of the moving policies.
