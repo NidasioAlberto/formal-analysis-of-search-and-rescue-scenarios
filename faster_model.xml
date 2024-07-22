@@ -1028,7 +1028,7 @@ Save the result in wait.</label>
 		<transition id="id38">
 			<source ref="id28"/>
 			<target ref="id23"/>
-			<label kind="assignment" x="833" y="-357">set_map(pos, CELL_EMPTY),
+			<label kind="assignment" x="833" y="-357">empty_map(),
 dead_survivors += 1,
 reset()</label>
 		</transition>
